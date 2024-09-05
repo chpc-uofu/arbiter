@@ -307,10 +307,7 @@ class DashboardAdmin(admin.ModelAdmin):
         agents = []
         try:
             result = prometheus.custom_query('up{job="cgroup-agent"} > 0')
-            if settings.ARBITER_DEFAULT_PORT_IN_USE:
-                agents = [strip_port(metric["metric"]["instance"]) for metric in result]
-            else:
-                agents = [metric["metric"]["instance"] for metric in result]
+            agents = [strip_port(metric["metric"]["instance"]) for metric in result]
         except Exception as e:
             LOGGER.error(f"Could not query promethues for cgroup-agent instances: {e}")
 
