@@ -1,0 +1,19 @@
+Vagrant.configure("2") do |config|
+    config.vm.define "cgroup-warden" do |goAgent| 
+        goAgent.vm.box = "generic/ubuntu2004"
+        goAgent.vm.network "private_network", ip: "192.168.56.2"
+        goAgent.vm.network "forwarded_port", guest: 2112, host: 2112, host_ip: "127.0.0.1"
+        goAgent.vm.synced_folder ".", "/vagrant/cgroup-warden"
+        goAgent.vm.provision "shell", path: "provisioning.sh"
+    end
+  
+     config.vm.provider "virtualbox" do |vb|
+      vb.customize [ "modifyvm", :id, "--uartmode1", "disconnected" ]
+      vb.customize ["modifyvm", :id, "--cableconnected1", "on"]
+      vb.customize ["modifyvm", :id, "--uart1", "0x3F8", "4"]
+      vb.customize ["modifyvm", :id, "--uartmode1", "file", File::NULL]
+      vb.memory = 4096 
+      vb.cpus = 5
+    end
+end 
+

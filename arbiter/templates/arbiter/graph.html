@@ -1,0 +1,22 @@
+<style>
+.graph-box{
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-around;
+}
+</style>
+
+<ul class="messagelist">
+    {% if error %}
+        <li class = "error">{{error}}</li>
+    {% endif %}
+    {% if warning %}
+        <li class="warning">{{warning}}</li>
+    {% endif %}
+</ul>
+
+<div class="graph-box">
+    <div style="min-width: 600px; width: 50%; flex:1;">{{graph}}</div>
+    <div style="min-width: 400px; width: 50%; max-width: 600px; flex:1;">{{pie}}</div>
+</div>

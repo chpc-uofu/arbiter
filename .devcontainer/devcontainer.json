@@ -1,0 +1,46 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/python
+{
+	"name": "Python 3",
+	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	"dockerComposeFile": "docker-compose.yml",
+	"service": "arbiter",
+	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	// "features": {},
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	"forwardPorts": [8000],
+	// Use 'postCreateCommand' to run commands after the container is created.
+	
+	"features": {
+		"ghcr.io/devcontainers/features/python:1": {
+		  "version": "3.11"
+		},
+		"ghcr.io/devcontainers/features/go:1": {
+			"version": "1.22"
+		}
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"golang.Go", 
+				"ms-python.python",
+				"ms-python.black-formatter"
+			]
+		}
+	},
+	"postCreateCommand": "pip3 install poetry && poetry install --with=dev",
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	"remoteUser": "vscode",
+
+	"containerEnv": {
+		"ARBITER_PROMETHEUS_HOST": "http://prometheus:9090",
+		"ARBITER_CONTROL_KEY": "insecure-95axve4fn4j2u8ih0j1ltg272g1n297l8",
+		"ARBITER_EMAIL_DOMAIN": "test.site.edu",
+		"ARBITER_EMAIL_HOST": "host.docker.internal",
+		"ARBITER_EMAIL_PORT": "1025",
+		"ARBITER_WARDEN_PORT": "2112"
+	}
+}
+

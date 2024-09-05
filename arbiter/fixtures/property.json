@@ -1,0 +1,1 @@
+[{"model": "arbiter.property", "pk": 1, "fields": {"name": "CPUQuotaPerSecUSec", "type": "int", "operation": "<"}}, {"model": "arbiter.property", "pk": 2, "fields": {"name": "MemoryMax", "type": "int", "operation": "<"}}]

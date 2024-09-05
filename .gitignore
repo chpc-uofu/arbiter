@@ -1,0 +1,9 @@
+poetry.lock
+.env
+*.pyc
+.vagrant/
+db.sqlite3
+*.pyc
+**/__pycache__/
+.pytest_cache/
+testing/warden/cgroup-warden

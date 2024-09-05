@@ -1,0 +1,11 @@
+<ul class="messagelist">
+    {% if info %}
+        <li class="info">{{info}}</li>
+    {% endif %}
+    {% if error %}
+        <li class = "error">{{error}}</li>
+    {% endif %}
+    {% if warning %}
+        <li class="warning">{{warning}}</li>
+    {% endif %}
+</ul>
