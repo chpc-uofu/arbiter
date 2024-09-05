@@ -27,18 +27,18 @@ The architecture for Arbiter 3 involves the follwoing pieces as shown on the dia
 3. Once in, you can configure the Policies/Penalties you want Arbiter to use and enforce and where.
     - If you want a starting point to work from use `python3 manage.py loaddata start` to load a basic Policy/Penalty in.
     - Note that you will need to set up SystemD Propetries on the admin as well as Limits for them, though you can load the Propetry fixture which is a good starting point using `python3 manage.py loaddata property`
-4. Once all the configuration is set up, you can use the Dashboard page on the Admin to see user usage, and run the Arbiter evaluation loop (only one loop) or set Properties on user/hosts with a Cgroup-agent.
+4. Once all the configuration is set up, you can use the Dashboard page on the Admin to see user usage, and run the Arbiter evaluation loop (only one loop) or set Properties on user/hosts with a `cgroup-warden`.
 
 5. Now that everything is set up, you can start up the Evaluation loop to run forever, by using `python3 manage.py evaluate` with along with how long you want to wait between each loop using the `--seconds`, `--minutes`, and `--hours` arguments. If no furation arguments are provided, the loop runs once and exits. Additionally, you can specifiy only certain Policies to evaluate if you want using `--policies` and a list of Policy names.
     - If you want to start simple just use this commands which runs the loop every 30 secs `python3 manage.py evaluate --seconds 30`
 
 6. There are also commands for clearing/logs or history. If you want a list of commands run `python3 manage.py` and if you want to know more about a command run `python3 manage.py <command-name> --help`
 
-### Get Cgroup-Agent Testing Environment Set up
-1. Because most container runtimes do support systemd, which cgroup-agent utilizes heavily, we opted to use [Vagrant](https://www.vagrantup.com/) to provision virtual machines that we can test the agent on. Before testing make sure you have vagrant as well as a virtual machine provider such as [VirtualBox](https://www.virtualbox.org/). 
+### Get `cgroup-warden` Testing Environment Set up
+1. Because most container runtimes do support systemd, which `cgroup-warden` utilizes heavily, we opted to use [Vagrant](https://www.vagrantup.com/) to provision virtual machines that we can test the agent on. Before testing make sure you have vagrant as well as a virtual machine provider such as [VirtualBox](https://www.virtualbox.org/). 
 2. Now that you have that set up, on your host machine, navigate to /testing in the directory containing this repo and run `vagrant up`. This will set up the vm and run the cgroup-agent as a service. You can verify it is running when the command finishes by going to `localhost:2112/metrics` or if the container is running, by going to `localhost:9090/targets`. 
 3. From here you can test how Arbiter will work with the agent by going into the vm with `vagrant ssh` and testing what causes Arbiter's Policies to put you in Penalty.
-4. For any adiitional agents you will need to add their host/ip to the `prometheus.yml` in the `.devcontainer/prometheus/` folder. When you do, make sure to add them to the existing `cgroup-agent` job as Arbiter looks for that name.
+4. For any adiitional agents you will need to add their host/ip to the `prometheus.yml` in the `.devcontainer/prometheus/` folder. When you do, make sure to add them to the existing `cgroup-warden` job as Arbiter looks for that name.
 
 ## Testing
 1. To run our test suit you will need to have the container with the Arbiter daemon open, the vagrant vm running with the cgroup-agent up, and the Prometheus server running from its container.
@@ -48,7 +48,7 @@ The architecture for Arbiter 3 involves the follwoing pieces as shown on the dia
     - Make sure your promtehus scrape interval is low for these tests, roughly around 1sec.
 4. After this if you want to test a specific file you can run `pytest <file>` for any of the files in `testing/` where the *Vagrantfile* is located. You can also use `pytest <file>:<test_name>` to run a specific test of `pytest -k <test_regex>` to run all tests that match what you give it.
 5. If you want to do any manual tests on your own, it may help to use the grafana server inside the Docker configuration to view usage/limits as you perform specific tests. 
-    - To do this naviagte to `localhost:3000` then log in with the default login `username:admin`, `password:admin` which it will ask you to change.
+    - To do this navigate to `localhost:3000` then log in with the default login `username:admin`, `password:admin` which it will ask you to change.
     - From here you can either make your own dashboard or import the serialized one located at `.devcontainer/grafana/dashboard.json`. Make sure to add your Prometheus server as a data source, if it isn't already as well.
 
 ## Modeling
