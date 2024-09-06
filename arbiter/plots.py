@@ -111,8 +111,8 @@ def add_graph_data_traces(
 
 
 def plot_target_cpu_graph(
-    user_re: str,
-    host: str,
+    unit_re: str,
+    host_re: str,
     start_time: datetime,
     end_time: datetime,
     policy_threshold: float | None = None,
@@ -123,54 +123,41 @@ def plot_target_cpu_graph(
     Makes a stacked line chart of CPU-usage in cores split by processes. Shows the cgroup limit and will draw the policy threshold if provided
     """
 
-    response = prom.custom_query_range(
-        f'sum by (proc) (rate(procfs_pid_cpu_usage_ns{{username=~"{user_re}", instance=~"{host}"}}[{step}]))',
-        start_time=start_time,
-        end_time=end_time,
-        step=step,
-    )
-
-    pid_cpu_data = response_to_graph_data(response, "proc", 1_000_000_000)
-
-    response = prom.custom_query_range(
-        f'systemd_unit_cpu_limit_us_per_s{{username=~"{user_re}", instance=~"{host}"}}',
-        start_time=start_time,
-        end_time=end_time,
-        step=step,
-    )
-
-    cpu_limit_data = response_to_graph_data(
-        response, "unit", 1_000_000, omit_negative=True
-    )
-
-    response = prom.custom_query_range(
-        f'((sum (increase(systemd_unit_cpu_usage_ns{{username=~"{user_re}", instance=~"{host}"}}[{step}]))) - (sum (increase(procfs_pid_cpu_usage_ns{{username=~"{user_re}", instance=~"{host}"}}[{step}])))) > 0',
-        start_time=start_time,
-        end_time=end_time,
-        step=step,
-    )
-
-    other_proc_data = response_to_graph_data(
-        response, unit_divisor=1_000_000_000, omit_negative=True
-    )
-
+    #TODO fixme
+    host_re += ".*"
+    
     fig = Figure()
 
-    add_graph_data_traces(
-        fig,
-        other_proc_data,
-        connectgaps=False,
-        stackgroup="process",
-        line={"color": "gray"},
-    )
-    add_graph_data_traces(fig, pid_cpu_data, stackgroup="process")
-    add_graph_data_traces(
-        fig,
-        cpu_limit_data,
-        name_postfix="-Limit",
-        connectgaps=False,
-        line={"dash": "dot", "color": "red"},
-    )
+    # we are only interested in 'these' targets, filter all following queries
+    target_filters = f'{{ unit=~"{ unit_re }", instance=~"{ host_re }"}}'
+
+    # sum the total cpu usage of the unit
+    total_usage_metric = 'systemd_unit_cpu_usage_ns'
+    total_usage_query = f'sum(increase({ total_usage_metric }{ target_filters }[{ step }]))'
+
+    # sum the total cpu of the processes in the unit, and graph
+    proc_usage_metric = 'systemd_unit_proc_cpu_seconds'
+    proc_usage_query = f'rate({ proc_usage_metric }{ target_filters }[{ step }])'
+    proc_usage = prom.custom_query_range(proc_usage_query, start_time=start_time, end_time=end_time, step=step)
+    print("proc_usage", proc_usage, proc_usage_query)
+    proc_data = response_to_graph_data(response=proc_usage, group_label="proc", unit_divisor=1, omit_negative=True)
+    add_graph_data_traces(fig, proc_data, stackgroup="process")
+
+    # calculate the delta between the two totals, graph this as "other usage"
+    delta_usage_query = f'(({ total_usage_query }) - ({ proc_usage_query })) > 0'
+    delta_usage = prom.custom_query_range(delta_usage_query, start_time=start_time, end_time=end_time, step=step)
+    print("delta_usage", delta_usage, delta_usage_query)
+    delta_data = response_to_graph_data(response=delta_usage, unit_divisor=1_000_000_000, omit_negative=True)
+    add_graph_data_traces(fig, delta_data, connectgaps=False, stackgroup="process", line={"color": "gray"})
+
+    # discover if there are any hard quotas on the unit, and graph
+    quota_metric = 'systemd_unit_cpu_quota_us_per_s'
+    quota_query = f'{ quota_metric }{ target_filters }'
+    quota = prom.custom_query_range(quota_query, start_time=start_time, end_time=end_time, step=step)
+    quota_data = response_to_graph_data(response=quota, group_label="unit", unit_divisor=1_000_000_000, omit_negative=True)
+    print("quota", quota, quota_query)
+    delta_data = response_to_graph_data(response=delta_usage, unit_divisor=1_000_000_000, omit_negative=True)
+    add_graph_data_traces(fig, quota_data, name_postfix="-Limit", connectgaps=False, line={"dash": "dot", "color": "red"})   
 
     if policy_threshold:
         fig.add_hline(
@@ -189,7 +176,7 @@ def plot_target_cpu_graph(
         )
 
     fig.update_layout(
-        title=f"CPU Usage Report For {user_re} on {host}",
+        title=f"CPU Usage Report For {unit_re} on {host_re}",
         xaxis_title="Time",
         yaxis_title="Usage in Cores",
     )
@@ -198,7 +185,7 @@ def plot_target_cpu_graph(
 
 
 def plot_target_memory_graph(
-    user_re: str,
+    unit_re: str,
     host: str,
     start_time: datetime,
     end_time: datetime,
@@ -211,7 +198,7 @@ def plot_target_memory_graph(
     """
 
     response = prom.custom_query_range(
-        f'sum by (proc) (avg_over_time(procfs_pid_pss_bytes{{username=~"{user_re}", instance=~"{host}"}}[{step}]))',
+        f'sum by (proc) (avg_over_time(procfs_pid_pss_bytes{{unit=~"{unit_re}", instance=~"{host}"}}[{step}]))',
         start_time=start_time,
         end_time=end_time,
         step=step,
@@ -220,7 +207,7 @@ def plot_target_memory_graph(
     pid_memory_data = response_to_graph_data(response, "proc", unit_divisor=GIB)
 
     response = prom.custom_query_range(
-        f'systemd_unit_memory_max_bytes{{username=~"{user_re}", instance=~"{host}"}}',
+        f'systemd_unit_memory_max_bytes{{unit=~"{unit_re}", instance=~"{host}"}}',
         start_time=start_time,
         end_time=end_time,
         step=step,
@@ -231,7 +218,7 @@ def plot_target_memory_graph(
     )
 
     response = prom.custom_query_range(
-        f'((sum (systemd_unit_memory_current_bytes{{username=~"{user_re}", instance=~"{host}"}})) - (sum (procfs_pid_pss_bytes{{username=~"{user_re}", instance=~"{host}"}}))) > 0',
+        f'((sum (systemd_unit_memory_current_bytes{{unit=~"{unit_re}", instance=~"{host}"}})) - (sum (procfs_pid_pss_bytes{{unit=~"{unit_re}", instance=~"{host}"}}))) > 0',
         start_time=start_time,
         end_time=end_time,
         step=step,
@@ -276,7 +263,7 @@ def plot_target_memory_graph(
         )
 
     fig.update_layout(
-        title=f"Memory Usage Report For {user_re} on {host}",
+        title=f"Memory Usage Report For {unit_re} on {host}",
         xaxis_title="Time",
         yaxis_title="Usage in GiB",
     )
@@ -296,11 +283,11 @@ def instant_response_to_data(response: dict, group_label: str, unit_divisor=1) -
 
 
 def plot_target_proc_cpu_usage_pie(
-    user_re: str, host: str, start_time: datetime, end_time: datetime
+    unit_re: str, host: str, start_time: datetime, end_time: datetime
 ) -> Figure:
     total_seconds = int((end_time - start_time).total_seconds())
     response = prom.custom_query(
-        f'rate(procfs_pid_cpu_usage_ns{{username=~"{user_re}", instance=~"^{host}"}}[{total_seconds}s])',
+        f'rate(procfs_pid_cpu_usage_ns{{unit=~"{unit_re}", instance=~"^{host}"}}[{total_seconds}s])',
         params=dict(time=end_time.timestamp()),
     )
 
@@ -309,7 +296,7 @@ def plot_target_proc_cpu_usage_pie(
     )
 
     response = prom.custom_query(
-        f'((sum (increase(systemd_unit_cpu_usage_ns{{username=~"{user_re}", instance=~"{host}"}}[{total_seconds}s]))) - (sum (increase(procfs_pid_cpu_usage_ns{{username=~"{user_re}", instance=~"{host}"}}[{total_seconds}s])))) > 0',
+        f'((sum (increase(systemd_unit_cpu_usage_ns{{unit=~"{unit_re}", instance=~"{host}"}}[{total_seconds}s]))) - (sum (increase(procfs_pid_cpu_usage_ns{{unit=~"{unit_re}", instance=~"{host}"}}[{total_seconds}s])))) > 0',
     )
 
     cpu_pie_data["other"] = sum(
@@ -328,11 +315,11 @@ def plot_target_proc_cpu_usage_pie(
 
 
 def plot_target_proc_memory_usage_pie(
-    user_re: str, host: str, start_time: datetime, end_time: datetime
+    unit_re: str, host: str, start_time: datetime, end_time: datetime
 ) -> Figure:
     total_seconds = int((end_time - start_time).total_seconds())
     response = prom.custom_query(
-        f'avg_over_time(procfs_pid_pss_bytes{{username=~"{user_re}", instance=~"{host}"}}[{total_seconds}s])',
+        f'avg_over_time(procfs_pid_pss_bytes{{unit=~"{unit_re}", instance=~"{host}"}}[{total_seconds}s])',
         params=dict(time=end_time.timestamp()),
     )
     cpu_pie_data: dict = instant_response_to_data(
@@ -340,7 +327,7 @@ def plot_target_proc_memory_usage_pie(
     )
 
     response = prom.custom_query(
-        f'((sum (avg_over_time(systemd_unit_memory_current_bytes{{username=~"{user_re}", instance=~"{host}"}}[{total_seconds}s]))) - (sum (avg_over_time(procfs_pid_pss_bytes{{username=~"{user_re}", instance=~"{host}"}}[{total_seconds}s])))) > 0',
+        f'((sum (avg_over_time(systemd_unit_memory_current_bytes{{unit=~"{unit_re}", instance=~"{host}"}}[{total_seconds}s]))) - (sum (avg_over_time(procfs_pid_pss_bytes{{unit=~"{unit_re}", instance=~"{host}"}}[{total_seconds}s])))) > 0',
     )
 
     cpu_pie_data["other"] = sum(
@@ -364,7 +351,7 @@ def plot_violation_cpu_graph(violation: Violation, step="10s") -> Figure:
     step = align_with_prom_limit(start_time, end_time, step)
 
     return plot_target_cpu_graph(
-        violation.target.username,
+        violation.target.unit,
         violation.target.host,
         start_time=start_time,
         end_time=end_time,
@@ -380,7 +367,7 @@ def plot_violation_memory_graph(violation: Violation, step="10s") -> Figure:
     step = align_with_prom_limit(start_time, end_time, step)
 
     return plot_target_memory_graph(
-        violation.target.username,
+        violation.target.unit,
         violation.target.host,
         start_time=start_time,
         end_time=end_time,
@@ -395,7 +382,7 @@ def plot_violation_proc_cpu_usage_pie(violation: Violation) -> Figure:
     end_time = violation.timestamp
 
     return plot_target_proc_cpu_usage_pie(
-        violation.target.username,
+        violation.target.unit,
         violation.target.host,
         start_time=start_time,
         end_time=end_time,
@@ -407,7 +394,7 @@ def plot_violation_proc_memory_usage_pie(violation: Violation) -> Figure:
     end_time = violation.timestamp
 
     return plot_target_proc_memory_usage_pie(
-        violation.target.username,
+        violation.target.unit,
         violation.target.host,
         start_time=start_time,
         end_time=end_time,

@@ -133,7 +133,6 @@ auth = (user, password) if user and password else None
 disable_ssl = auth is None
 PROMETHEUS_CONNECTION = PrometheusConnect(url=url, auth=auth, disable_ssl=disable_ssl)
 
-
 # key used to authenticate with cgroup-agent 
 ARBITER_CONTROL_KEY = os.environ.get("ARBITER_CONTROL_KEY")
 
@@ -142,7 +141,6 @@ ARBITER_WARDEN_PORT = os.environ.get("ARBITER_WARDEN_PORT", 2112)
 
 ARBITER_WARDEN_PROTOCOL = os.environ.get("ARBITER_WARDEN_PROTOCOL", "https")
  
-
 # domain used in default email lookup, and from email
 ARBITER_EMAIL_DOMAIN = os.environ["ARBITER_EMAIL_DOMAIN"]
 
@@ -153,71 +151,3 @@ EMAIL_PORT = os.environ["ARBITER_EMAIL_PORT"]
 # if your smtp server requires authentication
 EMAIL_HOST_USER = os.environ.get("ARBITER_EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.environ.get("ARBITER_EMAIL_HOST_PASSWORD")
-
-from typing import NamedTuple
-
-class UserInfo(NamedTuple):
-    username: str
-    realname: str
-    email: str
-
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from arbiter.models import Target
-
-def ARBITER_USER_LOOKUP(target : "Target") -> UserInfo:
-    """
-    Looks up a user's information given the uid. 
-    Information is used to send emails to users after a violation.
-    """
-    username = target.username
-    realname = realname_lookup(username=username)
-    email = email_lookup(username=username)
-    return UserInfo(username, realname, email)
-
-# your custom email lookup goes here.
-def email_lookup(username : str) -> str:
-    """
-    Returns the email address of a user given the username.
-    
-    You can customize this function to suit your own needs,
-    but it must take a username as an input and return the 
-    desired email. 
-    """
-
-    return _default_email_lookup(username)
-
-# your custom user lookup goes here. 
-def realname_lookup(username: str) -> str:
-    """
-    Returns the realname of a user given the username.
-
-    You can customize this function to suit your own needs,
-    but it must take a uid as an input and return the
-    desired username and realname.
-    """
-
-    return _default_realname_lookup(username=username)
-
-def _default_email_lookup(username: str) -> str:
-    """
-    The default email address resolution method.
-    """
-
-    return f"{username}@{ARBITER_EMAIL_DOMAIN}"
-
-from pwd import getpwnam
-
-def _default_realname_lookup(username: str) -> str:
-    """
-    The default user info resolution method.
-    """
-
-    realname = f"unknown real name"
-    try:
-        pwd_info = getpwnam(username)
-        gecos = pwd_info.pw_gecos
-        realname = gecos.rstrip() or realname
-    except KeyError:
-        pass
-    return realname

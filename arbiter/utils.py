@@ -31,36 +31,6 @@ async def set_property(
     return status, message
 
 
-async def set_property_with_username(
-    username: str, host: str, session: aiohttp.ClientSession, prop: dict[str, str]
-) -> tuple[http.HTTPStatus, str]:
-    """
-    Sets a systemd property for a unit on host by sending a control request to cgroup-agent.
-    A property is a JSON object with the name and value of a property.For example,
-    prop = {"name" : "CPUQuotaPerSecUSec, "value", "1000000000"}
-    """
-
-    logger.debug(
-        f"setting property {prop['name']} with value {prop['value']} for {username} on {host}"
-    )
-    
-    endpoint = f"{settings.ARBITER_WARDEN_PROTOCOL}://{host}:{settings.ARBITER_WARDEN_PORT}/control"
-    logger.info(f"setting property {prop['name']} with value {prop['value']} for {username} on {endpoint}")
-    payload = {"username": username, "property": prop}
-    auth_header = {"Authorization": "Bearer " + settings.ARBITER_CONTROL_KEY}
-    try:
-        async with session.post(
-            url=endpoint, json=payload, timeout=5, headers=auth_header, ssl=False
-        ) as response:
-            status = response.status
-            message = await response.json()
-    except (aiohttp.ClientConnectionError, aiohttp.ClientError) as e:
-        status = http.HTTPStatus.SERVICE_UNAVAILABLE
-        message = f"Service Unavailable"
-
-    return status, message
-
-
 def strip_port(host: str) -> str:
     """
     Strips the port from a host string

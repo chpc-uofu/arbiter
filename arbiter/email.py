@@ -3,10 +3,10 @@ from arbiter import plots
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from email.mime.image import MIMEImage
-from django.conf import settings
 import logging
 from smtplib import SMTPException
 from plotly.graph_objects import Figure
+from arbiter.integrations import arbiter_user_lookup
 
 LOGGER = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ def send_violation_email(violation: Violation | None):
         cpu_usage_pie=plots.plot_violation_proc_cpu_usage_pie(violation),
         mem_usage_pie=plots.plot_violation_proc_memory_usage_pie(violation),
     )
-    user = settings.ARBITER_USER_LOOKUP(violation.target)
+    user = arbiter_user_lookup(violation.target)
     LOGGER.info(f"Attempting to send violation mail to {user}")
     subject = f"Violation of usage policy {violation.policy} on {violation.target.host} by {user.username} ({user.realname})"
     text_content = f"Violation of usage policy {violation.policy} on {violation.target.host} by {user.username} ({user.realname})"

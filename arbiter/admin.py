@@ -171,9 +171,9 @@ class PolicyAdmin(admin.ModelAdmin):
             help_text="A regular expression for any process names you want to be excluded from a user's reported usage",
             required=False,
         )
-        user_whitelist = forms.CharField(
+        unit_whitelist = forms.CharField(
             max_length=1000,
-            help_text="A regular expression for the usernames you don't want to this policy to apply to",
+            help_text="A regular expression for the units you don't want to this policy to apply to",
             required=False,
         )
 
@@ -338,9 +338,9 @@ admin.site.register(DashboardAdmin.Dashboard, DashboardAdmin)
 
 
 class TargetAdmin(admin.ModelAdmin):
-    list_display = ["unit", "username", "host"]
-    list_filter = ["host", "username"]
-    search_fields = ["unit", "username", "host"]
+    list_display = ["unit", "host"]
+    list_filter = ["host"]
+    search_fields = ["unit", "host"]
 
 
 admin.site.register(models.Target, TargetAdmin)

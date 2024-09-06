@@ -33,9 +33,8 @@ def query_violations(policies: list[Policy]) -> list[Violation]:
         for result in response:
             unit = result["metric"]["unit"]
             host = strip_port(result["metric"]["instance"])
-            username = result["metric"]["username"]
 
-            target, _ = Target.objects.get_or_create(unit=unit, username=username, host=host)
+            target, _ = Target.objects.get_or_create(unit=unit, host=host)
             unit_violations = Violation.objects.filter(policy=policy, target=target)
             in_grace = unit_violations.filter(
                 expiration__gte=timezone.now() - policy.grace_period
@@ -183,7 +182,7 @@ def evaluate(policies: "QuerySet[Policy]" = None):
     applicable_limits = {target : [] for target in targets}
     for v in unexpired:
         for host in affected_hosts[v.policy.domain]:
-            target, _ = targets.get_or_create(unit=v.target.unit, username=v.target.username, host=host)
+            target, _ = targets.get_or_create(unit=v.target.unit, host=host)
             target.last_applied.prefetch_related("property")
             if not applicable_limits.get(target):
                 applicable_limits[target] = []
