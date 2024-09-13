@@ -38,7 +38,7 @@
 		"ARBITER_PROMETHEUS_HOST": "http://prometheus:9090",
 		"ARBITER_CONTROL_KEY": "insecure-95axve4fn4j2u8ih0j1ltg272g1n297l8",
 		"ARBITER_EMAIL_DOMAIN": "test.site.edu",
-		"ARBITER_EMAIL_HOST": "host.docker.internal",
+		"ARBITER_EMAIL_HOST": "mailhog",
 		"ARBITER_EMAIL_PORT": "1025",
 		"ARBITER_WARDEN_PORT": "2112"
 	}

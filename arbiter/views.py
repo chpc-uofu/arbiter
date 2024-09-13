@@ -93,9 +93,7 @@ def user_proc_cpu_graph(request):
     if host == "all":
         host = ".*"
 
-    messages["warning"] = f"unit {unit}, host {host}"
-
-    fig = plots.plot_target_cpu_graph(
+    fig = plots.cpu_usage_graph(
         unit_re=unit,
         host_re=host,
         start_time=start_time,
@@ -103,9 +101,9 @@ def user_proc_cpu_graph(request):
         step=step,
     )
 
-    pie = plots.plot_target_proc_cpu_usage_pie(
+    pie = plots.cpu_pie_graph(
         unit_re=unit,
-        host=host,
+        host_re=host,
         start_time=start_time,
         end_time=end_time,
     )
@@ -168,17 +166,17 @@ def user_proc_memory_graph(request):
     if host == "all":
         host = ".*"
 
-    fig = plots.plot_target_memory_graph(
+    fig = plots.mem_usage_graph(
         unit_re=unit,
-        host=host,
+        host_re=host,
         start_time=start_time,
         end_time=end_time,
         step=step,
     )
 
-    pie = plots.plot_target_proc_memory_usage_pie(
+    pie = plots.mem_pie_graph(
         unit_re=unit,
-        host=host,
+        host_re=host,
         start_time=start_time,
         end_time=end_time,
     )
