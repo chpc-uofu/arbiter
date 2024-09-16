@@ -18,19 +18,19 @@ As stated in the README, Arbiter needs to following models: Properties, Limits, 
 ### Properties
 The first place to start is at the properties. These are the actual cgroup properties we set on specific user/hosts pairings to limit their usage. For most cases you will only need our defaults (MemoryMax and CPUQuotaPerSecUSec) which you can load in on its own with `python3 manage.py loaddata property` as described above in the quick start section. If for whatever reason, you would like to set other properties beyond limiting memory and cpu usage, you can add the respective cgroup property here. When adding a property you will see the following screen:
 
-<img src="resources/property.png" width="600px"/>
+<img src="resources/property.png" width="800px"/>
 
 Here the name is the **exact** property name used by systemd, the type is if the type of the value (mostly integers for our case), and lastly, the operation determines which limit will be choosen if there is a conflict of multiple limits of this type being applied to one user at the same time.
 
 ### Limits
 The next model you will need to add are limits. Limits are a specific value for a property you created above. These are the models that hold the actual values for whats gets set as the limits on the user's cgroup slice.
 
-<img src="resources/limit.png" width="500px" />
+<img src="resources/limit.png" width="700px" />
 
 ### Penalties
 Penalties are the actual state the users get put in on violation of a policy. They consist of: A name to idenitify the state, a set of limits to ste on the user's slice when put in this penalty state, a duration of the penalty state, and a repeat offense scale. The repeat offense scale is how much a penalty's duration scales by for each previous violation of the policy inside its configiurated lookback history. The calculation for the duration is as follows: $$applied\_duration=penalty\_duration*(1+repeat\_offsense\_scale*num\_previous\_violations)$$
 So a repeat offense scale of 0 would have no scaling and a scale of 1 would double the duration upon second violation.
-<img src="resources/penalty.png" width="600px" />
+<img src="resources/penalty.png" width="800px" />
 
 ### Policies
 Policies are the usage rules users can violate. Policies use a prometheus query to determine if a user is in violation. There are two type of policies: 1) builder query policies and 2) raw query policies. We reccomend <u>exclusively using builder query policies (which is the default) unless your desired behavior is not supported through the builder query</u>, such as wanting to cause a violation based on other usage readings than CPU and Memory like network usage. Policies contain many options, so we will go through them one by one:
