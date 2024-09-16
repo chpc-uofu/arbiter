@@ -100,7 +100,6 @@ def user_proc_cpu_graph(request):
         end_time=end_time,
         step=step,
     )
-
     pie = plots.cpu_pie_graph(
         unit_re=unit,
         host_re=host,

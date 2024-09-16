@@ -26,7 +26,7 @@ async def set_property(
             message = await response.json()
     except (aiohttp.ClientConnectionError, aiohttp.ClientError) as e:
         status = http.HTTPStatus.SERVICE_UNAVAILABLE
-        message = f"Service Unavailable"
+        message = f"Service Unavailable : {e}"
 
     return status, message
 

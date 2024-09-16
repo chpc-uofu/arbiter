@@ -137,7 +137,7 @@ PROMETHEUS_CONNECTION = PrometheusConnect(url=url, auth=auth, disable_ssl=disabl
 ARBITER_CONTROL_KEY = os.environ.get("ARBITER_CONTROL_KEY")
 
 # (optional) Default port for the warden service. Only required if your TSDB strips ports
-ARBITER_WARDEN_PORT = os.environ.get("ARBITER_WARDEN_PORT", 2112)
+ARBITER_WARDEN_PORT = os.environ.get("ARBITER_WARDEN_PORT", 2113)
 
 ARBITER_WARDEN_PROTOCOL = os.environ.get("ARBITER_WARDEN_PROTOCOL", "https")
  

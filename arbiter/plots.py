@@ -30,8 +30,9 @@ def align_with_prom_limit(start_time, end_time, step):
 def usage_graph(query: str, label: str, start: datetime, end: datetime, threshold: float | None = None, penalized: datetime | None = None, step: str = "15s"):
     result = prom.custom_query_range(query, start_time=start, end_time=end, step=step)
     df = MetricRangeDataFrame(result)
+    df.loc[df.value < 0.01, 'proc'] = 'other'
     df = df[df.value != 0]
-    fig = px.area(df.sort_values(by=['value']), y="value", color=label)
+    fig = px.area(df.sort_values(by=['value']), y="value", color=label, line_shape='spline', color_discrete_sequence=px.colors.qualitative.Light24)
     if threshold:
         fig.add_hline(
             threshold,
@@ -60,11 +61,11 @@ def cpu_usage_graph(
 ) -> Figure:
 
     #FIXME port may still be in instance label, add this to match on those. 
-    host_re += ".*"
-    filters = f'{{ unit=~"{ unit_re }", instance=~"{ host_re }"}}'
+    port_re = r'(:[0-9]{1,5})?'
+    filters = f'{{ unit=~"{ unit_re }", instance=~"{ host_re }{port_re}"}}'
     metric = 'systemd_unit_proc_cpu_usage_ns'
     labels = "(unit, instance, proc)"
-    query = f'sort_desc(avg by {labels} (irate({metric}{filters}[{step}])) / {NSPERSEC})'
+    query = f'sort_desc(avg by {labels} (irate({metric}{filters}[5s])) / {NSPERSEC})'
     fig = usage_graph(query, "proc", start_time, end_time, policy_threshold, penalized_time, step)   
     fig.update_layout(
         title=f"CPU Usage Report For {unit_re} on {host_re}",
@@ -84,8 +85,8 @@ def mem_usage_graph(
     step="10s",
 ) -> Figure:
     #FIXME port may still be in instance label, add this to match on those. 
-    host_re += ".*"
-    filters = f'{{ unit=~"{ unit_re }", instance=~"{ host_re }"}}'
+    port_re = r'(:[0-9]{1,5})?'
+    filters = f'{{ unit=~"{ unit_re }", instance=~"{ host_re }{port_re}"}}'
     metric = 'systemd_unit_proc_memory_current_bytes'
     labels = "(unit, instance, proc)"
     query = f"sort_desc(avg by {labels} (avg_over_time({metric}{filters}[{step}])) / {GIB})"
@@ -134,7 +135,7 @@ def cpu_pie_graph(
     metric = 'systemd_unit_proc_cpu_usage_ns'
     labels = "(unit, instance, proc)"
     time = int((end_time - start_time).total_seconds())
-    query = f"avg by {labels}(avg_over_time({metric}{filters}[{time}s]) / {NSPERSEC})"
+    query = f"sum by {labels}(rate({metric}{filters}[{time}s]) / {NSPERSEC})"
     fig = pie_graph(query, start_time, end_time)   
     fig.update_layout(
         #title=f"CPU Usage Report For {unit_re} on {host_re}",
