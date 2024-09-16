@@ -28,7 +28,7 @@ The next model you will need to add are limits. Limits are a specific value for 
 <img src="resources/limit.png" width="700px" />
 
 ### Penalties
-Penalties are the actual state the users get put in on violation of a policy. They consist of: A name to idenitify the state, a set of limits to ste on the user's slice when put in this penalty state, a duration of the penalty state, and a repeat offense scale. The repeat offense scale is how much a penalty's duration scales by for each previous violation of the policy inside its configiurated lookback history. The calculation for the duration is as follows: $$applied\_duration=penalty\_duration*(1+repeat\_offsense\_scale*num\_previous\_violations)$$
+Penalties are the actual state the users get put in on violation of a policy. They consist of: A name to idenitify the state, a set of limits to ste on the user's slice when put in this penalty state, a duration of the penalty state, and a repeat offense scale. The repeat offense scale is how much a penalty's duration scales by for each previous violation of the policy inside its configiurated lookback history. The calculation for the duration is as follows: $$appliedDuration=penaltyDuration*(1+repeatOffsenseScale*numPreviousViolations)$$
 So a repeat offense scale of 0 would have no scaling and a scale of 1 would double the duration upon second violation.
 <img src="resources/penalty.png" width="800px" />
 
