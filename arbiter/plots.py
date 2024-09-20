@@ -11,7 +11,7 @@ prom = settings.PROMETHEUS_CONNECTION
 GIB = 1024**3
 PROMETHUS_POINT_LIMIT = 400
 NSPERSEC = 1_000_000_000
-
+PORT_RE = r'(:[0-9]{1,5})?'
 
 def align_with_prom_limit(start_time, end_time, step):
     total_range_seconds = (end_time - start_time).total_seconds()
@@ -29,9 +29,13 @@ def align_with_prom_limit(start_time, end_time, step):
 
 def usage_graph(query: str, label: str, start: datetime, end: datetime, threshold: float | None = None, penalized: datetime | None = None, step: str = "15s"):
     result = prom.custom_query_range(query, start_time=start, end_time=end, step=step)
+
+    if not result:
+        return Figure()
+
     df = MetricRangeDataFrame(result)
     df.loc[df.value < 0.01, 'proc'] = 'other'
-    df = df[df.value != 0]
+    
     fig = px.area(df.sort_values(by=['value']), y="value", color=label, line_shape='spline', color_discrete_sequence=px.colors.qualitative.Light24)
     if threshold:
         fig.add_hline(
@@ -42,7 +46,7 @@ def usage_graph(query: str, label: str, start: datetime, end: datetime, threshol
         )
     if penalized:
         fig.add_vline(
-            penalized.timestamp() * 1000,
+            penalized.timestamp() * 1000, # convert to ms
             annotation_text="Penalized",
             annotation_position="top left",
             line={"dash": "dash", "color": "grey"},
@@ -59,13 +63,12 @@ def cpu_usage_graph(
     penalized_time: datetime | None = None,
     step="15s",
 ) -> Figure:
-
-    #FIXME port may still be in instance label, add this to match on those. 
-    port_re = r'(:[0-9]{1,5})?'
-    filters = f'{{ unit=~"{ unit_re }", instance=~"{ host_re }{port_re}"}}'
+    
     metric = 'systemd_unit_proc_cpu_usage_ns'
+    filters = f'{{ unit=~"{ unit_re }", instance=~"{host_re}{PORT_RE}"}}'
+   
     labels = "(unit, instance, proc)"
-    query = f'sort_desc(avg by {labels} (irate({metric}{filters}[5s])) / {NSPERSEC})'
+    query = f'sort_desc(avg by {labels} (rate({metric}{filters}[{step}])) / {NSPERSEC})'
     fig = usage_graph(query, "proc", start_time, end_time, policy_threshold, penalized_time, step)   
     fig.update_layout(
         title=f"CPU Usage Report For {unit_re} on {host_re}",
@@ -86,7 +89,7 @@ def mem_usage_graph(
 ) -> Figure:
     #FIXME port may still be in instance label, add this to match on those. 
     port_re = r'(:[0-9]{1,5})?'
-    filters = f'{{ unit=~"{ unit_re }", instance=~"{ host_re }{port_re}"}}'
+    filters = f'{{ unit=~"{ unit_re }", instance=~"{ host_re }{PORT_RE}"}}'
     metric = 'systemd_unit_proc_memory_current_bytes'
     labels = "(unit, instance, proc)"
     query = f"sort_desc(avg by {labels} (avg_over_time({metric}{filters}[{step}])) / {GIB})"
@@ -116,6 +119,10 @@ def pie_graph(
     step="15s"
 ):
     result = prom.custom_query_range(query, start_time=start, end_time=end, step=step)
+
+    if not result:
+        return Figure()
+
     df = MetricRangeDataFrame(result)
     df = df[df.value != 0]
     aggregate = df.groupby(['unit','instance', 'proc'], as_index=False).agg(mean=('value','mean'))
@@ -129,17 +136,14 @@ def pie_graph(
 def cpu_pie_graph(
     unit_re: str, host_re: str, start_time: datetime, end_time: datetime
 ) -> Figure:
-    #FIXME port may still be in instance label, add this to match on those. 
-    host_re += ".*"
-    filters = f'{{ unit=~"{ unit_re }", instance=~"{ host_re }"}}'
+    filters = f'{{ unit=~"{ unit_re }", instance=~"{ host_re }{PORT_RE}"}}'
     metric = 'systemd_unit_proc_cpu_usage_ns'
     labels = "(unit, instance, proc)"
     time = int((end_time - start_time).total_seconds())
-    query = f"sum by {labels}(rate({metric}{filters}[{time}s]) / {NSPERSEC})"
+    query = f"sum by {labels}(rate({metric}{filters}[{time}s]))/ {NSPERSEC}"
     fig = pie_graph(query, start_time, end_time)   
     fig.update_layout(
-        #title=f"CPU Usage Report For {unit_re} on {host_re}",
-        title=f"{start_time} - {end_time}",
+        title=f" % CPU Usage Report For {unit_re} on {host_re}",
         xaxis_title="Time",
         yaxis_title="Usage in cores",
     )
@@ -149,16 +153,14 @@ def cpu_pie_graph(
 def mem_pie_graph(
     unit_re: str, host_re: str, start_time: datetime, end_time: datetime
 ) -> Figure:
-    #FIXME port may still be in instance label, add this to match on those. 
-    host_re += ".*"
-    filters = f'{{ unit=~"{ unit_re }", instance=~"{ host_re }"}}'
+    filters = f'{{ unit=~"{ unit_re }", instance=~"{ host_re }{PORT_RE}"}}'
     metric = 'systemd_unit_proc_memory_current_bytes'
     labels = "(unit, instance, proc)"
     time = int((end_time - start_time).total_seconds())
     query = f"avg by {labels}(avg_over_time({metric}{filters}[{time}s]) / {GIB})"
     fig = pie_graph(query, start_time, end_time)   
     fig.update_layout(
-        title=f"Memory Usage Report For {unit_re} on {host_re}",
+        title=f"% Memory Usage Report For {unit_re} on {host_re}",
         xaxis_title="Time",
         yaxis_title="Usage in GiB",
     )
