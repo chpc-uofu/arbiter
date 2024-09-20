@@ -193,9 +193,6 @@ class PolicyAdmin(admin.ModelAdmin):
                 self.fields["process_whitelist"].initial = query_params.get(
                     "process_whitelist", ""
                 )
-                self.fields["user_whitelist"].initial = query_params.get(
-                    "user_whitelist", ""
-                )
             else:
                 self.fields["cpu_threshold"].initial = 1.0
                 self.fields["memory_threshold"].initial = 1.0
@@ -215,11 +212,6 @@ class PolicyAdmin(admin.ModelAdmin):
             if "process_whitelist" in self.cleaned_data:
                 instance.query_params["process_whitelist"] = self.cleaned_data[
                     "process_whitelist"
-                ]
-
-            if "user_whitelist" in self.cleaned_data:
-                instance.query_params["user_whitelist"] = self.cleaned_data[
-                    "user_whitelist"
                 ]
 
             if commit:
