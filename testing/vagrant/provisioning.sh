@@ -16,7 +16,7 @@ sudo apt-get install stress-ng -y
 openssl req -x509 -newkey rsa:4096 -keyout /vagrant/key.pem -out /vagrant/cert.pem -sha256 -days 3650 -nodes -subj "/C=XX/ST=StateName/L=CityName/O=CompanyName/OU=CompanySectionName/CN=CommonNameOrHostname"
 
 # install cgroup-warden
-export WAR_VER=0.0.5
+export WAR_VER="0.0.6-beta"
 curl -OL https://github.com/chpc-uofu/cgroup-warden/releases/download/v${WAR_VER}/cgroup-warden-linux-amd64-${WAR_VER}.tar.gz
 tar -xzf cgroup-warden-linux-amd64-${WAR_VER}.tar.gz
 sudo cp cgroup-warden-linux-amd64-${WAR_VER}/cgroup-warden /usr/sbin
