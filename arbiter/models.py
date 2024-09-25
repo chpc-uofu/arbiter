@@ -152,12 +152,12 @@ class Policy(models.Model):
 
             if self.query_params.get("process_whitelist"):
                 process_cpu_whitelist = (
-                    f"- rate(systemd_unit_proc_cpu_seconds"
-                    f'{{proc=~"{self.query_params["process_whitelist"]}"}}[{timewindow}])'
+                    f"- (rate(systemd_unit_proc_cpu_seconds"
+                    f'{{{user_filters}, proc=~"{self.query_params["process_whitelist"]}"}}[{timewindow}]) or 0)'
                 )
                 process_mem_whitelist = (
-                    f"- avg_over_time(systemd_unit_proc_memory_bytes"
-                    f'{{proc=~"{self.query_params["process_whitelist"]}"}}[{timewindow}])'
+                    f"- (avg_over_time(systemd_unit_proc_memory_bytes"
+                    f'{{{user_filters} proc=~"{self.query_params["process_whitelist"]}"}}[{timewindow}]) or 0)'
                 )
 
             if self.query_params.get("unit_whitelist"):
