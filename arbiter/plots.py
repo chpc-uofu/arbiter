@@ -1,5 +1,6 @@
-from plotly.graph_objects import Scatter, Figure, Pie
+from plotly.graph_objects import Figure
 from datetime import datetime
+from django.utils import timezone
 from zoneinfo import ZoneInfo
 from arbiter.models import Violation
 from django.conf import settings
@@ -12,6 +13,23 @@ GIB = 1024**3
 PROMETHUS_POINT_LIMIT = 400
 NSPERSEC = 1_000_000_000
 PORT_RE = r'(:[0-9]{1,5})?'
+
+def align_to_step(start_time: datetime, end_time: datetime, step = "15s") -> datetime:
+    end_time_seconds = int(end_time.timestamp())
+    start_time_seconds = int(start_time.timestamp())
+    
+    if step[-1] == "s":
+        step_seconds = int(step[:-1])
+    elif step[-1] == "m":
+        step_seconds = int(step[:-1]) * 60
+
+    end_time_seconds = end_time_seconds - (end_time_seconds % step_seconds)
+    start_time_seconds = start_time_seconds - (start_time_seconds % step_seconds)
+
+    end_time = timezone.make_aware(datetime.fromtimestamp(end_time_seconds))
+    start_time = timezone.make_aware(datetime.fromtimestamp(start_time_seconds))
+    return start_time, end_time
+    
 
 def align_with_prom_limit(start_time, end_time, step):
     total_range_seconds = (end_time - start_time).total_seconds()
@@ -28,6 +46,7 @@ def align_with_prom_limit(start_time, end_time, step):
 
 
 def usage_graph(query: str, label: str, start: datetime, end: datetime, threshold: float | None = None, penalized: datetime | None = None, step: str = "15s"):
+    start, end = align_to_step(start, end, step)
     result = prom.custom_query_range(query, start_time=start, end_time=end, step=step)
 
     if not result:
@@ -87,8 +106,6 @@ def mem_usage_graph(
     penalized_time: datetime | None = None,
     step="10s",
 ) -> Figure:
-    #FIXME port may still be in instance label, add this to match on those. 
-    port_re = r'(:[0-9]{1,5})?'
     filters = f'{{ unit=~"{ unit_re }", instance=~"{ host_re }{PORT_RE}"}}'
     metric = 'systemd_unit_proc_memory_current_bytes'
     labels = "(unit, instance, proc)"
@@ -118,6 +135,7 @@ def pie_graph(
     end: datetime,
     step="15s"
 ):
+    start, end = align_to_step(start, end, step)
     result = prom.custom_query_range(query, start_time=start, end_time=end, step=step)
 
     if not result:
@@ -177,7 +195,7 @@ def plot_violation_cpu_graph(violation: Violation, step="10s") -> Figure:
         start_time=start_time,
         end_time=end_time,
         policy_threshold=violation.policy.query_params.get("cpu_threshold", None),
-        penalized_time=violation.timestamp,
+        penalized_time=violation.timestamp.astimezone(ZoneInfo("UTC")),
         step=step,
     )
 
@@ -193,7 +211,7 @@ def plot_violation_memory_graph(violation: Violation, step="10s") -> Figure:
         start_time=start_time,
         end_time=end_time,
         policy_threshold=violation.policy.query_params.get("memory_threshold", None),
-        penalized_time=violation.timestamp,
+        penalized_time=violation.timestamp.astimezone(ZoneInfo("UTC")),
         step=step,
     )
 

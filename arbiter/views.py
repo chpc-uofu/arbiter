@@ -208,6 +208,7 @@ def violation_cpu_usage(request, violation_id):
         )
 
     step = request.GET.get("step-value", "30") + request.GET.get("step-unit", "s")
+    step = plots.align_with_prom_limit(violation.timestamp, violation.expiration, step)
 
     messages = {}
     graph = plots.plot_violation_cpu_graph(violation, step=step)
@@ -242,7 +243,8 @@ def violation_memory_usage(request, violation_id):
         )
 
     step = request.GET.get("step-value", "30") + request.GET.get("step-unit", "s")
-
+    step = plots.align_with_prom_limit(violation.timestamp, violation.expiration, step)
+    
     messages = {}
 
     graph = plots.plot_violation_memory_graph(violation, step=step)
