@@ -201,7 +201,7 @@ class Target(models.Model):
     class Meta:
         verbose_name_plural = "Targets"
         constraints = [
-            models.UniqueConstraint(fields=["unit", "host"], name="unique_target")
+            models.UniqueConstraint(fields=["unit", "host"], name="unique_target"),
         ]
 
     unit = models.CharField(max_length=255)

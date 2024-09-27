@@ -23,9 +23,6 @@ def query_violations(policies: list[Policy]) -> list[Violation]:
     Queries prometheus for violations of each policy given, and returns
     a list of all violations.
     """
-
-
-    
     violations = []
     for policy in policies:
         query = policy.query
