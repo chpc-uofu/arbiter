@@ -81,7 +81,7 @@ def cpu_usage_graph(
     policy_threshold: float | None = None,
     penalized_time: datetime | None = None,
     step="15s",
-) -> Figure:
+) -> tuple[Figure, Figure]:
     
     metric = 'systemd_unit_proc_cpu_usage_ns'
     filters = f'{{ unit=~"{ unit_re }", instance=~"{host_re}{PORT_RE}"}}'
@@ -96,12 +96,12 @@ def cpu_usage_graph(
     )
     return fig, pie
 
-def usage_charts(query: str, label: str, start: datetime, end: datetime, threshold: float | None = None, penalized: datetime | None = None, step: str = "15s") -> Figure:
+def usage_charts(query: str, label: str, start: datetime, end: datetime, threshold: float | None = None, penalized: datetime | None = None, step: str = "15s") -> tuple[Figure]:
     start, end = align_to_step(start, end, step)
     result = prom.custom_query_range(query, start_time=start, end_time=end, step=step)
 
     if not result:
-        return Figure()
+        return Figure(), Figure()
 
     df = MetricRangeDataFrame(result)
     df.loc[df.value < 0.01, 'proc'] = 'other'
@@ -153,7 +153,7 @@ def mem_usage_graph(
     policy_threshold: float | None = None,
     penalized_time: datetime | None = None,
     step="10s",
-) -> Figure:
+) -> tuple[Figure, Figure]:
     filters = f'{{ unit=~"{ unit_re }", instance=~"{ host_re }{PORT_RE}"}}'
     metric = 'systemd_unit_proc_memory_current_bytes'
     labels = "(unit, instance, proc)"
