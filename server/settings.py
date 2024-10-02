@@ -151,3 +151,5 @@ EMAIL_PORT = os.environ["ARBITER_EMAIL_PORT"]
 # if your smtp server requires authentication
 EMAIL_HOST_USER = os.environ.get("ARBITER_EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.environ.get("ARBITER_EMAIL_HOST_PASSWORD")
+
+USERINFO_MAPPER = "mycode.module.user_mapper"

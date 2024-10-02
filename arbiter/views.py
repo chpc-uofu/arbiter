@@ -93,19 +93,19 @@ def user_proc_cpu_graph(request):
     if host == "all":
         host = ".*"
 
-    fig = plots.cpu_usage_graph(
+    fig, pie = plots.cpu_usage_graph(
         unit_re=unit,
         host_re=host,
         start_time=start_time,
         end_time=end_time,
         step=step,
     )
-    pie = plots.cpu_pie_graph(
-        unit_re=unit,
-        host_re=host,
-        start_time=start_time,
-        end_time=end_time,
-    )
+    # pie = plots.cpu_pie_graph(
+    #     unit_re=unit,
+    #     host_re=host,
+    #     start_time=start_time,
+    #     end_time=end_time,
+    # )
 
     return render(
         request,
@@ -165,7 +165,7 @@ def user_proc_memory_graph(request):
     if host == "all":
         host = ".*"
 
-    fig = plots.mem_usage_graph(
+    fig, pie = plots.mem_usage_graph(
         unit_re=unit,
         host_re=host,
         start_time=start_time,
@@ -173,12 +173,12 @@ def user_proc_memory_graph(request):
         step=step,
     )
 
-    pie = plots.mem_pie_graph(
-        unit_re=unit,
-        host_re=host,
-        start_time=start_time,
-        end_time=end_time,
-    )
+    # pie = plots.mem_pie_graph(
+    #     unit_re=unit,
+    #     host_re=host,
+    #     start_time=start_time,
+    #     end_time=end_time,
+    # )
 
     return render(
         request,
@@ -211,8 +211,8 @@ def violation_cpu_usage(request, violation_id):
     step = plots.align_with_prom_limit(violation.timestamp, violation.expiration, step)
 
     messages = {}
-    graph = plots.plot_violation_cpu_graph(violation, step=step)
-    pie = plots.plot_violation_proc_cpu_usage_pie(violation)
+    graph, pie = plots.plot_violation_cpu_graph(violation, step=step)
+    #pie = plots.plot_violation_proc_cpu_usage_pie(violation)
 
     return render(
         request,
@@ -247,8 +247,8 @@ def violation_memory_usage(request, violation_id):
     
     messages = {}
 
-    graph = plots.plot_violation_memory_graph(violation, step=step)
-    pie = plots.plot_violation_proc_memory_usage_pie(violation)
+    graph, pie = plots.plot_violation_memory_graph(violation, step=step)
+    #pie = plots.plot_violation_proc_memory_usage_pie(violation)
 
     return render(
         request,

@@ -1,5 +1,5 @@
 from plotly.graph_objects import Figure
-from datetime import datetime
+from datetime import datetime, timezone as tz
 from django.utils import timezone
 from zoneinfo import ZoneInfo
 from arbiter.models import Violation
@@ -88,13 +88,61 @@ def cpu_usage_graph(
    
     labels = "(unit, instance, proc)"
     query = f'sort_desc(avg by {labels} (rate({metric}{filters}[{step}])) / {NSPERSEC})'
-    fig = usage_graph(query, "proc", start_time, end_time, policy_threshold, penalized_time, step)   
+    fig, pie = usage_charts(query, "proc", start_time, end_time, policy_threshold, penalized_time, step)   
     fig.update_layout(
         title=f"CPU Usage Report For {unit_re} on {host_re}",
         xaxis_title="Time",
         yaxis_title="Usage in Cores",
     )
-    return fig
+    return fig, pie
+
+def usage_charts(query: str, label: str, start: datetime, end: datetime, threshold: float | None = None, penalized: datetime | None = None, step: str = "15s") -> Figure:
+    start, end = align_to_step(start, end, step)
+    result = prom.custom_query_range(query, start_time=start, end_time=end, step=step)
+
+    if not result:
+        return Figure()
+
+    df = MetricRangeDataFrame(result)
+    df.loc[df.value < 0.01, 'proc'] = 'other'
+
+    aggregate = df.groupby(['unit','instance', 'proc'], as_index=False).agg(mean=('value','mean'))
+    aggregate['pct'] = (aggregate['mean'] / aggregate['mean'].sum())
+    aggregate.loc[aggregate.pct < 0.01, 'proc'] = 'other'
+
+    proc_list = aggregate['proc'].unique()
+    color_mapping =  dict()
+    color_cursor = 0
+    swatch = px.colors.qualitative.Light24
+    for proc in proc_list:
+        color_mapping[proc] = swatch[color_cursor%len(swatch)]
+        color_cursor += 1
+        
+    pie = px.pie(aggregate, values="pct", names="proc", color=label, labels={'proc':'process', 'mean': "value"}, color_discrete_map=color_mapping, opacity=0.75)
+    pie.update_traces(textposition='inside', textinfo='percent+label')
+    pie.layout.showlegend = False
+    
+
+    df.loc[~df['proc'].isin(proc_list), 'proc'] = 'other'
+    graph = px.area(df.sort_values(by=['value']), y="value", color=label, line_shape='spline', color_discrete_map=color_mapping)
+    if threshold:
+        graph.add_hline(
+            threshold,
+            annotation_text="Policy Threshold",
+            annotation_position="top left",
+            line={"dash": "dot", "color": "grey"},
+        )
+    if penalized:
+        graph.add_vline(
+            penalized.timestamp() * 1000, # convert to ms
+            annotation_text="Penalized",
+            annotation_position="top left",
+            line={"dash": "dash", "color": "grey"},
+        )
+    
+    
+
+    return graph, pie
 
 
 def mem_usage_graph(
@@ -110,13 +158,13 @@ def mem_usage_graph(
     metric = 'systemd_unit_proc_memory_current_bytes'
     labels = "(unit, instance, proc)"
     query = f"sort_desc(avg by {labels} (avg_over_time({metric}{filters}[{step}])) / {GIB})"
-    fig = usage_graph(query, "proc", start_time, end_time, policy_threshold, penalized_time, step)   
+    fig, pie = usage_charts(query, "proc", start_time, end_time, policy_threshold, penalized_time, step)   
     fig.update_layout(
         title=f"Memory Usage Report For {unit_re} on {host_re}",
         xaxis_title="Time",
         yaxis_title="Usage in GiB",
     )
-    return fig
+    return fig, pie
 
 
 def instant_response_to_data(response: dict, group_label: str, unit_divisor=1) -> dict:
@@ -192,8 +240,8 @@ def plot_violation_cpu_graph(violation: Violation, step="10s") -> Figure:
     return cpu_usage_graph(
         violation.target.unit,
         violation.target.host,
-        start_time=start_time,
-        end_time=end_time,
+        start_time=start_time.astimezone,
+        end_time=end_time.astimezone(tz.utc),
         policy_threshold=violation.policy.query_params.get("cpu_threshold", None),
         penalized_time=violation.timestamp.astimezone(ZoneInfo("UTC")),
         step=step,
@@ -208,8 +256,8 @@ def plot_violation_memory_graph(violation: Violation, step="10s") -> Figure:
     return mem_usage_graph(
         violation.target.unit,
         violation.target.host,
-        start_time=start_time,
-        end_time=end_time,
+        start_time=start_time.astimezone(tz.utc),
+        end_time=end_time.astimezone(tz.utc),
         policy_threshold=violation.policy.query_params.get("memory_threshold", None),
         penalized_time=violation.timestamp.astimezone(ZoneInfo("UTC")),
         step=step,
