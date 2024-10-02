@@ -133,6 +133,10 @@ auth = (user, password) if user and password else None
 disable_ssl = auth is None
 PROMETHEUS_CONNECTION = PrometheusConnect(url=url, auth=auth, disable_ssl=disable_ssl)
 
+# Name of your job used to cgroup instances of cgroup-warden. Used when determining
+# where to apply limits. 
+WARDEN_SCRAPE_JOB_NAME = os.environ.get("WARDEN_SCRAPE_JOB_NAME", "cgroup-warden")
+
 # key used to authenticate with cgroup-agent 
 ARBITER_CONTROL_KEY = os.environ.get("ARBITER_CONTROL_KEY")
 

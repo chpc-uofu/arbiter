@@ -37,10 +37,10 @@ SYSTEMD_METRICS = [
     "systemd_unit_cpu_accounting",
     "systemd_unit_memory_max_bytes",
     "systemd_unit_memory_current_bytes",
-    "systemd_unit_cpu_quota_ns_per_s",
+    "systemd_unit_cpu_quota_us_per_s",
     "systemd_unit_cpu_usage_ns",
-    "systemd_unit_proc_cpu_seconds",
-    "systemd_unit_proc_memory_bytes",
+    "systemd_unit_proc_cpu_usage_ns",
+    "systemd_unit_proc_memory_current_bytes",
     "systemd_unit_proc_count",
 ]
 

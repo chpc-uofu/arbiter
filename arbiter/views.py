@@ -93,7 +93,7 @@ def user_proc_cpu_graph(request):
     if host == "all":
         host = ".*"
 
-    fig, pie = plots.cpu_usage_graph(
+    fig, pie = plots.cpu_usage_figures(
         unit_re=unit,
         host_re=host,
         start_time=start_time,
@@ -165,7 +165,7 @@ def user_proc_memory_graph(request):
     if host == "all":
         host = ".*"
 
-    fig, pie = plots.mem_usage_graph(
+    fig, pie = plots.mem_usage_figures(
         unit_re=unit,
         host_re=host,
         start_time=start_time,

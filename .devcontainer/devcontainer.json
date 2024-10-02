@@ -35,6 +35,7 @@
 	"remoteUser": "vscode",
 
 	"containerEnv": {
+		"WARDEN_SCRAPE_JOB_NAME": "cgroup-warden.*",
 		"ARBITER_PROMETHEUS_HOST": "http://prometheus:9090",
 		"ARBITER_CONTROL_KEY": "insecure-95axve4fn4j2u8ih0j1ltg272g1n297l8",
 		"ARBITER_EMAIL_DOMAIN": "test.site.edu",

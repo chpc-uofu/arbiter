@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 LOGGER = logging.getLogger(__name__)
 
 prometheus = settings.PROMETHEUS_CONNECTION
+job_name = settings.WARDEN_SCRAPE_JOB_NAME
 
 def query_violations(policies: list[Policy]) -> list[Violation]:
     """
@@ -62,7 +63,7 @@ def get_affected_hosts(domain) -> list[str]:
     For a given domain, calculated all other hosts in the domain that
     the penalty for a violation in that domain would apply to.
     """
-    up_query = f"up{{job='cgroup-agent', instance=~'{domain}'}}"
+    up_query = f"up{{job=~'{job_name}', instance=~'{domain}'}}"
     result = prometheus.custom_query(up_query)
     return [strip_port(r["metric"]["instance"]) for r in result]
 
