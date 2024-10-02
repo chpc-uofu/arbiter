@@ -11,11 +11,14 @@ from arbiter.integrations import arbiter_user_lookup
 LOGGER = logging.getLogger(__name__)
 
 def send_violation_email(violation: Violation | None):
+    cpu_chart, cpu_pie = plots.violation_cpu_usage_figures(violation)
+    mem_chart, mem_pie = plots.violation_mem_usage_figures(violation)
+
     figures: dict[str, Figure] = dict(
-        cpu_graph=plots.plot_violation_cpu_graph(violation),
-        mem_graph=plots.plot_violation_memory_graph(violation),
-        cpu_usage_pie=plots.plot_violation_proc_cpu_usage_pie(violation),
-        mem_usage_pie=plots.plot_violation_proc_memory_usage_pie(violation),
+        cpu_chart=cpu_chart,
+        cpu_pie=cpu_pie,
+        mem_chart=mem_chart,
+        mem_pie=mem_pie
     )
     user = arbiter_user_lookup(violation.target)
     LOGGER.info(f"Attempting to send violation mail to {user}")
@@ -24,8 +27,8 @@ def send_violation_email(violation: Violation | None):
     message = EmailMultiAlternatives(subject, text_content, "arbiter", [user.email])
 
     for name, figure in figures.items():
-        figure_bytes = figure.to_image(format="png", width=600, height=350, scale=2)
-        image = MIMEImage(figure_bytes)
+        fig_bytes = figure.to_image(format="png", width=600, height=350, scale=2)
+        image = MIMEImage(fig_bytes)
         image.add_header("Content-ID", f"<{name}>")
         message.attach(image)
 
@@ -36,4 +39,3 @@ def send_violation_email(violation: Violation | None):
         message.send(fail_silently=False)
     except SMTPException as e:
         LOGGER.error(f"Could not send email to {user.email} ({user.username} i.e. {user.realname}): {e}")
-
