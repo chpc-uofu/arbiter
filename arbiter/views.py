@@ -6,9 +6,9 @@ from django.core.management import call_command
 from django.utils.safestring import mark_safe
 import arbiter.plots as plots
 from django.utils import timezone
-from arbiter.utils import set_property_with_username
 import aiohttp
 import asyncio
+from arbiter.utils import set_property
 
 
 def convert_policy(request, id: int):
@@ -86,27 +86,26 @@ def user_proc_cpu_graph(request):
             "warning"
         ] = f"Step size exceeded Promtheus's limit of {plots.PROMETHUS_POINT_LIMIT} points, so was aligned to {aligned_step}"
         step = aligned_step
-    user = request.GET.get("user", ".*")
+    unit = request.GET.get("unit", ".*")
     host = request.GET.get("host", ".*")
-    if len(user) == 0:
-        user = ".*"
+    if len(unit) == 0:
+        unit = ".*"
     if host == "all":
         host = ".*"
 
-    fig = plots.plot_target_cpu_graph(
-        user_re=user,
-        host=host,
+    fig, pie = plots.cpu_usage_figures(
+        unit_re=unit,
+        host_re=host,
         start_time=start_time,
         end_time=end_time,
         step=step,
     )
-
-    pie = plots.plot_target_proc_cpu_usage_pie(
-        user_re=user,
-        host=host,
-        start_time=start_time,
-        end_time=end_time,
-    )
+    # pie = plots.cpu_pie_graph(
+    #     unit_re=unit,
+    #     host_re=host,
+    #     start_time=start_time,
+    #     end_time=end_time,
+    # )
 
     return render(
         request,
@@ -159,27 +158,27 @@ def user_proc_memory_graph(request):
         ] = f"Step size exceeded Promtheus's limit of {plots.PROMETHUS_POINT_LIMIT} points, so was aligned to {aligned_step}"
         step = aligned_step
 
-    user = request.GET.get("user", ".*")
+    unit = request.GET.get("unit", ".*")
     host = request.GET.get("host", ".*")
-    if len(user) == 0:
-        user = ".*"
+    if len(unit) == 0:
+        unit = ".*"
     if host == "all":
         host = ".*"
 
-    fig = plots.plot_target_memory_graph(
-        user_re=user,
-        host=host,
+    fig, pie = plots.mem_usage_figures(
+        unit_re=unit,
+        host_re=host,
         start_time=start_time,
         end_time=end_time,
         step=step,
     )
 
-    pie = plots.plot_target_proc_memory_usage_pie(
-        user_re=user,
-        host=host,
-        start_time=start_time,
-        end_time=end_time,
-    )
+    # pie = plots.mem_pie_graph(
+    #     unit_re=unit,
+    #     host_re=host,
+    #     start_time=start_time,
+    #     end_time=end_time,
+    # )
 
     return render(
         request,
@@ -209,10 +208,11 @@ def violation_cpu_usage(request, violation_id):
         )
 
     step = request.GET.get("step-value", "30") + request.GET.get("step-unit", "s")
+    step = plots.align_with_prom_limit(violation.timestamp, violation.expiration, step)
 
     messages = {}
-    graph = plots.plot_violation_cpu_graph(violation, step=step)
-    pie = plots.plot_violation_proc_cpu_usage_pie(violation)
+    graph, pie = plots.plot_violation_cpu_graph(violation, step=step)
+    #pie = plots.plot_violation_proc_cpu_usage_pie(violation)
 
     return render(
         request,
@@ -243,11 +243,12 @@ def violation_memory_usage(request, violation_id):
         )
 
     step = request.GET.get("step-value", "30") + request.GET.get("step-unit", "s")
-
+    step = plots.align_with_prom_limit(violation.timestamp, violation.expiration, step)
+    
     messages = {}
 
-    graph = plots.plot_violation_memory_graph(violation, step=step)
-    pie = plots.plot_violation_proc_memory_usage_pie(violation)
+    graph, pie = plots.plot_violation_memory_graph(violation, step=step)
+    #pie = plots.plot_violation_proc_memory_usage_pie(violation)
 
     return render(
         request,
@@ -262,11 +263,11 @@ def violation_memory_usage(request, violation_id):
     )
 
 
-async def _set_property_and_update_target(context, username, host, property: Property, value:str):
+async def _set_property_and_update_target(context, target: Target, property: Property, value:str):
     property_payload = {"name":property.name, "value":value}
     try:
         async with aiohttp.ClientSession() as session:
-            status, message = await set_property_with_username(username, host, session, property_payload)
+            status, message = await set_property(target, session, property_payload)
         if status == 200:
             context['info'] = "Set property successfully"
         else:
@@ -281,12 +282,12 @@ def apply_property_for_user(request):
         context['error'] = "You do not have permission to execute commands"
         return render(request, "arbiter/message.html", context)
 
-    user = request.POST.get("user", "")
+    unit = request.POST.get("unit", "")
     prop = request.POST.get("property", "")
     value = request.POST.get("value", "")
     host = request.POST.get("host", "")
 
-    if not (len(user) > 0 and len(prop) > 0 and len(host) > 0 and len(value) > 0):
+    if not (len(unit) > 0 and len(prop) > 0 and len(host) > 0 and len(value) > 0):
         context['error'] = "Please select a unit, property and host"
         return render(request, "arbiter/message.html", context)
     
@@ -295,9 +296,8 @@ def apply_property_for_user(request):
         context['error'] = f"Property {prop} not found"
         return render(request, "arbiter/message.html", context)
     
-    asyncio.run(_set_property_and_update_target(context, user, host, property, value))
-    
-    target, created = Target.objects.get_or_create(username=user, host=host)
+    target, created = Target.objects.get_or_create(unit=unit, host=host)
+    asyncio.run(_set_property_and_update_target(context, target, property, value))
     if context.get("info"):
         limit, created = Limit.objects.get_or_create(value=value, property=property)
         target.last_applied.remove(*target.last_applied.filter(property__name=property.name))

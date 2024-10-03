@@ -4,6 +4,7 @@ from datetime import timedelta
 from arbiter.utils import set_property
 import asyncio
 import aiohttp
+import re
 from django.utils import timezone
 
 class Property(models.Model):
@@ -26,23 +27,27 @@ class Property(models.Model):
     class Type(models.TextChoices):
         INTEGER = ("int", "Integer")
         FLOAT = ("float", "Floating Point")
+        BOOLEAN = ("bool", "Boolean")
 
     type = models.CharField(max_length=255, choices=Type.choices)
 
     class OP(models.TextChoices):
         GREATER = (">", "Greater Than")
         LESS = ("<", "Less Than")
+        ENABLED = ("==", "Enabled")
 
     operation = models.CharField(max_length=255, choices=OP.choices)
 
     compare = {
         ">": lambda a, b: a > b,
         "<": lambda a, b: a < b,
+        "==": lambda a, b: a and not b or a
     }
 
     cast = {
         "int": lambda x: int(x),
         "float": lambda x: float(x),
+        "bool": lambda x: bool(x)
     }
 
     def __str__(self) -> str:
@@ -147,20 +152,20 @@ class Policy(models.Model):
 
             if self.query_params.get("process_whitelist"):
                 process_cpu_whitelist = (
-                    f"- rate(systemd_unit_proc_cpu_seconds"
-                    f'{{proc=~"{self.query_params["process_whitelist"]}"}}[{timewindow}])'
+                    f"- ignoring(job) (sum by (unit, instance) (rate(systemd_unit_proc_cpu_usage_ns"
+                    f'{{{user_filters}, proc=~"{self.query_params["process_whitelist"]}"}}[{timewindow}]) or 0*systemd_unit_cpu_usage_ns{{instance=~"{self.domain}"}}))'
                 )
                 process_mem_whitelist = (
-                    f"- avg_over_time(systemd_unit_proc_memory_bytes"
-                    f'{{proc=~"{self.query_params["process_whitelist"]}"}}[{timewindow}])'
+                    f"- ignoring(job) (sum by (unit, instance) (avg_over_time(systemd_unit_proc_memory_bytes"
+                    f'{{{user_filters}, proc=~"{self.query_params["process_whitelist"]}"}}[{timewindow}]) or 0*systemd_unit_cpu_usage_ns{{instance=~"{self.domain}"}}))'
                 )
 
-            if self.query_params.get("user_whitelist"):
-                user_filters += f', username !~ "{self.query_params["user_whitelist"]}"'
+            if self.query_params.get("unit_whitelist"):
+                user_filters += f', unit !~ "{self.query_params["unit_whitelist"]}"'
 
             if "cpu_threshold" in self.query_params:
                 query += (
-                    f"(sum by (unit, instance, username) (rate(systemd_unit_cpu_usage_ns{{{user_filters}}}"
+                    f"(sum by (unit, instance) (rate(systemd_unit_cpu_usage_ns{{{user_filters}}}"
                     f"[{timewindow}]){process_cpu_whitelist})"
                     f' / {1000**3 * self.query_params["cpu_threshold"]}) > 1.0'
                 )
@@ -170,7 +175,7 @@ class Policy(models.Model):
 
             if "memory_threshold" in self.query_params:
                 query += (
-                    f"(sum by (unit, instance, username) (avg_over_time(systemd_unit_memory_current_bytes"
+                    f"(sum by (unit, instance) (avg_over_time(systemd_unit_memory_current_bytes"
                     f"{{{user_filters}}}[{timewindow}]){process_mem_whitelist})"
                     f'/ {1024**3 * self.query_params["memory_threshold"]}) > 1.0'
                 )
@@ -196,16 +201,22 @@ class Target(models.Model):
     class Meta:
         verbose_name_plural = "Targets"
         constraints = [
-            models.UniqueConstraint(fields=["unit", "username", "host"], name="unique_target")
+            models.UniqueConstraint(fields=["unit", "host"], name="unique_target"),
         ]
 
     unit = models.CharField(max_length=255)
-    username = models.CharField(max_length=255)
     host = models.CharField(max_length=255)
     last_applied = models.ManyToManyField(Limit)
 
     def __str__(self) -> str:
         return f"{self.unit}@{self.host}"
+    
+    @property
+    def uid(self) -> int | None:
+        match = re.search(r'user-(\d+)\.slice', self.unit)
+        if not match:
+            return None
+        return int(match.group(1))
 
 
 class Violation(models.Model):

@@ -171,9 +171,9 @@ class PolicyAdmin(admin.ModelAdmin):
             help_text="A regular expression for any process names you want to be excluded from a user's reported usage",
             required=False,
         )
-        user_whitelist = forms.CharField(
+        unit_whitelist = forms.CharField(
             max_length=1000,
-            help_text="A regular expression for the usernames you don't want to this policy to apply to",
+            help_text="A regular expression for the units you don't want to this policy to apply to",
             required=False,
         )
 
@@ -192,9 +192,6 @@ class PolicyAdmin(admin.ModelAdmin):
                 self.fields["domain"].initial = query_params.get("domain", ".*")
                 self.fields["process_whitelist"].initial = query_params.get(
                     "process_whitelist", ""
-                )
-                self.fields["user_whitelist"].initial = query_params.get(
-                    "user_whitelist", ""
                 )
             else:
                 self.fields["cpu_threshold"].initial = 1.0
@@ -215,11 +212,6 @@ class PolicyAdmin(admin.ModelAdmin):
             if "process_whitelist" in self.cleaned_data:
                 instance.query_params["process_whitelist"] = self.cleaned_data[
                     "process_whitelist"
-                ]
-
-            if "user_whitelist" in self.cleaned_data:
-                instance.query_params["user_whitelist"] = self.cleaned_data[
-                    "user_whitelist"
                 ]
 
             if commit:
@@ -306,7 +298,7 @@ class DashboardAdmin(admin.ModelAdmin):
 
         agents = []
         try:
-            result = prometheus.custom_query('up{job="cgroup-agent"} > 0')
+            result = prometheus.custom_query('up{job=~"cgroup-warden.*"} > 0')
             agents = [strip_port(metric["metric"]["instance"]) for metric in result]
         except Exception as e:
             LOGGER.error(f"Could not query promethues for cgroup-agent instances: {e}")
@@ -338,9 +330,9 @@ admin.site.register(DashboardAdmin.Dashboard, DashboardAdmin)
 
 
 class TargetAdmin(admin.ModelAdmin):
-    list_display = ["unit", "username", "host"]
-    list_filter = ["host", "username"]
-    search_fields = ["unit", "username", "host"]
+    list_display = ["unit", "host"]
+    list_filter = ["host"]
+    search_fields = ["unit", "host"]
 
 
 admin.site.register(models.Target, TargetAdmin)

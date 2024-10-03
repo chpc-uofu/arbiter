@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
-from arbiter.models import Policy, Violation
+from arbiter.models import Policy, Violation, Event
 from django.utils import timezone
 
 
@@ -21,3 +21,9 @@ class Command(BaseCommand):
         )
 
         selected_violations.delete()
+
+        selected_events = Event.objects.filter(
+            timestamp__lte = before_time,
+        )
+
+        selected_events.delete()

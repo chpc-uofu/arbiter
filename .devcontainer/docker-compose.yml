@@ -7,7 +7,7 @@ volumes:
 services:
   arbiter:
     image: mcr.microsoft.com/vscode/devcontainers/base:bookworm
-    container_name: arbiter-devcontainer
+    container_name: arbiter
     volumes:
       - ../..:/workspaces:cached
     extra_hosts:

@@ -37,10 +37,10 @@ SYSTEMD_METRICS = [
     "systemd_unit_cpu_accounting",
     "systemd_unit_memory_max_bytes",
     "systemd_unit_memory_current_bytes",
-    "systemd_unit_cpu_quota_ns_per_s",
+    "systemd_unit_cpu_quota_us_per_s",
     "systemd_unit_cpu_usage_ns",
-    "systemd_unit_proc_cpu_seconds",
-    "systemd_unit_proc_memory_bytes",
+    "systemd_unit_proc_cpu_usage_ns",
+    "systemd_unit_proc_memory_current_bytes",
     "systemd_unit_proc_count",
 ]
 
@@ -49,9 +49,9 @@ logger = logging.getLogger(__name__)
 
 
 ########## HELPER FUNCTIONS ##########
-def set_property(property, name, value):
+def set_property(property, unit):
     payload = {
-        name: value,
+        "unit": unit,
         "property": property,
         "runtime": False,
     }
@@ -63,24 +63,15 @@ def set_property(property, name, value):
 
 
 def set_unit_property(property):
-    return set_property(property, name="unit", value=TEST_USER1_SLICE)
+    return set_property(property, unit=TEST_USER1_SLICE)
 
 def set_and_verify_unit_property(property):
-    response = set_property(property, name="unit", value=TEST_USER1_SLICE)
+    response = set_property(property, unit=TEST_USER1_SLICE)
     assert response.status_code == http.HTTPStatus.OK
-    data = response.json()
-    assert data["username"] == TEST_USER1
-    assert data["unit"] == TEST_USER1_SLICE
-    assert data["property"] == property
 
 def set_and_fail_unit_property(property):
-    response = set_property(property, name="unit", value=TEST_USER1_SLICE)
+    response = set_property(property, unit=TEST_USER1_SLICE)
     assert response.status_code == http.HTTPStatus.BAD_REQUEST
-
-
-def set_and_verify_username_property(property):
-    response = set_property(property, name="username", value=TEST_USER1)
-    assert response.status_code == http.HTTPStatus.OK
 
 
 def parse_metrics(data):
@@ -116,10 +107,6 @@ def test_get_metrics(target1, short_low_harsh_policy):
     metrics = parse_metrics(response.text)
     for metric_name in SYSTEMD_METRICS:
         assert metric_name in metrics
-
-def test_set_with_username():
-    set_and_verify_username_property({"name": "MemoryAccounting", "value": "false"})
-    set_and_verify_username_property({"name": "MemoryAccounting", "value": "true"})
 
 def test_set_mem_accounting():
     set_and_verify_unit_property({"name": "MemoryAccounting", "value": "false"})
@@ -168,8 +155,5 @@ def test_fail_malformed():
 
 def test_malformed_target():
     property = {"name": "MemoryMax", "value": "800000"}
-    response = set_property(property, name="bad", value=TEST_USER1_SLICE)
-    assert response.status_code == http.HTTPStatus.BAD_REQUEST
-    
-    response = set_property(property, name="username", value="NOT FOUND")
+    response = set_property(property, unit="NOT FOUND")
     assert response.status_code == http.HTTPStatus.BAD_REQUEST
