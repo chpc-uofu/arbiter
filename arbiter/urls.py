@@ -11,4 +11,5 @@ urlpatterns = [
     path('apply-property', views.apply_property_for_user, name="apply-property"),
     path('violation/<int:violation_id>/expire', views.expire_violation, name="expire-violation"), 
     path('dashboard/command/<str:command>', views.dashboard_command, name="dashboard-command"),
+    path('metrics', views.violation_metrics_scrape, name="violation_metric_scrape")
 ]

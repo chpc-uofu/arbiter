@@ -7,7 +7,7 @@ SECRET_KEY = "django-insecure-wgoq*f367%a#m_^zsh=7g!@v+f(pu^ei2#y5gq_q(@y9k0qd^$
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["host.docker.internal"]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
