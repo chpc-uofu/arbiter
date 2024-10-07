@@ -8,19 +8,19 @@ from django.template.response import TemplateResponse
 from django.utils.safestring import mark_safe
 from django.utils import timezone
 from django import forms
-from arbiter import models
 from django.urls import reverse
 from django.db.models import Model
 from logging import getLogger
-from django.conf import settings
 from arbiter.utils import strip_port
+from arbiter.conf import PROMETHEUS_CONNECTION
+from arbiter import models
 
-prometheus = settings.PROMETHEUS_CONNECTION
 LOGGER = getLogger(__name__)
+
 
 @admin.register(models.Violation)
 class ViolationsAdmin(admin.ModelAdmin):
-    list_display = ["target", "policy_link", "penalty_link",  "expiration", "status"]
+    list_display = ["target", "policy_link", "penalty_link", "expiration", "status"]
     readonly_fields = ["plot_mem_usage", "plot_cpu_usage"]
     actions = ["expire_violation"]
     change_form_template = "arbiter/violation.html"
@@ -57,14 +57,14 @@ class ViolationsAdmin(admin.ModelAdmin):
             )
         else:
             return "No data available"
-    
+
     @admin.display(description="Status")
     def status(self, violation: models.Violation):
         if violation.expired:
-            return mark_safe(f'<em>Expired</em>')
+            return mark_safe(f"<em>Expired</em>")
         else:
-            return mark_safe(f'<em>Active</em>')
-    
+            return mark_safe(f"<em>Active</em>")
+
     @admin.action(description="Expire Violation")
     def expire_violation(self, request: HttpRequest, violations):
         for violation in violations:
@@ -298,7 +298,9 @@ class DashboardAdmin(admin.ModelAdmin):
 
         agents = []
         try:
-            result = prometheus.custom_query('up{job=~"cgroup-warden.*"} > 0')
+            result = PROMETHEUS_CONNECTION.custom_query(
+                'up{job=~"cgroup-warden.*"} > 0'
+            )
             agents = [strip_port(metric["metric"]["instance"]) for metric in result]
         except Exception as e:
             LOGGER.error(f"Could not query promethues for cgroup-agent instances: {e}")

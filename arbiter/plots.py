@@ -1,11 +1,10 @@
 from plotly.graph_objects import Figure
 from datetime import datetime, timezone, timedelta
 from arbiter.models import Violation
-from django.conf import settings
 from prometheus_api_client import MetricRangeDataFrame
 import plotly.express as px
 
-prom = settings.PROMETHEUS_CONNECTION
+from arbiter.conf import PROMETHEUS_CONNECTION
 
 chart = Figure
 pie = Figure
@@ -16,10 +15,10 @@ NSPERSEC = 1_000_000_000
 PORT_RE = r"(:[0-9]{1,5})?"
 
 
-def align_to_step(start: datetime, end: datetime, step:str="15s") -> datetime:
+def align_to_step(start: datetime, end: datetime, step: str = "15s") -> datetime:
     """
     Given a duration as defined by the start and end, ensure the duration is
-    aligned to the given step size. 
+    aligned to the given step size.
     """
 
     start_seconds = int(start.astimezone(timezone.utc).timestamp())
@@ -36,11 +35,11 @@ def align_to_step(start: datetime, end: datetime, step:str="15s") -> datetime:
     return start - start_delta, end - end_delta
 
 
-def align_with_prom_limit(start: datetime, end: datetime, step:str):
+def align_with_prom_limit(start: datetime, end: datetime, step: str):
     """
     Given a timerange as defined by the start and end, create a step
     interval for a prometheus query that ensures no more than 400
-    results will be returned. 
+    results will be returned.
     """
 
     total_range_seconds = (end - start).total_seconds()
@@ -55,6 +54,7 @@ def align_with_prom_limit(start: datetime, end: datetime, step:str):
     else:
         return step
 
+
 def create_usage_figures(
     query: str,
     label: str,
@@ -65,10 +65,12 @@ def create_usage_figures(
     step: str = "15s",
 ) -> tuple[chart, pie]:
     start, end = align_to_step(start, end, step)
-    result = prom.custom_query_range(query, start_time=start, end_time=end, step=step)
+    result = PROMETHEUS_CONNECTION.custom_query_range(
+        query, start_time=start, end_time=end, step=step
+    )
 
     if not result:
-        return None, None
+        return Figure(), Figure()
 
     # create a dataframe from prometheus query, and group all processes under 1%
     df = MetricRangeDataFrame(result)

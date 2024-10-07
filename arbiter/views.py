@@ -212,7 +212,7 @@ def violation_cpu_usage(request, violation_id):
 
     messages = {}
     graph, pie = plots.plot_violation_cpu_graph(violation, step=step)
-    #pie = plots.plot_violation_proc_cpu_usage_pie(violation)
+    # pie = plots.plot_violation_proc_cpu_usage_pie(violation)
 
     return render(
         request,
@@ -244,11 +244,11 @@ def violation_memory_usage(request, violation_id):
 
     step = request.GET.get("step-value", "30") + request.GET.get("step-unit", "s")
     step = plots.align_with_prom_limit(violation.timestamp, violation.expiration, step)
-    
+
     messages = {}
 
     graph, pie = plots.plot_violation_memory_graph(violation, step=step)
-    #pie = plots.plot_violation_proc_memory_usage_pie(violation)
+    # pie = plots.plot_violation_proc_memory_usage_pie(violation)
 
     return render(
         request,
@@ -263,23 +263,25 @@ def violation_memory_usage(request, violation_id):
     )
 
 
-async def _set_property_and_update_target(context, target: Target, property: Property, value:str):
-    property_payload = {"name":property.name, "value":value}
+async def _set_property_and_update_target(
+    context, target: Target, property: Property, value: str
+):
+    property_payload = {"name": property.name, "value": value}
     try:
         async with aiohttp.ClientSession() as session:
             status, message = await set_property(target, session, property_payload)
         if status == 200:
-            context['info'] = "Set property successfully"
+            context["info"] = "Set property successfully"
         else:
-            context['error']  = f"Failed to set property: {message}"
+            context["error"] = f"Failed to set property: {message}"
     except Exception as e:
-        context['error'] = f"Failed to set property: Service Unavailable {repr(e)}"
+        context["error"] = f"Failed to set property: Service Unavailable {repr(e)}"
 
 
 def apply_property_for_user(request):
     context = dict()
     if not request.user.has_perm("arbiter.change_penalty"):
-        context['error'] = "You do not have permission to execute commands"
+        context["error"] = "You do not have permission to execute commands"
         return render(request, "arbiter/message.html", context)
 
     unit = request.POST.get("unit", "")
@@ -288,19 +290,21 @@ def apply_property_for_user(request):
     host = request.POST.get("host", "")
 
     if not (len(unit) > 0 and len(prop) > 0 and len(host) > 0 and len(value) > 0):
-        context['error'] = "Please select a unit, property and host"
+        context["error"] = "Please select a unit, property and host"
         return render(request, "arbiter/message.html", context)
-    
+
     property = Property.objects.filter(name=prop).first()
     if not property:
-        context['error'] = f"Property {prop} not found"
+        context["error"] = f"Property {prop} not found"
         return render(request, "arbiter/message.html", context)
-    
+
     target, created = Target.objects.get_or_create(unit=unit, host=host)
     asyncio.run(_set_property_and_update_target(context, target, property, value))
     if context.get("info"):
         limit, created = Limit.objects.get_or_create(value=value, property=property)
-        target.last_applied.remove(*target.last_applied.filter(property__name=property.name))
+        target.last_applied.remove(
+            *target.last_applied.filter(property__name=property.name)
+        )
         if limit.value != Limit.UNSET_LIMIT:
             target.last_applied.add(limit)
         target.save()
@@ -312,43 +316,44 @@ def dashboard_command(request, command):
     context = dict()
     args = dict()
     if not request.user.has_perm("arbiter.change_dashboard"):
-        context['error'] = "You do not have permission to execute commands"
+        context["error"] = "You do not have permission to execute commands"
         return render(request, "arbiter/message.html", context)
-    
+
     if command == "evaluate":
         message = f"Ran evaluation loop successfully. Check the logs for violations"
-    
+
     elif command == "clean":
         if not request.POST.get("before", "").strip():
-            context['error'] = "Please provide a time to clean violations before."
+            context["error"] = "Please provide a time to clean violations before."
             return render(request, "arbiter/message.html", context)
         else:
-            args['before'] = request.POST.get("before")
-        
+            args["before"] = request.POST.get("before")
+
         message = f"Cleaned violation history successfully."
 
     else:
         message = f"Executed the command <dfn>{command}</dfn> successfully!"
- 
+
     try:
         call_command(command, **args)
-        context['info'] = mark_safe(message)
+        context["info"] = mark_safe(message)
     except Exception as e:
-        context['error'] = mark_safe(f"Could not execute command {command}: {e}")
+        context["error"] = mark_safe(f"Could not execute command {command}: {e}")
 
     return render(request, "arbiter/message.html", context)
+
 
 def expire_violation(request, violation_id):
     if not request.user.has_perm("arbiter.delete_violation"):
         messages.error(request, "You do not have permission to execute commands")
         return redirect("admin:arbiter_violation_changelist")
-    
+
     violation = Violation.objects.filter(pk=violation_id).first()
 
     if not violation:
         messages.error(request, "Violation not found")
         return redirect("admin:arbiter_dashboard_changelist")
-    
+
     if violation.expired:
         messages.warning(request, "Violation was already expired")
         return redirect("admin:arbiter_violation_changelist")
