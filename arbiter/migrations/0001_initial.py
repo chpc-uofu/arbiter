@@ -86,7 +86,10 @@ class Migration(migrations.Migration):
                 (
                     "type",
                     models.CharField(
-                        choices=[("int", "Integer"), ("float", "Floating Point")],
+                        choices=[
+                            ("int", "Integer"),
+                            ("float", "Floating Point"),
+                        ],
                         max_length=255,
                     ),
                 ),
@@ -117,7 +120,9 @@ class Migration(migrations.Migration):
                 ("name", models.CharField(default="Penalty", max_length=255)),
                 (
                     "duration",
-                    models.DurationField(default=datetime.timedelta(seconds=300)),
+                    models.DurationField(
+                        default=datetime.timedelta(seconds=300)
+                    ),
                 ),
                 (
                     "repeat_offense_scale",
@@ -151,7 +156,9 @@ class Migration(migrations.Migration):
                 ("query", models.TextField(blank=True, max_length=1024)),
                 (
                     "grace_period",
-                    models.DurationField(default=datetime.timedelta(seconds=180)),
+                    models.DurationField(
+                        default=datetime.timedelta(seconds=180)
+                    ),
                 ),
                 (
                     "lookback_window",
@@ -176,7 +183,8 @@ class Migration(migrations.Migration):
             model_name="limit",
             name="property",
             field=models.ForeignKey(
-                on_delete=django.db.models.deletion.CASCADE, to="arbiter.property"
+                on_delete=django.db.models.deletion.CASCADE,
+                to="arbiter.property",
             ),
         ),
         migrations.CreateModel(
@@ -217,13 +225,15 @@ class Migration(migrations.Migration):
                 (
                     "policy",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, to="arbiter.policy"
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="arbiter.policy",
                     ),
                 ),
                 (
                     "target",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, to="arbiter.target"
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="arbiter.target",
                     ),
                 ),
             ],

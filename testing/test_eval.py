@@ -78,7 +78,9 @@ def test_apply_limits(
     assert soft_limit_mem in successful[1]
 
     successful = asyncio.run(
-        run_apply_with_session(limits=[unset_limit_cpu, unset_limit_mem], target=target)
+        run_apply_with_session(
+            limits=[unset_limit_cpu, unset_limit_mem], target=target
+        )
     )
     assert target == successful[0]
     assert unset_limit_cpu in successful[1]

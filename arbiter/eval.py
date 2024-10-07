@@ -31,7 +31,9 @@ def query_violations(policies: list[Policy]) -> list[Violation]:
             host = strip_port(result["metric"]["instance"])
 
             target, _ = Target.objects.get_or_create(unit=unit, host=host)
-            unit_violations = Violation.objects.filter(policy=policy, target=target)
+            unit_violations = Violation.objects.filter(
+                policy=policy, target=target
+            )
             in_grace = unit_violations.filter(
                 expiration__gte=timezone.now() - policy.grace_period
             ).exists()
@@ -197,7 +199,9 @@ def evaluate(policies: "QuerySet[Policy]" = None):
 
     for target, limits in applications.items():
         if limits:
-            limit_msg = ", ".join([f"{l.property.name} -> {l.value}" for l in limits])
+            limit_msg = ", ".join(
+                [f"{l.property.name} -> {l.value}" for l in limits]
+            )
             logger.info(f"Updated {target} with {limit_msg}")
 
     for violation in violations:

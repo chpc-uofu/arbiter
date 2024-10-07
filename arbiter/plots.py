@@ -1,8 +1,10 @@
 from plotly.graph_objects import Figure
-from datetime import datetime, timezone, timedelta
-from arbiter.models import Violation
+from datetime import datetime, timedelta, timezone
 from prometheus_api_client import MetricRangeDataFrame
 import plotly.express as px
+from arbiter.models import Violation
+from django.utils.timezone import get_current_timezone, localtime
+
 
 from arbiter.conf import PROMETHEUS_CONNECTION
 
@@ -14,8 +16,13 @@ PROMETHUS_POINT_LIMIT = 400
 NSPERSEC = 1_000_000_000
 PORT_RE = r"(:[0-9]{1,5})?"
 
+MEM_USAGE = "mem"
+CPU_USAGE = "cpu"
 
-def align_to_step(start: datetime, end: datetime, step: str = "15s") -> datetime:
+
+def align_to_step(
+    start: datetime, end: datetime, step: str = "15s"
+) -> datetime:
     """
     Given a duration as defined by the start and end, ensure the duration is
     aligned to the given step size.
@@ -55,7 +62,7 @@ def align_with_prom_limit(start: datetime, end: datetime, step: str):
         return step
 
 
-def create_usage_figures(
+def usage_figures(
     query: str,
     label: str,
     start: datetime,
@@ -71,11 +78,26 @@ def create_usage_figures(
 
     if not result:
         return Figure(), Figure()
+    
+    local_tz = get_current_timezone()
 
-    # create a dataframe from prometheus query, and group all processes under 1%
+    # convert penalized time (utc) to local 
+    if penalized:
+        penalized = localtime(penalized)
+    
+    # convert start and end (utc) to local
+    start = localtime(start)
+    end = localtime(end)
+
+    # create a dataframe from prometheus query 
     df = MetricRangeDataFrame(result)
-    df.loc[df.value < 0.01, "proc"] = "other"
+    
+    # convert timestamps (utc) to local
+    df.index = df.index.tz_localize('UTC').tz_convert(local_tz)
 
+    #group all processes under 1%
+    df.loc[df.value < 0.01, "proc"] = "other"
+    
     # calculate the average value of a metric
     aggregate = df.groupby(["unit", "instance", "proc"], as_index=False).agg(
         mean=("value", "mean")
@@ -110,25 +132,50 @@ def create_usage_figures(
         df.sort_values(by=["value"]),
         y="value",
         color=label,
-        line_shape="spline",
+        # line_shape="spline",
         color_discrete_map=color_mapping,
     )
     if threshold:
         chart.add_hline(
             threshold,
-            annotation_text="Policy Threshold",
-            annotation_position="top left",
             line={"dash": "dot", "color": "grey"},
         )
+
     if penalized:
-        chart.add_vline(
-            penalized.timestamp() * 1000,  # convert to ms
-            annotation_text="Penalized",
-            annotation_position="top left",
-            line={"dash": "dash", "color": "grey"},
+        chart.add_vrect(
+            x0=penalized,
+            x1=penalized + timedelta(microseconds=1),
+            line={"dash": "dot", "color": "red"},
         )
 
     return chart, pie
+
+def violation_usage_figures(violation: Violation, usage_type:str, step:str = '30s'):
+    unit = violation.target.unit
+    host = violation.target.host
+    start = violation.timestamp - violation.policy.timewindow
+    end = violation.expiration
+    penalized = violation.timestamp
+    step = align_with_prom_limit(
+        violation.timestamp, violation.expiration, step
+    )
+
+    if usage_type == CPU_USAGE:
+        threshold = violation.policy.query_params.get("cpu_threshold", None)
+        return cpu_usage_figures(unit, host, start, end, threshold, penalized, step)
+    if usage_type == MEM_USAGE:
+        threshold = violation.policy.query_params.get("memory_threshold", None)
+        return mem_usage_figures(unit, host, start, end, threshold, penalized, step)
+    
+    return Figure(), Figure()
+
+
+def violation_cpu_usage_figures(violation: Violation, step:str = '30s'): 
+    return violation_usage_figures(violation, CPU_USAGE, step)
+
+
+def violation_mem_usage_figures(violation: Violation, step:str = '30s'): 
+    return violation_usage_figures(violation, MEM_USAGE, step)
 
 
 def cpu_usage_figures(
@@ -145,8 +192,14 @@ def cpu_usage_figures(
 
     labels = "(unit, instance, proc)"
     query = f"sort_desc(avg by {labels} (rate({metric}{filters}[{step}])) / {NSPERSEC})"
-    fig, pie = create_usage_figures(
-        query, "proc", start_time, end_time, policy_threshold, penalized_time, step
+    fig, pie = usage_figures(
+        query,
+        "proc",
+        start_time,
+        end_time,
+        policy_threshold,
+        penalized_time,
+        step,
     )
     fig.update_layout(
         title=f"CPU Usage Report For {unit_re} on {host_re}",
@@ -168,11 +221,15 @@ def mem_usage_figures(
     filters = f'{{ unit=~"{ unit_re }", instance=~"{ host_re }{PORT_RE}"}}'
     metric = "systemd_unit_proc_memory_current_bytes"
     labels = "(unit, instance, proc)"
-    query = (
-        f"sort_desc(avg by {labels} (avg_over_time({metric}{filters}[{step}])) / {GIB})"
-    )
-    fig, pie = create_usage_figures(
-        query, "proc", start_time, end_time, policy_threshold, penalized_time, step
+    query = f"sort_desc(avg by {labels} (avg_over_time({metric}{filters}[{step}])) / {GIB})"
+    fig, pie = usage_figures(
+        query,
+        "proc",
+        start_time,
+        end_time,
+        policy_threshold,
+        penalized_time,
+        step,
     )
     fig.update_layout(
         title=f"Memory Usage Report For {unit_re} on {host_re}",
@@ -180,25 +237,3 @@ def mem_usage_figures(
         yaxis_title="Usage in GiB",
     )
     return fig, pie
-
-
-def violation_cpu_usage_figures(violation: Violation) -> tuple[chart, pie]:
-    unit = violation.target.unit
-    host = violation.target.host
-    start = violation.timestamp - violation.policy.timewindow
-    end = violation.expiration
-    threshold = violation.policy.query_params.get("cpu_threshold", None)
-    penalized = violation.timestamp
-
-    return cpu_usage_figures(unit, host, start, end, threshold, penalized)
-
-
-def violation_mem_usage_figures(violation: Violation) -> tuple[chart, pie]:
-    unit = violation.target.unit
-    host = violation.target.host
-    start = violation.timestamp - violation.policy.timewindow
-    end = violation.expiration
-    threshold = violation.policy.query_params.get("memory_threshold", None)
-    penalized = violation.timestamp
-
-    return mem_usage_figures(unit, host, start, end, threshold, penalized)

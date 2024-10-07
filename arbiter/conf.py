@@ -29,7 +29,9 @@ except AttributeError:
     raise ImproperlyConfigured("setting EMAIL_HOST is required")
 
 try:
-    EMAIL_DISABLE_AUTH = ImproperlyConfigured("setting EMAIL_DISABLE_AUTH is required")
+    EMAIL_DISABLE_AUTH = ImproperlyConfigured(
+        "setting EMAIL_DISABLE_AUTH is required"
+    )
 except AttributeError:
     raise ImproperlyConfigured("setting EMAIL_DISABLE_AUTH is required")
 

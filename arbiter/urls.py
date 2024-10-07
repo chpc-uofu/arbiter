@@ -3,8 +3,14 @@ from . import views
 
 
 urlpatterns = [
-    path("policy/<int:id>/convert-query", views.convert_policy, name="convert_policy"),
-    path("graphs/proc/cpu", views.user_proc_cpu_graph, name="user-proc-cpu-graph"),
+    path(
+        "policy/<int:id>/convert-query",
+        views.convert_policy,
+        name="convert_policy",
+    ),
+    path(
+        "graphs/proc/cpu", views.user_proc_cpu_graph, name="user-proc-cpu-graph"
+    ),
     path(
         "graphs/proc/memory",
         views.user_proc_memory_graph,
@@ -20,7 +26,9 @@ urlpatterns = [
         views.violation_memory_usage,
         name="user-violation-memory-graph",
     ),
-    path("apply-property", views.apply_property_for_user, name="apply-property"),
+    path(
+        "apply-property", views.apply_property_for_user, name="apply-property"
+    ),
     path(
         "violation/<int:violation_id>/expire",
         views.expire_violation,

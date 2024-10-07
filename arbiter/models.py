@@ -164,7 +164,9 @@ class Policy(models.Model):
                 )
 
             if self.query_params.get("unit_whitelist"):
-                user_filters += f', unit !~ "{self.query_params["unit_whitelist"]}"'
+                user_filters += (
+                    f', unit !~ "{self.query_params["unit_whitelist"]}"'
+                )
 
             if "cpu_threshold" in self.query_params:
                 query += (
@@ -204,7 +206,9 @@ class Target(models.Model):
     class Meta:
         verbose_name_plural = "Targets"
         constraints = [
-            models.UniqueConstraint(fields=["unit", "host"], name="unique_target"),
+            models.UniqueConstraint(
+                fields=["unit", "host"], name="unique_target"
+            ),
         ]
 
     unit = models.CharField(max_length=255)
@@ -231,7 +235,7 @@ class Violation(models.Model):
     target = models.ForeignKey(Target, on_delete=models.CASCADE)
     policy = models.ForeignKey(Policy, on_delete=models.CASCADE)
     expiration = models.DateTimeField()
-    timestamp = models.DateTimeField(auto_now=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
     offense_count = models.IntegerField(default=1)
 
     @property
@@ -243,9 +247,7 @@ class Violation(models.Model):
         return self.expiration < timezone.now()
 
     def __str__(self) -> str:
-        return (
-            f"Unit {self.target.unit} violated {self.policy.name} on {self.target.host}"
-        )
+        return f"Unit {self.target.unit} violated {self.policy.name} on {self.target.host}"
 
 
 class Event(models.Model):

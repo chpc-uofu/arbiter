@@ -5,7 +5,10 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("arbiter", "0003_remove_target_unique_target_target_username_and_more"),
+        (
+            "arbiter",
+            "0003_remove_target_unique_target_target_username_and_more",
+        ),
     ]
 
     operations = [

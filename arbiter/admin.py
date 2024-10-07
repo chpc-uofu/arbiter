@@ -20,7 +20,13 @@ LOGGER = getLogger(__name__)
 
 @admin.register(models.Violation)
 class ViolationsAdmin(admin.ModelAdmin):
-    list_display = ["target", "policy_link", "penalty_link", "expiration", "status"]
+    list_display = [
+        "target",
+        "policy_link",
+        "penalty_link",
+        "expiration",
+        "status",
+    ]
     readonly_fields = ["plot_mem_usage", "plot_cpu_usage"]
     actions = ["expire_violation"]
     change_form_template = "arbiter/violation.html"
@@ -97,11 +103,10 @@ class PenaltyAdmin(admin.ModelAdmin):
         result = ""
         for limit in penalty.limits.all():
             url = resolve_url(
-                admin_urlname(models.Property._meta, "change"), limit.property.id
+                admin_urlname(models.Property._meta, "change"),
+                limit.property.id,
             )
-            result += (
-                f'<li><a href="{url}">{limit.property.name}</a>: {limit.value}</li>'
-            )
+            result += f'<li><a href="{url}">{limit.property.name}</a>: {limit.value}</li>'
         return mark_safe(f"<ul>{result}</ul>")
 
 
@@ -207,7 +212,9 @@ class PolicyAdmin(admin.ModelAdmin):
             instance.query_params["memory_threshold"] = self.cleaned_data.get(
                 "memory_threshold", 1.0
             )
-            instance.query_params["domain"] = self.cleaned_data.get("domain", ".*")
+            instance.query_params["domain"] = self.cleaned_data.get(
+                "domain", ".*"
+            )
 
             if "process_whitelist" in self.cleaned_data:
                 instance.query_params["process_whitelist"] = self.cleaned_data[
@@ -255,7 +262,11 @@ class PolicyAdmin(admin.ModelAdmin):
             return instance
 
     def get_form(
-        self, request: Any, obj: Any | None = ..., change: bool = ..., **kwargs: Any
+        self,
+        request: Any,
+        obj: Any | None = ...,
+        change: bool = ...,
+        **kwargs: Any,
     ) -> Any:
         if not obj:
             return PolicyAdmin.BuilderForm
@@ -273,9 +284,13 @@ class PolicyAdmin(admin.ModelAdmin):
     ) -> Any:
         extra_context = extra_context or dict()
         if object_id is not None:
-            extra_context["raw"] = models.Policy.objects.get(id=object_id).is_raw_query
+            extra_context["raw"] = models.Policy.objects.get(
+                id=object_id
+            ).is_raw_query
 
-        return super().changeform_view(request, object_id, form_url, extra_context)
+        return super().changeform_view(
+            request, object_id, form_url, extra_context
+        )
 
 
 class DashboardAdmin(admin.ModelAdmin):
@@ -301,15 +316,21 @@ class DashboardAdmin(admin.ModelAdmin):
             result = PROMETHEUS_CONNECTION.custom_query(
                 'up{job=~"cgroup-warden.*"} > 0'
             )
-            agents = [strip_port(metric["metric"]["instance"]) for metric in result]
+            agents = [
+                strip_port(metric["metric"]["instance"]) for metric in result
+            ]
         except Exception as e:
-            LOGGER.error(f"Could not query promethues for cgroup-agent instances: {e}")
+            LOGGER.error(
+                f"Could not query promethues for cgroup-agent instances: {e}"
+            )
 
         last_eval = models.Event.objects.order_by("timestamp").last()
 
         context.update(
             title="Arbiter Dashboard",
-            violations=models.Violation.objects.all().order_by("-timestamp")[:10],
+            violations=models.Violation.objects.all().order_by("-timestamp")[
+                :10
+            ],
             agents=agents,
             last_evaluated=last_eval.timestamp if last_eval else "Never",
             properties=models.Property.objects.all(),

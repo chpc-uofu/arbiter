@@ -5,7 +5,10 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("arbiter", "0004_remove_target_unique_target_remove_target_username_and_more"),
+        (
+            "arbiter",
+            "0004_remove_target_unique_target_remove_target_username_and_more",
+        ),
     ]
 
     operations = [
@@ -13,7 +16,11 @@ class Migration(migrations.Migration):
             model_name="property",
             name="operation",
             field=models.CharField(
-                choices=[(">", "Greater Than"), ("<", "Less Than"), ("==", "Enabled")],
+                choices=[
+                    (">", "Greater Than"),
+                    ("<", "Less Than"),
+                    ("==", "Enabled"),
+                ],
                 max_length=255,
             ),
         ),

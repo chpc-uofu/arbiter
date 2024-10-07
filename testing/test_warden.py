@@ -128,8 +128,12 @@ def test_set_mem_limit():
 
 
 def test_set_cpu_limit():
-    set_and_verify_unit_property({"name": "CPUQuotaPerSecUSec", "value": "500000"})
-    set_and_verify_unit_property({"name": "CPUQuotaPerSecUSec", "value": str(UNSET)})
+    set_and_verify_unit_property(
+        {"name": "CPUQuotaPerSecUSec", "value": "500000"}
+    )
+    set_and_verify_unit_property(
+        {"name": "CPUQuotaPerSecUSec", "value": str(UNSET)}
+    )
 
 
 def test_fail_read_only():
@@ -161,7 +165,10 @@ def test_fail_write():
 def test_fail_malformed():
     headers = {"Authorization": TEST_BEARER_TOKEN}
     r = requests.post(
-        TEST_CONTROL_ENDPOINT, headers=headers, data="Hello, world!", verify=False
+        TEST_CONTROL_ENDPOINT,
+        headers=headers,
+        data="Hello, world!",
+        verify=False,
     )
     assert r.status_code == http.HTTPStatus.BAD_REQUEST
 

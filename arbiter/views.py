@@ -22,7 +22,9 @@ def convert_policy(request, id: int):
         case "To Raw Query":
             if selected_policy.is_raw_query:
                 messages.error(request, "Policy already uses a raw query")
-                return redirect("admin:arbiter_policy_change", selected_policy.pk)
+                return redirect(
+                    "admin:arbiter_policy_change", selected_policy.pk
+                )
 
             selected_policy.query_params["raw"] = selected_policy.query
             selected_policy.save()
@@ -30,7 +32,9 @@ def convert_policy(request, id: int):
         case "To Builder Query":
             if not selected_policy.is_raw_query:
                 messages.error(request, "Policy already uses a builder query")
-                return redirect("admin:arbiter_policy_change", selected_policy.pk)
+                return redirect(
+                    "admin:arbiter_policy_change", selected_policy.pk
+                )
             selected_policy.query_params.pop("raw")
             selected_policy.query_params[
                 "cpu_threshold"
@@ -49,27 +53,35 @@ def convert_policy(request, id: int):
     return redirect(f"admin:arbiter_policy_change", selected_policy.pk)
 
 
-def user_proc_cpu_graph(request):
+def user_proc_graph(request, usage_type):
     if not request.user.has_perm("arbiter.change_dashboard"):
         return render(
             request,
             "arbiter/graph.html",
-            context={"warning": "You do not have permission to view usage graphs"},
+            context={
+                "warning": "You do not have permission to view usage graphs"
+            },
         )
 
     start_time = request.GET.get("start-time")
     end_time = request.GET.get("end-time")
-    step = request.GET.get("step-value", "30") + request.GET.get("step-unit", "s")
+    step = request.GET.get("step-value", "30") + request.GET.get(
+        "step-unit", "s"
+    )
 
     if not end_time:
         end_time = timezone.now()
     else:
-        end_time = timezone.make_aware(timezone.datetime.fromisoformat(end_time))
+        end_time = timezone.make_aware(
+            timezone.datetime.fromisoformat(end_time)
+        )
 
     if not start_time:
         start_time = end_time - timezone.timedelta(minutes=10)
     else:
-        start_time = timezone.make_aware(timezone.datetime.fromisoformat(start_time))
+        start_time = timezone.make_aware(
+            timezone.datetime.fromisoformat(start_time)
+        )
 
     if start_time >= end_time:
         return render(
@@ -82,9 +94,8 @@ def user_proc_cpu_graph(request):
     aligned_step = plots.align_with_prom_limit(start_time, end_time, step)
 
     if aligned_step != step:
-        messages[
-            "warning"
-        ] = f"Step size exceeded Promtheus's limit of {plots.PROMETHUS_POINT_LIMIT} points, so was aligned to {aligned_step}"
+        message = f"Step size exceeded Promtheus's limit of {plots.PROMETHUS_POINT_LIMIT} points, so was aligned to {aligned_step}"
+        messages["warning"] = message
         step = aligned_step
     unit = request.GET.get("unit", ".*")
     host = request.GET.get("host", ".*")
@@ -93,19 +104,22 @@ def user_proc_cpu_graph(request):
     if host == "all":
         host = ".*"
 
-    fig, pie = plots.cpu_usage_figures(
-        unit_re=unit,
-        host_re=host,
-        start_time=start_time,
-        end_time=end_time,
-        step=step,
-    )
-    # pie = plots.cpu_pie_graph(
-    #     unit_re=unit,
-    #     host_re=host,
-    #     start_time=start_time,
-    #     end_time=end_time,
-    # )
+    if usage_type == plots.CPU_USAGE:
+        fig, pie = plots.cpu_usage_figures(
+            unit_re=unit,
+            host_re=host,
+            start_time=start_time,
+            end_time=end_time,
+            step=step,
+        )
+    elif usage_type == plots.MEM_USAGE:
+        fig, pie = plots.mem_usage_figures(
+            unit_re=unit,
+            host_re=host,
+            start_time=start_time,
+            end_time=end_time,
+            step=step,
+        )
 
     return render(
         request,
@@ -114,153 +128,69 @@ def user_proc_cpu_graph(request):
             "graph": mark_safe(
                 fig.to_html(default_width="100%", default_height="400px")
             ),
-            "pie": mark_safe(pie.to_html(default_width="100%", default_height="400px")),
+            "pie": mark_safe(
+                pie.to_html(default_width="100%", default_height="400px")
+            ),
             **messages,
         },
     )
 
 
+def user_proc_cpu_graph(request):
+    return user_proc_graph(request, plots.CPU_USAGE)
+
+
 def user_proc_memory_graph(request):
+    return user_proc_graph(request, plots.MEM_USAGE)
+
+
+def violation_usage(request, violation_id, usage_type):
     if not request.user.has_perm("arbiter.change_dashboard"):
         return render(
             request,
             "arbiter/graph.html",
-            context={"warning": "You do not have permission to view usage graphs"},
+            context={
+                "warning": "You do not have permission to view usage graphs"
+            },
         )
 
-    start_time = request.GET.get("start-time")
-    end_time = request.GET.get("end-time")
-    step = request.GET.get("step-value", "30") + request.GET.get("step-unit", "s")
-
-    if not end_time:
-        end_time = timezone.now()
-    else:
-        end_time = timezone.make_aware(timezone.datetime.fromisoformat(end_time))
-
-    if not start_time:
-        start_time = end_time - timezone.timedelta(minutes=10)
-    else:
-        start_time = timezone.make_aware(timezone.datetime.fromisoformat(start_time))
-
-    if start_time >= end_time:
+    violation = Violation.objects.filter(pk=violation_id).first()
+    if not violation:
         return render(
             request,
             "arbiter/graph.html",
-            context={"error": "Given start time is after given end time"},
+            context={"error": "Violation not found"},
         )
 
-    messages = {}
-    aligned_step = plots.align_with_prom_limit(start_time, end_time, step)
-
-    if aligned_step != step:
-        messages[
-            "warning"
-        ] = f"Step size exceeded Promtheus's limit of {plots.PROMETHUS_POINT_LIMIT} points, so was aligned to {aligned_step}"
-        step = aligned_step
-
-    unit = request.GET.get("unit", ".*")
-    host = request.GET.get("host", ".*")
-    if len(unit) == 0:
-        unit = ".*"
-    if host == "all":
-        host = ".*"
-
-    fig, pie = plots.mem_usage_figures(
-        unit_re=unit,
-        host_re=host,
-        start_time=start_time,
-        end_time=end_time,
-        step=step,
+    step = request.GET.get("step-value", "30") + request.GET.get(
+        "step-unit", "s"
     )
 
-    # pie = plots.mem_pie_graph(
-    #     unit_re=unit,
-    #     host_re=host,
-    #     start_time=start_time,
-    #     end_time=end_time,
-    # )
+    graph, pie = plots.violation_usage_figures(violation, usage_type, step)
+
+    messages = {}
 
     return render(
         request,
         "arbiter/graph.html",
         context={
             "graph": mark_safe(
-                fig.to_html(default_width="100%", default_height="400px")
+                graph.to_html(default_width="100%", default_height="400px")
             ),
-            "pie": mark_safe(pie.to_html(default_width="100%", default_height="400px")),
+            "pie": mark_safe(
+                pie.to_html(default_width="100%", default_height="400px")
+            ),
             **messages,
         },
     )
 
 
 def violation_cpu_usage(request, violation_id):
-    if not request.user.has_perm("arbiter.change_dashboard"):
-        return render(
-            request,
-            "arbiter/graph.html",
-            context={"warning": "You do not have permission to view usage graphs"},
-        )
-
-    violation = Violation.objects.filter(pk=violation_id).first()
-    if not violation:
-        return render(
-            request, "arbiter/graph.html", context={"error": "Violation not found"}
-        )
-
-    step = request.GET.get("step-value", "30") + request.GET.get("step-unit", "s")
-    step = plots.align_with_prom_limit(violation.timestamp, violation.expiration, step)
-
-    messages = {}
-    graph, pie = plots.plot_violation_cpu_graph(violation, step=step)
-    # pie = plots.plot_violation_proc_cpu_usage_pie(violation)
-
-    return render(
-        request,
-        "arbiter/graph.html",
-        context={
-            "graph": mark_safe(
-                graph.to_html(default_width="100%", default_height="400px")
-            ),
-            "pie": mark_safe(pie.to_html(default_width="100%", default_height="400px")),
-            **messages,
-        },
-    )
+    return violation_usage(request, violation_id, plots.CPU_USAGE)
 
 
 def violation_memory_usage(request, violation_id):
-    if not request.user.has_perm("arbiter.change_dashboard"):
-        return render(
-            request,
-            "arbiter/graph.html",
-            context={"warning": "You do not have permission to view usage graphs"},
-        )
-
-    violation = Violation.objects.filter(pk=violation_id).first()
-
-    if not violation:
-        return render(
-            request, "arbiter/graph.html", context={"error": "Violation not found"}
-        )
-
-    step = request.GET.get("step-value", "30") + request.GET.get("step-unit", "s")
-    step = plots.align_with_prom_limit(violation.timestamp, violation.expiration, step)
-
-    messages = {}
-
-    graph, pie = plots.plot_violation_memory_graph(violation, step=step)
-    # pie = plots.plot_violation_proc_memory_usage_pie(violation)
-
-    return render(
-        request,
-        "arbiter/graph.html",
-        context={
-            "graph": mark_safe(
-                graph.to_html(default_width="100%", default_height="400px")
-            ),
-            "pie": mark_safe(pie.to_html(default_width="100%", default_height="400px")),
-            **messages,
-        },
-    )
+    return violation_usage(request, violation_id, plots.MEM_USAGE)
 
 
 async def _set_property_and_update_target(
@@ -269,13 +199,17 @@ async def _set_property_and_update_target(
     property_payload = {"name": property.name, "value": value}
     try:
         async with aiohttp.ClientSession() as session:
-            status, message = await set_property(target, session, property_payload)
+            status, message = await set_property(
+                target, session, property_payload
+            )
         if status == 200:
             context["info"] = "Set property successfully"
         else:
             context["error"] = f"Failed to set property: {message}"
     except Exception as e:
-        context["error"] = f"Failed to set property: Service Unavailable {repr(e)}"
+        context[
+            "error"
+        ] = f"Failed to set property: Service Unavailable {repr(e)}"
 
 
 def apply_property_for_user(request):
@@ -289,7 +223,9 @@ def apply_property_for_user(request):
     value = request.POST.get("value", "")
     host = request.POST.get("host", "")
 
-    if not (len(unit) > 0 and len(prop) > 0 and len(host) > 0 and len(value) > 0):
+    if not (
+        len(unit) > 0 and len(prop) > 0 and len(host) > 0 and len(value) > 0
+    ):
         context["error"] = "Please select a unit, property and host"
         return render(request, "arbiter/message.html", context)
 
@@ -299,9 +235,13 @@ def apply_property_for_user(request):
         return render(request, "arbiter/message.html", context)
 
     target, created = Target.objects.get_or_create(unit=unit, host=host)
-    asyncio.run(_set_property_and_update_target(context, target, property, value))
+    asyncio.run(
+        _set_property_and_update_target(context, target, property, value)
+    )
     if context.get("info"):
-        limit, created = Limit.objects.get_or_create(value=value, property=property)
+        limit, created = Limit.objects.get_or_create(
+            value=value, property=property
+        )
         target.last_applied.remove(
             *target.last_applied.filter(property__name=property.name)
         )
@@ -320,11 +260,15 @@ def dashboard_command(request, command):
         return render(request, "arbiter/message.html", context)
 
     if command == "evaluate":
-        message = f"Ran evaluation loop successfully. Check the logs for violations"
+        message = (
+            f"Ran evaluation loop successfully. Check the logs for violations"
+        )
 
     elif command == "clean":
         if not request.POST.get("before", "").strip():
-            context["error"] = "Please provide a time to clean violations before."
+            context[
+                "error"
+            ] = "Please provide a time to clean violations before."
             return render(request, "arbiter/message.html", context)
         else:
             args["before"] = request.POST.get("before")
@@ -338,14 +282,18 @@ def dashboard_command(request, command):
         call_command(command, **args)
         context["info"] = mark_safe(message)
     except Exception as e:
-        context["error"] = mark_safe(f"Could not execute command {command}: {e}")
+        context["error"] = mark_safe(
+            f"Could not execute command {command}: {e}"
+        )
 
     return render(request, "arbiter/message.html", context)
 
 
 def expire_violation(request, violation_id):
     if not request.user.has_perm("arbiter.delete_violation"):
-        messages.error(request, "You do not have permission to execute commands")
+        messages.error(
+            request, "You do not have permission to execute commands"
+        )
         return redirect("admin:arbiter_violation_changelist")
 
     violation = Violation.objects.filter(pk=violation_id).first()
