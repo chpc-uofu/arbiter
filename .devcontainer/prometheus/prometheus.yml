@@ -17,3 +17,10 @@ scrape_configs:
     scrape_interval: 1s
     static_configs:
       - targets: ['host.docker.internal:2113']
+
+  - job_name: arbiter
+    scrape_interval: 30s
+    metrics_path: /arbiter/metrics
+    static_configs:
+      - targets: ['host.docker.internal:8000']
+        
