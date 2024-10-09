@@ -1,3 +1,4 @@
+from prometheus_api_client import PrometheusConnect
 from pathlib import Path
 import os
 
@@ -9,7 +10,7 @@ SECRET_KEY = (
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["host.docker.internal", "localhost"]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -86,7 +87,6 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-import os
 
 LOGGING = {
     "version": 1,

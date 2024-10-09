@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from arbiter.models import Policy, Violation, Target, Property, Limit
+from django.db.models import Count
 from django.shortcuts import redirect
 from django.contrib import messages
 from django.core.management import call_command
@@ -8,6 +9,7 @@ import arbiter.plots as plots
 from django.utils import timezone
 import aiohttp
 import asyncio
+from django.http import HttpResponse
 from arbiter.utils import set_property
 
 
@@ -311,3 +313,20 @@ def expire_violation(request, violation_id):
     messages.info(request, "Violation expired successfully")
 
     return redirect("admin:arbiter_violation_changelist")
+
+
+def violation_metrics_scrape(request):
+    #arbiter_violations{policy="foobar", offense_count=1} 2
+    unexpired_violations_metrics = Violation.objects.filter(expiration__gte=timezone.now()).values("policy__name", "offense_count").annotate(count=Count("*"))
+
+    metric_name = "arbiter_violations_count"
+
+    exported_str = f"""# HELP {metric_name} The count of the current unexpired violations under that policy/offense count\n# TYPE {metric_name} gauge\n"""
+
+    for metric in unexpired_violations_metrics:
+        policy_name     = metric['policy__name']
+        offense_count   = metric['offense_count']
+        violation_count = metric['count']
+        exported_str  += f'{metric_name}{{policy="{policy_name}", offense_count="{offense_count}"}} {violation_count}'
+
+    return HttpResponse(exported_str, content_type="text")
