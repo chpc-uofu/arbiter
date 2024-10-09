@@ -1,3 +1,4 @@
+from prometheus_api_client import PrometheusConnect
 from pathlib import Path
 import os
 
@@ -7,7 +8,7 @@ SECRET_KEY = "django-insecure-wgoq*f367%a#m_^zsh=7g!@v+f(pu^ei2#y5gq_q(@y9k0qd^$
 
 DEBUG = True
 
-ALLOWED_HOSTS = ["host.docker.internal"]
+ALLOWED_HOSTS = ["host.docker.internal", "localhost"]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -84,7 +85,6 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-import os
 
 LOGGING = {
     "version": 1,
@@ -125,26 +125,27 @@ LOGGING = {
 }
 
 # prometheus configuration
-from prometheus_api_client import PrometheusConnect
 url = os.environ["ARBITER_PROMETHEUS_HOST"]
 user = os.environ.get("ARBITER_PROMETHEUS_USER")
 password = os.environ.get("ARBITER_PROMETHEUS_PASS")
 auth = (user, password) if user and password else None
 disable_ssl = auth is None
-PROMETHEUS_CONNECTION = PrometheusConnect(url=url, auth=auth, disable_ssl=disable_ssl)
+PROMETHEUS_CONNECTION = PrometheusConnect(
+    url=url, auth=auth, disable_ssl=disable_ssl)
 
 # Name of your job used to cgroup instances of cgroup-warden. Used when determining
-# where to apply limits. 
-WARDEN_SCRAPE_JOB_NAME = os.environ.get("WARDEN_SCRAPE_JOB_NAME", "cgroup-warden")
+# where to apply limits.
+WARDEN_SCRAPE_JOB_NAME = os.environ.get(
+    "WARDEN_SCRAPE_JOB_NAME", "cgroup-warden")
 
-# key used to authenticate with cgroup-agent 
+# key used to authenticate with cgroup-agent
 ARBITER_CONTROL_KEY = os.environ.get("ARBITER_CONTROL_KEY")
 
 # (optional) Default port for the warden service. Only required if your TSDB strips ports
 ARBITER_WARDEN_PORT = os.environ.get("ARBITER_WARDEN_PORT", 2113)
 
 ARBITER_WARDEN_PROTOCOL = os.environ.get("ARBITER_WARDEN_PROTOCOL", "https")
- 
+
 # domain used in default email lookup, and from email
 ARBITER_EMAIL_DOMAIN = os.environ["ARBITER_EMAIL_DOMAIN"]
 
