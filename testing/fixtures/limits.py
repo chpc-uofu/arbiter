@@ -10,17 +10,23 @@ def unset_limit_cpu(cpu_property):
 
 @pytest.fixture
 def soft_limit_cpu(cpu_property):
-    return Limit.objects.create(property=cpu_property, value="4000000")  # 4 cores
+    return Limit.objects.create(
+        property=cpu_property, value="4000000"
+    )  # 4 cores
 
 
 @pytest.fixture
 def medium_limit_cpu(cpu_property):
-    return Limit.objects.create(property=cpu_property, value="2000000")  # 2 cores
+    return Limit.objects.create(
+        property=cpu_property, value="2000000"
+    )  # 2 cores
 
 
 @pytest.fixture
 def harsh_limit_cpu(cpu_property):
-    return Limit.objects.create(property=cpu_property, value="1000000")  # 1 core
+    return Limit.objects.create(
+        property=cpu_property, value="1000000"
+    )  # 1 core
 
 
 @pytest.fixture
@@ -30,17 +36,23 @@ def unset_limit_mem(mem_property):
 
 @pytest.fixture
 def soft_limit_mem(mem_property):
-    return Limit.objects.create(property=mem_property, value="4294967296")  # 4 GiB
+    return Limit.objects.create(
+        property=mem_property, value="4294967296"
+    )  # 4 GiB
 
 
 @pytest.fixture
 def medium_limit_mem(mem_property):
-    return Limit.objects.create(property=mem_property, value="2147483648")  # 2 GiB
+    return Limit.objects.create(
+        property=mem_property, value="2147483648"
+    )  # 2 GiB
 
 
 @pytest.fixture
 def harsh_limit_mem(mem_property):
-    return Limit.objects.create(property=mem_property, value="1073741824")  # 1 GiB
+    return Limit.objects.create(
+        property=mem_property, value="1073741824"
+    )  # 1 GiB
 
 
 @pytest.fixture

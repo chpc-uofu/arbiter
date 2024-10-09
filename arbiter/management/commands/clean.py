@@ -13,7 +13,11 @@ class Command(BaseCommand):
     def handle(self, before, *args, **options):
         before_time = timezone.datetime.fromisoformat(before)
         before_time = timezone.make_aware(before_time)
-        policies = Policy.objects.filter(name__in=options["policies"]) if options["policies"] else Policy.objects.all()
+        policies = (
+            Policy.objects.filter(name__in=options["policies"])
+            if options["policies"]
+            else Policy.objects.all()
+        )
 
         selected_violations = Violation.objects.filter(
             policy__in=policies,
@@ -23,7 +27,7 @@ class Command(BaseCommand):
         selected_violations.delete()
 
         selected_events = Event.objects.filter(
-            timestamp__lte = before_time,
+            timestamp__lte=before_time,
         )
 
         selected_events.delete()

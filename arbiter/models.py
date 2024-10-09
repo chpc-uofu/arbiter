@@ -1,4 +1,3 @@
-from typing import Iterable
 from django.db import models
 from datetime import timedelta
 from arbiter.utils import set_property
@@ -6,6 +5,7 @@ import asyncio
 import aiohttp
 import re
 from django.utils import timezone
+
 
 class Property(models.Model):
     """
@@ -41,13 +41,13 @@ class Property(models.Model):
     compare = {
         ">": lambda a, b: a > b,
         "<": lambda a, b: a < b,
-        "==": lambda a, b: a and not b or a
+        "==": lambda a, b: a and not b or a,
     }
 
     cast = {
         "int": lambda x: int(x),
         "float": lambda x: float(x),
-        "bool": lambda x: bool(x)
+        "bool": lambda x: bool(x),
     }
 
     def __str__(self) -> str:
@@ -75,11 +75,14 @@ class Limit(models.Model):
 
     def __str__(self) -> str:
         return f"{self.property.name} : {self.value}"
-    
+
     @staticmethod
     async def _update_target_limits(limit, targets) -> None:
         async with aiohttp.ClientSession() as session:
-            tasks = [set_property(target, session, limit.property_json()) for target in targets]
+            tasks = [
+                set_property(target, session, limit.property_json())
+                for target in targets
+            ]
             await asyncio.gather(*tasks)
 
     def save(self, **kwargs) -> None:
@@ -161,7 +164,9 @@ class Policy(models.Model):
                 )
 
             if self.query_params.get("unit_whitelist"):
-                user_filters += f', unit !~ "{self.query_params["unit_whitelist"]}"'
+                user_filters += (
+                    f', unit !~ "{self.query_params["unit_whitelist"]}"'
+                )
 
             if "cpu_threshold" in self.query_params:
                 query += (
@@ -201,7 +206,9 @@ class Target(models.Model):
     class Meta:
         verbose_name_plural = "Targets"
         constraints = [
-            models.UniqueConstraint(fields=["unit", "host"], name="unique_target"),
+            models.UniqueConstraint(
+                fields=["unit", "host"], name="unique_target"
+            ),
         ]
 
     unit = models.CharField(max_length=255)
@@ -210,10 +217,10 @@ class Target(models.Model):
 
     def __str__(self) -> str:
         return f"{self.unit}@{self.host}"
-    
+
     @property
     def uid(self) -> int | None:
-        match = re.search(r'user-(\d+)\.slice', self.unit)
+        match = re.search(r"user-(\d+)\.slice", self.unit)
         if not match:
             return None
         return int(match.group(1))
@@ -228,7 +235,7 @@ class Violation(models.Model):
     target = models.ForeignKey(Target, on_delete=models.CASCADE)
     policy = models.ForeignKey(Policy, on_delete=models.CASCADE)
     expiration = models.DateTimeField()
-    timestamp = models.DateTimeField(auto_now=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
     offense_count = models.IntegerField(default=1)
 
     @property
@@ -238,11 +245,9 @@ class Violation(models.Model):
     @property
     def expired(self) -> bool:
         return self.expiration < timezone.now()
-    
+
     def __str__(self) -> str:
-        return (
-            f"Unit {self.target.unit} violated {self.policy.name} on {self.target.host}"
-        )
+        return f"Unit {self.target.unit} violated {self.policy.name} on {self.target.host}"
 
 
 class Event(models.Model):

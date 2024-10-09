@@ -3,21 +3,19 @@ import http
 import asyncio
 import aiohttp
 from django.utils import timezone
-from django.conf import settings
 import logging
 from arbiter.models import *
 from arbiter.email import send_violation_email
 from collections import defaultdict
 from arbiter.utils import set_property, strip_port
 from typing import TYPE_CHECKING
+from arbiter.conf import PROMETHEUS_CONNECTION, WARDEN_JOB
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
 
-LOGGER = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
-prometheus = settings.PROMETHEUS_CONNECTION
-job_name = settings.WARDEN_SCRAPE_JOB_NAME
 
 def query_violations(policies: list[Policy]) -> list[Violation]:
     """
@@ -27,13 +25,15 @@ def query_violations(policies: list[Policy]) -> list[Violation]:
     violations = []
     for policy in policies:
         query = policy.query
-        response = prometheus.custom_query(query)
+        response = PROMETHEUS_CONNECTION.custom_query(query)
         for result in response:
             unit = result["metric"]["unit"]
             host = strip_port(result["metric"]["instance"])
 
             target, _ = Target.objects.get_or_create(unit=unit, host=host)
-            unit_violations = Violation.objects.filter(policy=policy, target=target)
+            unit_violations = Violation.objects.filter(
+                policy=policy, target=target
+            )
             in_grace = unit_violations.filter(
                 expiration__gte=timezone.now() - policy.grace_period
             ).exists()
@@ -63,9 +63,10 @@ def get_affected_hosts(domain) -> list[str]:
     For a given domain, calculated all other hosts in the domain that
     the penalty for a violation in that domain would apply to.
     """
-    up_query = f"up{{job=~'{job_name}', instance=~'{domain}'}}"
-    result = prometheus.custom_query(up_query)
+    up_query = f"up{{job=~'{WARDEN_JOB}', instance=~'{domain}'}}"
+    result = PROMETHEUS_CONNECTION.custom_query(up_query)
     return [strip_port(r["metric"]["instance"]) for r in result]
+
 
 async def apply_limits(
     limits: list[Limit],
@@ -76,7 +77,7 @@ async def apply_limits(
     For a given target, attempt to apply a number of property limits on that target.
     """
 
-    to_apply = {limit.property.name : limit for limit in limits}
+    to_apply = {limit.property.name: limit for limit in limits}
     async for limit in target.last_applied.all():
         prop = limit.property.name
 
@@ -111,7 +112,7 @@ def reduce_limits(limits: list[Limit]) -> list[Limit]:
     reduced = []
     for candidates in limit_map.values():
         reduced.append(functools.reduce(Limit.compare, candidates))
-    
+
     return reduced
 
 
@@ -133,7 +134,7 @@ async def reduce_and_apply_limits(
     for task in tasks:
         target, applications = task.result()
         final_applications[target] = applications
-        
+
         if not applications:
             continue
 
@@ -176,8 +177,10 @@ def evaluate(policies: "QuerySet[Policy]" = None):
     unexpired = unexpired.prefetch_related("policy__penalty__limits__property")
 
     targets = Target.objects.prefetch_related("last_applied__property").all()
-    affected_hosts = {policy.domain : get_affected_hosts(policy.domain) for policy in policies}
-    applicable_limits = {target : [] for target in targets}
+    affected_hosts = {
+        policy.domain: get_affected_hosts(policy.domain) for policy in policies
+    }
+    applicable_limits = {target: [] for target in targets}
     for v in unexpired:
         for host in affected_hosts[v.policy.domain]:
             target, _ = targets.get_or_create(unit=v.target.unit, host=host)
@@ -186,21 +189,22 @@ def evaluate(policies: "QuerySet[Policy]" = None):
                 applicable_limits[target] = []
 
             limits = v.policy.penalty.limits.all()
-            applicable_limits[target].extend(limits)  
+            applicable_limits[target].extend(limits)
 
     try:
         applications = asyncio.run(reduce_and_apply_limits(applicable_limits))
     except Exception as e:
-        LOGGER.error(f"Error: {e}")
+        logger.error(f"Error: {e}")
         return
 
     for target, limits in applications.items():
         if limits:
-            limit_msg = ", ".join([f"{l.property.name} -> {l.value}" for l in limits])
-            LOGGER.info(f"Updated {target} with {limit_msg}")
+            limit_msg = ", ".join(
+                [f"{l.property.name} -> {l.value}" for l in limits]
+            )
+            logger.info(f"Updated {target} with {limit_msg}")
 
     for violation in violations:
         send_violation_email(violation)
-    
-    create_event_for_eval(violations)
 
+    create_event_for_eval(violations)

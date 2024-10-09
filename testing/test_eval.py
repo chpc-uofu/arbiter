@@ -29,6 +29,7 @@ def launch_ssh_process(command, user):
     stdin.close()
     assert stderr.channel.recv_exit_status() == 0
 
+
 async def run_apply_with_session(limits, target):
     async with aiohttp.ClientSession() as session:
         return await apply_limits(
@@ -37,6 +38,7 @@ async def run_apply_with_session(limits, target):
             session=session,
         )
 
+
 ########## Begin Tests ##########
 @pytest.mark.asyncio
 async def test_set_property(db):
@@ -44,6 +46,7 @@ async def test_set_property(db):
     property = {"name": "MemoryAccounting", "value": "false"}
     async with aiohttp.ClientSession() as session:
         status, message = await set_property(target, session, property)
+        print(message)
         assert status == HTTPStatus.OK
         property = {"name": "MemoryAccounting", "value": "true"}
         status, message = await set_property(target, session, property)
@@ -67,12 +70,18 @@ def test_apply_limits(
 ):
     target = Target.objects.create(unit=TEST_USER1_SLICE, host=TEST_HOST)
 
-    successful = asyncio.run(run_apply_with_session([soft_limit_cpu, soft_limit_mem], target))
+    successful = asyncio.run(
+        run_apply_with_session([soft_limit_cpu, soft_limit_mem], target)
+    )
     assert target == successful[0]
     assert soft_limit_cpu in successful[1]
     assert soft_limit_mem in successful[1]
 
-    successful = asyncio.run(run_apply_with_session(limits=[unset_limit_cpu, unset_limit_mem], target=target))
+    successful = asyncio.run(
+        run_apply_with_session(
+            limits=[unset_limit_cpu, unset_limit_mem], target=target
+        )
+    )
     assert target == successful[0]
     assert unset_limit_cpu in successful[1]
     assert unset_limit_mem in successful[1]

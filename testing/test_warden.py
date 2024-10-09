@@ -65,9 +65,11 @@ def set_property(property, unit):
 def set_unit_property(property):
     return set_property(property, unit=TEST_USER1_SLICE)
 
+
 def set_and_verify_unit_property(property):
     response = set_property(property, unit=TEST_USER1_SLICE)
     assert response.status_code == http.HTTPStatus.OK
+
 
 def set_and_fail_unit_property(property):
     response = set_property(property, unit=TEST_USER1_SLICE)
@@ -99,39 +101,52 @@ def parse_metrics(data):
 
 ########## TESTING FUNCTIONS ##########
 
+
 def test_get_metrics(target1, short_low_harsh_policy):
     runtime = create_violation(target1, short_low_harsh_policy)
-    sleep(runtime-1)
+    sleep(runtime - 1)
     response = requests.get(TEST_METRICS_ENDPOINT, verify=False)
     assert response.status_code == http.HTTPStatus.OK, response.text
     metrics = parse_metrics(response.text)
     for metric_name in SYSTEMD_METRICS:
         assert metric_name in metrics
 
+
 def test_set_mem_accounting():
     set_and_verify_unit_property({"name": "MemoryAccounting", "value": "false"})
     set_and_verify_unit_property({"name": "MemoryAccounting", "value": "true"})
+
 
 def test_set_cpu_accounting():
     set_and_verify_unit_property({"name": "CPUAccounting", "value": "false"})
     set_and_verify_unit_property({"name": "CPUAccounting", "value": "true"})
 
+
 def test_set_mem_limit():
     set_and_verify_unit_property({"name": "MemoryMax", "value": str(8 * GIB)})
     set_and_verify_unit_property({"name": "MemoryMax", "value": str(UNSET)})
-    
+
+
 def test_set_cpu_limit():
-    set_and_verify_unit_property({"name": "CPUQuotaPerSecUSec", "value": "500000"})
-    set_and_verify_unit_property({"name": "CPUQuotaPerSecUSec", "value": str(UNSET)})
-    
+    set_and_verify_unit_property(
+        {"name": "CPUQuotaPerSecUSec", "value": "500000"}
+    )
+    set_and_verify_unit_property(
+        {"name": "CPUQuotaPerSecUSec", "value": str(UNSET)}
+    )
+
+
 def test_fail_read_only():
     set_and_fail_unit_property({"name": "MemoryCurrent", "value": "800000"})
+
 
 def test_fail_invalid_property():
     set_and_fail_unit_property({"name": "NotAProperty", "value": "800000"})
 
+
 def test_fail_invalid_value():
     set_and_fail_unit_property({"name": "MemoryMax", "value": "true"})
+
 
 def test_fail_write():
     property = {"name": "MemoryMax", "value": "800000"}
@@ -146,14 +161,19 @@ def test_fail_write():
     )
     assert r.status_code == http.HTTPStatus.BAD_REQUEST
 
+
 def test_fail_malformed():
     headers = {"Authorization": TEST_BEARER_TOKEN}
     r = requests.post(
-        TEST_CONTROL_ENDPOINT, headers=headers, data="Hello, world!", verify=False
+        TEST_CONTROL_ENDPOINT,
+        headers=headers,
+        data="Hello, world!",
+        verify=False,
     )
     assert r.status_code == http.HTTPStatus.BAD_REQUEST
 
+
 def test_malformed_target():
     property = {"name": "MemoryMax", "value": "800000"}
-    response = set_property(property, unit="NOT FOUND")
-    assert response.status_code == http.HTTPStatus.BAD_REQUEST
+    r = set_property(property, unit="NOT FOUND")
+    assert r.status_code == http.HTTPStatus.BAD_REQUEST

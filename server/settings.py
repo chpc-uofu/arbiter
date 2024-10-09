@@ -4,7 +4,9 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = "django-insecure-wgoq*f367%a#m_^zsh=7g!@v+f(pu^ei2#y5gq_q(@y9k0qd^$"
+SECRET_KEY = (
+    "django-insecure-wgoq*f367%a#m_^zsh=7g!@v+f(pu^ei2#y5gq_q(@y9k0qd^$"
+)
 
 DEBUG = True
 
@@ -118,43 +120,48 @@ LOGGING = {
         },
         "arbiter": {
             "handlers": ["console"],
-            "level": os.getenv("ARBITER_LOG_LEVEL", "INFO"),
+            "level": os.getenv("ARBITER_LOG_LEVEL", "DEBUG"),
             "propagate": False,
         },
     },
 }
 
-# prometheus configuration
-url = os.environ["ARBITER_PROMETHEUS_HOST"]
-user = os.environ.get("ARBITER_PROMETHEUS_USER")
-password = os.environ.get("ARBITER_PROMETHEUS_PASS")
-auth = (user, password) if user and password else None
-disable_ssl = auth is None
-PROMETHEUS_CONNECTION = PrometheusConnect(
-    url=url, auth=auth, disable_ssl=disable_ssl)
+ARBITER_NOTIFY_USERS = True
 
-# Name of your job used to cgroup instances of cgroup-warden. Used when determining
-# where to apply limits.
-WARDEN_SCRAPE_JOB_NAME = os.environ.get(
-    "WARDEN_SCRAPE_JOB_NAME", "cgroup-warden")
+ARBITER_EMAIL_DOMAIN = "test.site.edu"
 
-# key used to authenticate with cgroup-agent
-ARBITER_CONTROL_KEY = os.environ.get("ARBITER_CONTROL_KEY")
+ARBITER_USER_LOOKUP = "arbiter.utils.default_user_lookup"
 
-# (optional) Default port for the warden service. Only required if your TSDB strips ports
-ARBITER_WARDEN_PORT = os.environ.get("ARBITER_WARDEN_PORT", 2113)
+EMAIL_HOST = "mailhog"
 
-ARBITER_WARDEN_PROTOCOL = os.environ.get("ARBITER_WARDEN_PROTOCOL", "https")
+EMAIL_PORT = "1025"
 
-# domain used in default email lookup, and from email
-ARBITER_EMAIL_DOMAIN = os.environ["ARBITER_EMAIL_DOMAIN"]
+EMAIL_DISABLE_AUTH = True
 
-# arbiter sends mail via send_mail(), which requres these settings
-EMAIL_HOST = os.environ["ARBITER_EMAIL_HOST"]
-EMAIL_PORT = os.environ["ARBITER_EMAIL_PORT"]
+EMAIL_HOST_USER = None
 
-# if your smtp server requires authentication
-EMAIL_HOST_USER = os.environ.get("ARBITER_EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = os.environ.get("ARBITER_EMAIL_HOST_PASSWORD")
+EMAIL_HOST_PASSWORD = None
 
-USERINFO_MAPPER = "mycode.module.user_mapper"
+PROMETHEUS_URL = "http://prometheus:9090"
+
+PROMETHEUS_DISABLE_AUTH = True
+
+PROMETHEUS_DISABLE_SSL = True
+
+PROMETHEUS_USER = None
+
+PROMETHEUS_PASS = None
+
+PROMETHUS_BEARER = None
+
+WARDEN_JOB = "cgroup-warden"
+
+WARDEN_PORT = 2112
+
+WARDEN_DISABLE_SSL = False
+
+WARDEN_DISABLE_AUTH = False
+
+WARDEN_DISABLE_TLS = False
+
+WARDEN_BEARER = "insecure-95axve4fn4j2u8ih0j1ltg272g1n297l8"

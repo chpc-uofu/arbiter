@@ -15,21 +15,21 @@ class Command(BaseCommand):
         parser.add_argument("-H", "--hours", default=0, type=int)
 
     def handle(self, *args, **options):
-       
         seconds = options["seconds"]
         minutes = options["minutes"]
         hours = options["hours"]
 
-        cycle_time = timezone.timedelta(seconds=seconds, minutes=minutes, hours=hours).total_seconds()
+        cycle_time = timezone.timedelta(
+            seconds=seconds, minutes=minutes, hours=hours
+        ).total_seconds()
 
-        while True: 
-            
+        while True:
             if options["policies"]:
                 policies = Policy.objects.filter(name__in=options["policies"])
             else:
                 policies = Policy.objects.all()
-            
+
             evaluate(policies)
-            sleep(cycle_time) 
+            sleep(cycle_time)
             if cycle_time == 0:
                 break
