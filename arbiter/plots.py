@@ -99,7 +99,7 @@ def usage_figures(
     df.loc[df.value < 0.01, "proc"] = "other"
 
     # calculate the average value of a metric
-    aggregate = df.groupby(["unit", "instance", "proc"], as_index=False).agg(
+    aggregate = df.groupby(["username", "instance", "proc"], as_index=False).agg(
         mean=("value", "mean")
     )
     aggregate["pct"] = aggregate["mean"] / aggregate["mean"].sum()
@@ -152,7 +152,7 @@ def usage_figures(
 
 
 def violation_usage_figures(violation: Violation, usage_type: str, step: str = "30s"):
-    unit = violation.target.unit
+    username = violation.target.username
     host = violation.target.host
     start = violation.timestamp - violation.policy.timewindow
     end = violation.expiration
@@ -161,10 +161,10 @@ def violation_usage_figures(violation: Violation, usage_type: str, step: str = "
 
     if usage_type == CPU_USAGE:
         threshold = violation.policy.query_params.get("cpu_threshold", None)
-        return cpu_usage_figures(unit, host, start, end, threshold, penalized, step)
+        return cpu_usage_figures(username, host, start, end, threshold, penalized, step)
     if usage_type == MEM_USAGE:
         threshold = violation.policy.query_params.get("memory_threshold", None)
-        return mem_usage_figures(unit, host, start, end, threshold, penalized, step)
+        return mem_usage_figures(username, host, start, end, threshold, penalized, step)
 
     return Figure(), Figure()
 
@@ -178,7 +178,7 @@ def violation_mem_usage_figures(violation: Violation, step: str = "30s"):
 
 
 def cpu_usage_figures(
-    unit_re: str,
+    username_re: str,
     host_re: str,
     start_time: datetime,
     end_time: datetime,
@@ -187,9 +187,9 @@ def cpu_usage_figures(
     step="15s",
 ) -> tuple[Chart, Pie]:
     metric = "systemd_unit_proc_cpu_usage_ns"
-    filters = f'{{ unit=~"{ unit_re }", instance=~"{host_re}{PORT_RE}"}}'
+    filters = f'{{ username=~"{ username_re }", instance=~"{host_re}{PORT_RE}"}}'
 
-    labels = "(unit, instance, proc)"
+    labels = "(username, instance, proc)"
     query = f"sort_desc(avg by {labels} (rate({metric}{filters}[{step}])) / {NSPERSEC})"
     fig, pie = usage_figures(
         query,
@@ -201,7 +201,7 @@ def cpu_usage_figures(
         step,
     )
     fig.update_layout(
-        title=f"CPU Usage Report For {unit_re} on {host_re}",
+        title=f"CPU Usage Report For {username_re} on {host_re}",
         xaxis_title="Time",
         yaxis_title="Usage in Cores",
     )
@@ -209,7 +209,7 @@ def cpu_usage_figures(
 
 
 def mem_usage_figures(
-    unit_re: str,
+    username_re: str,
     host_re: str,
     start_time: datetime,
     end_time: datetime,
@@ -217,9 +217,9 @@ def mem_usage_figures(
     penalized_time: datetime | None = None,
     step="15s",
 ) -> tuple[Chart, Pie]:
-    filters = f'{{ unit=~"{ unit_re }", instance=~"{ host_re }{PORT_RE}"}}'
+    filters = f'{{ username=~"{ username_re }", instance=~"{ host_re }{PORT_RE}"}}'
     metric = "systemd_unit_proc_memory_current_bytes"
-    labels = "(unit, instance, proc)"
+    labels = "(username, instance, proc)"
     query = (
         f"sort_desc(avg by {labels} (avg_over_time({metric}{filters}[{step}])) / {GIB})"
     )
@@ -233,7 +233,7 @@ def mem_usage_figures(
         step,
     )
     fig.update_layout(
-        title=f"Memory Usage Report For {unit_re} on {host_re}",
+        title=f"Memory Usage Report For {username_re} on {host_re}",
         xaxis_title="Time",
         yaxis_title="Usage in GiB",
     )

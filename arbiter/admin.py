@@ -343,9 +343,9 @@ admin.site.register(DashboardAdmin.Dashboard, DashboardAdmin)
 
 
 class TargetAdmin(admin.ModelAdmin):
-    list_display = ["unit", "host"]
+    list_display = ["username", "host"]
     list_filter = ["host"]
-    search_fields = ["unit", "host"]
+    search_fields = ["username", "host"]
 
 
 admin.site.register(models.Target, TargetAdmin)

@@ -24,7 +24,7 @@ def send_violation_email(violation: Violation | None):
         mem_chart=mem_chart,
         mem_pie=mem_pie,
     )
-    username, realname, email = user_lookup(violation.target.uid)
+    username, realname, email = user_lookup(violation.target.username)
     logger.info(
         f"Attempting to send violation mail to {username} at {email} ({realname})"
     )

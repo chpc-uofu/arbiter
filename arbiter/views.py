@@ -87,16 +87,16 @@ def user_proc_graph(request, usage_type):
         message = f"Step size exceeded Promtheus's limit of {plots.PROMETHUS_POINT_LIMIT} points, so was aligned to {aligned_step}"
         messages["warning"] = message
         step = aligned_step
-    unit = request.GET.get("unit", ".*")
+    username = request.GET.get("username", ".*")
     host = request.GET.get("host", ".*")
-    if len(unit) == 0:
-        unit = ".*"
+    if len(username) == 0:
+        username = ".*"
     if host == "all":
         host = ".*"
 
     if usage_type == plots.CPU_USAGE:
         fig, pie = plots.cpu_usage_figures(
-            unit_re=unit,
+            username_re=username,
             host_re=host,
             start_time=start_time,
             end_time=end_time,
@@ -104,7 +104,7 @@ def user_proc_graph(request, usage_type):
         )
     elif usage_type == plots.MEM_USAGE:
         fig, pie = plots.mem_usage_figures(
-            unit_re=unit,
+            username_re=username,
             host_re=host,
             start_time=start_time,
             end_time=end_time,
@@ -196,12 +196,12 @@ def apply_property_for_user(request):
         context["error"] = "You do not have permission to execute commands"
         return render(request, "arbiter/message.html", context)
 
-    unit = request.POST.get("unit", "")
+    username = request.POST.get("username", "")
     prop = request.POST.get("property", "")
     value = request.POST.get("value", "")
     host = request.POST.get("host", "")
 
-    if not (len(unit) > 0 and len(prop) > 0 and len(host) > 0 and len(value) > 0):
+    if not (len(username) > 0 and len(prop) > 0 and len(host) > 0 and len(value) > 0):
         context["error"] = "Please select a unit, property and host"
         return render(request, "arbiter/message.html", context)
 
@@ -210,7 +210,11 @@ def apply_property_for_user(request):
         context["error"] = f"Property {prop} not found"
         return render(request, "arbiter/message.html", context)
 
-    target, created = Target.objects.get_or_create(unit=unit, host=host)
+    target = Target.objects.filter(username=username, host=host).first()
+    if not target:
+        context["error"] = "Target does not exist"
+        return render(request, "arbiter/message.html", context)
+
     asyncio.run(_set_property_and_update_target(context, target, property, value))
     if context.get("info"):
         limit, created = Limit.objects.get_or_create(value=value, property=property)

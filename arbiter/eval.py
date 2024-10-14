@@ -35,8 +35,9 @@ def query_violations(policies: list[Policy]) -> list[Violation]:
         for result in response:
             unit = result["metric"]["unit"]
             host = strip_port(result["metric"]["instance"])
+            username = result["metric"]["username"]
 
-            target, _ = Target.objects.get_or_create(unit=unit, host=host)
+            target, _ = Target.objects.get_or_create(unit=unit, host=host, username=username)
 
             if target.uid < ARBITER_MIN_UID:
                 continue
@@ -101,6 +102,7 @@ async def apply_limits(
         payload = limit.property_json()
         status, message = await set_property(target, session, payload)
         if status == http.HTTPStatus.OK:
+            logger.info(f"applied limits {limits} to {target}")
             applied.append(limit)
 
     return (target, applied)
@@ -191,7 +193,7 @@ def evaluate(policies: "QuerySet[Policy]" = None):
     applicable_limits = {target: [] for target in targets}
     for v in unexpired:
         for host in affected_hosts[v.policy.domain]:
-            target, _ = targets.get_or_create(unit=v.target.unit, host=host)
+            target, _ = targets.get_or_create(unit=v.target.unit, host=host, username=v.target.username)
 
             target.last_applied.prefetch_related("property")
             if target not in applicable_limits:
