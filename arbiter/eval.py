@@ -9,7 +9,7 @@ from arbiter.email import send_violation_email
 from collections import defaultdict
 from arbiter.utils import set_property, strip_port
 from typing import TYPE_CHECKING
-from arbiter.conf import PROMETHEUS_CONNECTION, WARDEN_JOB, ARBITER_PERMISSIVE_MODE, ARBITER_NOTIFY_USERS
+from arbiter.conf import PROMETHEUS_CONNECTION, WARDEN_JOB, ARBITER_PERMISSIVE_MODE, ARBITER_NOTIFY_USERS, ARBITER_MIN_UID
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
@@ -184,8 +184,12 @@ def evaluate(policies: "QuerySet[Policy]" = None):
     for v in unexpired:
         for host in affected_hosts[v.policy.domain]:
             target, _ = targets.get_or_create(unit=v.target.unit, host=host)
+
+            if target.uid < ARBITER_MIN_UID:
+                continue
+
             target.last_applied.prefetch_related("property")
-            if not applicable_limits.get(target):
+            if target not in applicable_limits:
                 applicable_limits[target] = []
 
             limits = v.policy.penalty.limits.all()

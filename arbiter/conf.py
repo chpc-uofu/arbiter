@@ -5,8 +5,27 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+########## GENERAL SETTINGS ##########
+
+
+try:
+    ARBITER_MIN_UID = settings.ARBITER_MIN_UID
+except AttributeError:
+    raise ImproperlyConfigured("setting ARBITER_MIN_UID is required")
+
+try:
+    ARBITER_PERMISSIVE_MODE = settings.ARBITER_PERMISSIVE_MODE
+except AttributeError:
+    raise ImproperlyConfigured("setting ARBITER_PERMISSIVE_MODE is required")
+
+
 ########## EMAIL SETTINGS ##########
 
+
+try:
+    ARBITER_USER_LOOKUP = settings.ARBITER_USER_LOOKUP
+except AttributeError:
+    raise ImproperlyConfigured("setting ARBITER_USER_LOOKUP is required")
 
 try:
     ARBITER_NOTIFY_USERS = settings.ARBITER_NOTIFY_USERS
@@ -17,16 +36,6 @@ try:
     ARBITER_EMAIL_DOMAIN = settings.ARBITER_EMAIL_DOMAIN
 except AttributeError:
     raise ImproperlyConfigured("setting ARBITER_EMAIL_DOMAIN is required")
-
-try:
-    ARBITER_USER_LOOKUP = settings.ARBITER_USER_LOOKUP
-except AttributeError:
-    raise ImproperlyConfigured("setting ARBITER_USER_LOOKUP is required")
-
-try:
-    ARBITER_PERMISSIVE_MODE = settings.ARBITER_PERMISSIVE_MODE
-except AttributeError:
-    raise ImproperlyConfigured("setting ARBITER_PERMISSIVE_MODE is required")
 
 try:
     EMAIL_HOST = settings.EMAIL_HOST

@@ -126,13 +126,15 @@ LOGGING = {
     },
 }
 
-ARBITER_NOTIFY_USERS = True
+ARBITER_MIN_UID = 1000
 
-ARBITER_EMAIL_DOMAIN = "test.site.edu"
+ARBITER_PERMISSIVE_MODE = False
 
 ARBITER_USER_LOOKUP = "arbiter.utils.default_user_lookup"
 
-ARBITER_PERMISSIVE_MODE = False
+ARBITER_NOTIFY_USERS = True
+
+ARBITER_EMAIL_DOMAIN = "test.site.edu"
 
 EMAIL_HOST = "mailhog"
 
