@@ -5,11 +5,13 @@ import plotly.express as px
 from arbiter.models import Violation
 from django.utils.timezone import get_current_timezone, localtime
 
+from typing import TypeAlias
+
 
 from arbiter.conf import PROMETHEUS_CONNECTION
 
-chart = Figure
-pie = Figure
+Chart: TypeAlias = Figure
+Pie: TypeAlias = Figure
 
 GIB = 1024**3
 PROMETHUS_POINT_LIMIT = 400
@@ -70,7 +72,7 @@ def usage_figures(
     threshold: float | None = None,
     penalized: datetime | None = None,
     step: str = "15s",
-) -> tuple[chart, pie]:
+) -> tuple[Chart, Pie]:
     start, end = align_to_step(start, end, step)
     result = PROMETHEUS_CONNECTION.custom_query_range(
         query, start_time=start, end_time=end, step=step
@@ -186,7 +188,7 @@ def cpu_usage_figures(
     policy_threshold: float | None = None,
     penalized_time: datetime | None = None,
     step="15s",
-) -> tuple[chart, pie]:
+) -> tuple[Chart, Pie]:
     metric = "systemd_unit_proc_cpu_usage_ns"
     filters = f'{{ unit=~"{ unit_re }", instance=~"{host_re}{PORT_RE}"}}'
 
@@ -217,7 +219,7 @@ def mem_usage_figures(
     policy_threshold: float | None = None,
     penalized_time: datetime | None = None,
     step="15s",
-) -> tuple[chart, pie]:
+) -> tuple[Chart, Pie]:
     filters = f'{{ unit=~"{ unit_re }", instance=~"{ host_re }{PORT_RE}"}}'
     metric = "systemd_unit_proc_memory_current_bytes"
     labels = "(unit, instance, proc)"
