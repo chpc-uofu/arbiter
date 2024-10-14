@@ -31,6 +31,10 @@ def query_violations(policies: list[Policy]) -> list[Violation]:
             host = strip_port(result["metric"]["instance"])
 
             target, _ = Target.objects.get_or_create(unit=unit, host=host)
+
+            if target.uid < ARBITER_MIN_UID:
+                continue
+
             unit_violations = Violation.objects.filter(
                 policy=policy, target=target
             )
