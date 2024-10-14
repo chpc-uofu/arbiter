@@ -132,6 +132,8 @@ ARBITER_EMAIL_DOMAIN = "test.site.edu"
 
 ARBITER_USER_LOOKUP = "arbiter.utils.default_user_lookup"
 
+ARBITER_PERMISSIVE_MODE = False
+
 EMAIL_HOST = "mailhog"
 
 EMAIL_PORT = "1025"

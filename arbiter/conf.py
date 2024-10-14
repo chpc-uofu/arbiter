@@ -24,6 +24,11 @@ except AttributeError:
     raise ImproperlyConfigured("setting ARBITER_USER_LOOKUP is required")
 
 try:
+    ARBITER_PERMISSIVE_MODE = settings.ARBITER_PERMISSIVE_MODE
+except AttributeError:
+    raise ImproperlyConfigured("setting ARBITER_PERMISSIVE_MODE is required")
+
+try:
     EMAIL_HOST = settings.EMAIL_HOST
 except AttributeError:
     raise ImproperlyConfigured("setting EMAIL_HOST is required")

@@ -9,7 +9,7 @@ from arbiter.email import send_violation_email
 from collections import defaultdict
 from arbiter.utils import set_property, strip_port
 from typing import TYPE_CHECKING
-from arbiter.conf import PROMETHEUS_CONNECTION, WARDEN_JOB
+from arbiter.conf import PROMETHEUS_CONNECTION, WARDEN_JOB, ARBITER_PERMISSIVE_MODE, ARBITER_NOTIFY_USERS
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
@@ -191,20 +191,18 @@ def evaluate(policies: "QuerySet[Policy]" = None):
             limits = v.policy.penalty.limits.all()
             applicable_limits[target].extend(limits)
 
+    
+    create_event_for_eval(violations)
+
+    if ARBITER_NOTIFY_USERS:
+        for violation in violations:
+            send_violation_email(violation)
+
+    if ARBITER_PERMISSIVE_MODE:
+        return 
+    
     try:
-        applications = asyncio.run(reduce_and_apply_limits(applicable_limits))
+        asyncio.run(reduce_and_apply_limits(applicable_limits))
     except Exception as e:
         logger.error(f"Error: {e}")
         return
-
-    for target, limits in applications.items():
-        if limits:
-            limit_msg = ", ".join(
-                [f"{l.property.name} -> {l.value}" for l in limits]
-            )
-            logger.info(f"Updated {target} with {limit_msg}")
-
-    for violation in violations:
-        send_violation_email(violation)
-
-    create_event_for_eval(violations)
