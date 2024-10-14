@@ -9,7 +9,13 @@ from arbiter.email import send_violation_email
 from collections import defaultdict
 from arbiter.utils import set_property, strip_port
 from typing import TYPE_CHECKING
-from arbiter.conf import PROMETHEUS_CONNECTION, WARDEN_JOB, ARBITER_PERMISSIVE_MODE, ARBITER_NOTIFY_USERS, ARBITER_MIN_UID
+from arbiter.conf import (
+    PROMETHEUS_CONNECTION,
+    WARDEN_JOB,
+    ARBITER_PERMISSIVE_MODE,
+    ARBITER_NOTIFY_USERS,
+    ARBITER_MIN_UID,
+)
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
@@ -35,9 +41,7 @@ def query_violations(policies: list[Policy]) -> list[Violation]:
             if target.uid < ARBITER_MIN_UID:
                 continue
 
-            unit_violations = Violation.objects.filter(
-                policy=policy, target=target
-            )
+            unit_violations = Violation.objects.filter(policy=policy, target=target)
             in_grace = unit_violations.filter(
                 expiration__gte=timezone.now() - policy.grace_period
             ).exists()
@@ -196,7 +200,6 @@ def evaluate(policies: "QuerySet[Policy]" = None):
             limits = v.policy.penalty.limits.all()
             applicable_limits[target].extend(limits)
 
-    
     create_event_for_eval(violations)
 
     if ARBITER_NOTIFY_USERS:
@@ -204,8 +207,8 @@ def evaluate(policies: "QuerySet[Policy]" = None):
             send_violation_email(violation)
 
     if ARBITER_PERMISSIVE_MODE:
-        return 
-    
+        return
+
     try:
         asyncio.run(reduce_and_apply_limits(applicable_limits))
     except Exception as e:

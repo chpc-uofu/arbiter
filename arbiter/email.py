@@ -33,9 +33,7 @@ def send_violation_email(violation: Violation | None):
     message = EmailMultiAlternatives(subject, text_content, "arbiter", [email])
 
     for name, figure in figures.items():
-        fig_bytes = figure.to_image(
-            format="png", width=600, height=350, scale=2
-        )
+        fig_bytes = figure.to_image(format="png", width=600, height=350, scale=2)
         image = MIMEImage(fig_bytes)
         image.add_header("Content-ID", f"<{name}>")
         message.attach(image)
@@ -46,6 +44,4 @@ def send_violation_email(violation: Violation | None):
     try:
         message.send(fail_silently=False)
     except SMTPException as e:
-        logger.error(
-            f"Could not send email to {username} at {email} ({realname}): {e}"
-        )
+        logger.error(f"Could not send email to {username} at {email} ({realname}): {e}")
