@@ -189,9 +189,6 @@ def evaluate(policies: "QuerySet[Policy]" = None):
         for host in affected_hosts[v.policy.domain]:
             target, _ = targets.get_or_create(unit=v.target.unit, host=host)
 
-            if target.uid < ARBITER_MIN_UID:
-                continue
-
             target.last_applied.prefetch_related("property")
             if target not in applicable_limits:
                 applicable_limits[target] = []
