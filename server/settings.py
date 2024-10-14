@@ -4,9 +4,7 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = (
-    "django-insecure-wgoq*f367%a#m_^zsh=7g!@v+f(pu^ei2#y5gq_q(@y9k0qd^$"
-)
+SECRET_KEY = "django-insecure-wgoq*f367%a#m_^zsh=7g!@v+f(pu^ei2#y5gq_q(@y9k0qd^$"
 
 DEBUG = True
 
@@ -126,11 +124,15 @@ LOGGING = {
     },
 }
 
+ARBITER_MIN_UID = 1000
+
+ARBITER_PERMISSIVE_MODE = False
+
+ARBITER_USER_LOOKUP = "arbiter.utils.default_user_lookup"
+
 ARBITER_NOTIFY_USERS = True
 
 ARBITER_EMAIL_DOMAIN = "test.site.edu"
-
-ARBITER_USER_LOOKUP = "arbiter.utils.default_user_lookup"
 
 EMAIL_HOST = "mailhog"
 

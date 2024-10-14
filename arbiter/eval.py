@@ -9,7 +9,13 @@ from arbiter.email import send_violation_email
 from collections import defaultdict
 from arbiter.utils import set_property, strip_port
 from typing import TYPE_CHECKING
-from arbiter.conf import PROMETHEUS_CONNECTION, WARDEN_JOB
+from arbiter.conf import (
+    PROMETHEUS_CONNECTION,
+    WARDEN_JOB,
+    ARBITER_PERMISSIVE_MODE,
+    ARBITER_NOTIFY_USERS,
+    ARBITER_MIN_UID,
+)
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
@@ -29,11 +35,14 @@ def query_violations(policies: list[Policy]) -> list[Violation]:
         for result in response:
             unit = result["metric"]["unit"]
             host = strip_port(result["metric"]["instance"])
+            username = result["metric"]["username"]
 
-            target, _ = Target.objects.get_or_create(unit=unit, host=host)
-            unit_violations = Violation.objects.filter(
-                policy=policy, target=target
-            )
+            target, _ = Target.objects.get_or_create(unit=unit, host=host, username=username)
+
+            if target.uid < ARBITER_MIN_UID:
+                continue
+
+            unit_violations = Violation.objects.filter(policy=policy, target=target)
             in_grace = unit_violations.filter(
                 expiration__gte=timezone.now() - policy.grace_period
             ).exists()
@@ -93,6 +102,7 @@ async def apply_limits(
         payload = limit.property_json()
         status, message = await set_property(target, session, payload)
         if status == http.HTTPStatus.OK:
+            logger.info(f"applied limits {limits} to {target}")
             applied.append(limit)
 
     return (target, applied)
@@ -183,28 +193,26 @@ def evaluate(policies: "QuerySet[Policy]" = None):
     applicable_limits = {target: [] for target in targets}
     for v in unexpired:
         for host in affected_hosts[v.policy.domain]:
-            target, _ = targets.get_or_create(unit=v.target.unit, host=host)
+            target, _ = targets.get_or_create(unit=v.target.unit, host=host, username=v.target.username)
+
             target.last_applied.prefetch_related("property")
-            if not applicable_limits.get(target):
+            if target not in applicable_limits:
                 applicable_limits[target] = []
 
             limits = v.policy.penalty.limits.all()
             applicable_limits[target].extend(limits)
 
+    create_event_for_eval(violations)
+
+    if ARBITER_NOTIFY_USERS:
+        for violation in violations:
+            send_violation_email(violation)
+
+    if ARBITER_PERMISSIVE_MODE:
+        return
+
     try:
-        applications = asyncio.run(reduce_and_apply_limits(applicable_limits))
+        asyncio.run(reduce_and_apply_limits(applicable_limits))
     except Exception as e:
         logger.error(f"Error: {e}")
         return
-
-    for target, limits in applications.items():
-        if limits:
-            limit_msg = ", ".join(
-                [f"{l.property.name} -> {l.value}" for l in limits]
-            )
-            logger.info(f"Updated {target} with {limit_msg}")
-
-    for violation in violations:
-        send_violation_email(violation)
-
-    create_event_for_eval(violations)

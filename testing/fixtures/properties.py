@@ -4,9 +4,7 @@ from arbiter.models import Property
 
 @pytest.fixture
 def cpu_property():
-    return Property.objects.create(
-        name="CPUQuotaPerSecUSec", type="int", operation="<"
-    )
+    return Property.objects.create(name="CPUQuotaPerSecUSec", type="int", operation="<")
 
 
 @pytest.fixture

@@ -120,9 +120,7 @@ class Migration(migrations.Migration):
                 ("name", models.CharField(default="Penalty", max_length=255)),
                 (
                     "duration",
-                    models.DurationField(
-                        default=datetime.timedelta(seconds=300)
-                    ),
+                    models.DurationField(default=datetime.timedelta(seconds=300)),
                 ),
                 (
                     "repeat_offense_scale",
@@ -156,9 +154,7 @@ class Migration(migrations.Migration):
                 ("query", models.TextField(blank=True, max_length=1024)),
                 (
                     "grace_period",
-                    models.DurationField(
-                        default=datetime.timedelta(seconds=180)
-                    ),
+                    models.DurationField(default=datetime.timedelta(seconds=180)),
                 ),
                 (
                     "lookback_window",

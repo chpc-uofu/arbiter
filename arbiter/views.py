@@ -24,9 +24,7 @@ def convert_policy(request, id: int):
         case "To Raw Query":
             if selected_policy.is_raw_query:
                 messages.error(request, "Policy already uses a raw query")
-                return redirect(
-                    "admin:arbiter_policy_change", selected_policy.pk
-                )
+                return redirect("admin:arbiter_policy_change", selected_policy.pk)
 
             selected_policy.query_params["raw"] = selected_policy.query
             selected_policy.save()
@@ -34,9 +32,7 @@ def convert_policy(request, id: int):
         case "To Builder Query":
             if not selected_policy.is_raw_query:
                 messages.error(request, "Policy already uses a builder query")
-                return redirect(
-                    "admin:arbiter_policy_change", selected_policy.pk
-                )
+                return redirect("admin:arbiter_policy_change", selected_policy.pk)
             selected_policy.query_params.pop("raw")
             selected_policy.query_params[
                 "cpu_threshold"
@@ -60,30 +56,22 @@ def user_proc_graph(request, usage_type):
         return render(
             request,
             "arbiter/graph.html",
-            context={
-                "warning": "You do not have permission to view usage graphs"
-            },
+            context={"warning": "You do not have permission to view usage graphs"},
         )
 
     start_time = request.GET.get("start-time")
     end_time = request.GET.get("end-time")
-    step = request.GET.get("step-value", "30") + request.GET.get(
-        "step-unit", "s"
-    )
+    step = request.GET.get("step-value", "30") + request.GET.get("step-unit", "s")
 
     if not end_time:
         end_time = timezone.now()
     else:
-        end_time = timezone.make_aware(
-            timezone.datetime.fromisoformat(end_time)
-        )
+        end_time = timezone.make_aware(timezone.datetime.fromisoformat(end_time))
 
     if not start_time:
         start_time = end_time - timezone.timedelta(minutes=10)
     else:
-        start_time = timezone.make_aware(
-            timezone.datetime.fromisoformat(start_time)
-        )
+        start_time = timezone.make_aware(timezone.datetime.fromisoformat(start_time))
 
     if start_time >= end_time:
         return render(
@@ -99,16 +87,16 @@ def user_proc_graph(request, usage_type):
         message = f"Step size exceeded Promtheus's limit of {plots.PROMETHUS_POINT_LIMIT} points, so was aligned to {aligned_step}"
         messages["warning"] = message
         step = aligned_step
-    unit = request.GET.get("unit", ".*")
+    username = request.GET.get("username", ".*")
     host = request.GET.get("host", ".*")
-    if len(unit) == 0:
-        unit = ".*"
+    if len(username) == 0:
+        username = ".*"
     if host == "all":
         host = ".*"
 
     if usage_type == plots.CPU_USAGE:
         fig, pie = plots.cpu_usage_figures(
-            unit_re=unit,
+            username_re=username,
             host_re=host,
             start_time=start_time,
             end_time=end_time,
@@ -116,7 +104,7 @@ def user_proc_graph(request, usage_type):
         )
     elif usage_type == plots.MEM_USAGE:
         fig, pie = plots.mem_usage_figures(
-            unit_re=unit,
+            username_re=username,
             host_re=host,
             start_time=start_time,
             end_time=end_time,
@@ -130,9 +118,7 @@ def user_proc_graph(request, usage_type):
             "graph": mark_safe(
                 fig.to_html(default_width="100%", default_height="400px")
             ),
-            "pie": mark_safe(
-                pie.to_html(default_width="100%", default_height="400px")
-            ),
+            "pie": mark_safe(pie.to_html(default_width="100%", default_height="400px")),
             **messages,
         },
     )
@@ -151,9 +137,7 @@ def violation_usage(request, violation_id, usage_type):
         return render(
             request,
             "arbiter/graph.html",
-            context={
-                "warning": "You do not have permission to view usage graphs"
-            },
+            context={"warning": "You do not have permission to view usage graphs"},
         )
 
     violation = Violation.objects.filter(pk=violation_id).first()
@@ -164,9 +148,7 @@ def violation_usage(request, violation_id, usage_type):
             context={"error": "Violation not found"},
         )
 
-    step = request.GET.get("step-value", "30") + request.GET.get(
-        "step-unit", "s"
-    )
+    step = request.GET.get("step-value", "30") + request.GET.get("step-unit", "s")
 
     graph, pie = plots.violation_usage_figures(violation, usage_type, step)
 
@@ -179,9 +161,7 @@ def violation_usage(request, violation_id, usage_type):
             "graph": mark_safe(
                 graph.to_html(default_width="100%", default_height="400px")
             ),
-            "pie": mark_safe(
-                pie.to_html(default_width="100%", default_height="400px")
-            ),
+            "pie": mark_safe(pie.to_html(default_width="100%", default_height="400px")),
             **messages,
         },
     )
@@ -201,17 +181,13 @@ async def _set_property_and_update_target(
     property_payload = {"name": property.name, "value": value}
     try:
         async with aiohttp.ClientSession() as session:
-            status, message = await set_property(
-                target, session, property_payload
-            )
+            status, message = await set_property(target, session, property_payload)
         if status == 200:
             context["info"] = "Set property successfully"
         else:
             context["error"] = f"Failed to set property: {message}"
     except Exception as e:
-        context[
-            "error"
-        ] = f"Failed to set property: Service Unavailable {repr(e)}"
+        context["error"] = f"Failed to set property: Service Unavailable {repr(e)}"
 
 
 def apply_property_for_user(request):
@@ -220,14 +196,12 @@ def apply_property_for_user(request):
         context["error"] = "You do not have permission to execute commands"
         return render(request, "arbiter/message.html", context)
 
-    unit = request.POST.get("unit", "")
+    username = request.POST.get("username", "")
     prop = request.POST.get("property", "")
     value = request.POST.get("value", "")
     host = request.POST.get("host", "")
 
-    if not (
-        len(unit) > 0 and len(prop) > 0 and len(host) > 0 and len(value) > 0
-    ):
+    if not (len(username) > 0 and len(prop) > 0 and len(host) > 0 and len(value) > 0):
         context["error"] = "Please select a unit, property and host"
         return render(request, "arbiter/message.html", context)
 
@@ -236,14 +210,14 @@ def apply_property_for_user(request):
         context["error"] = f"Property {prop} not found"
         return render(request, "arbiter/message.html", context)
 
-    target, created = Target.objects.get_or_create(unit=unit, host=host)
-    asyncio.run(
-        _set_property_and_update_target(context, target, property, value)
-    )
+    target = Target.objects.filter(username=username, host=host).first()
+    if not target:
+        context["error"] = "Target does not exist"
+        return render(request, "arbiter/message.html", context)
+
+    asyncio.run(_set_property_and_update_target(context, target, property, value))
     if context.get("info"):
-        limit, created = Limit.objects.get_or_create(
-            value=value, property=property
-        )
+        limit, created = Limit.objects.get_or_create(value=value, property=property)
         target.last_applied.remove(
             *target.last_applied.filter(property__name=property.name)
         )
@@ -262,15 +236,11 @@ def dashboard_command(request, command):
         return render(request, "arbiter/message.html", context)
 
     if command == "evaluate":
-        message = (
-            f"Ran evaluation loop successfully. Check the logs for violations"
-        )
+        message = f"Ran evaluation loop successfully. Check the logs for violations"
 
     elif command == "clean":
         if not request.POST.get("before", "").strip():
-            context[
-                "error"
-            ] = "Please provide a time to clean violations before."
+            context["error"] = "Please provide a time to clean violations before."
             return render(request, "arbiter/message.html", context)
         else:
             args["before"] = request.POST.get("before")
@@ -284,18 +254,14 @@ def dashboard_command(request, command):
         call_command(command, **args)
         context["info"] = mark_safe(message)
     except Exception as e:
-        context["error"] = mark_safe(
-            f"Could not execute command {command}: {e}"
-        )
+        context["error"] = mark_safe(f"Could not execute command {command}: {e}")
 
     return render(request, "arbiter/message.html", context)
 
 
 def expire_violation(request, violation_id):
     if not request.user.has_perm("arbiter.delete_violation"):
-        messages.error(
-            request, "You do not have permission to execute commands"
-        )
+        messages.error(request, "You do not have permission to execute commands")
         return redirect("admin:arbiter_violation_changelist")
 
     violation = Violation.objects.filter(pk=violation_id).first()
@@ -316,17 +282,21 @@ def expire_violation(request, violation_id):
 
 
 def violation_metrics_scrape(request):
-    #arbiter_violations{policy="foobar", offense_count=1} 2
-    unexpired_violations_metrics = Violation.objects.filter(expiration__gte=timezone.now()).values("policy__name", "offense_count").annotate(count=Count("*"))
+    # arbiter_violations{policy="foobar", offense_count=1} 2
+    unexpired_violations_metrics = (
+        Violation.objects.filter(expiration__gte=timezone.now())
+        .values("policy__name", "offense_count")
+        .annotate(count=Count("*"))
+    )
 
     metric_name = "arbiter_violations_count"
 
     exported_str = f"""# HELP {metric_name} The count of the current unexpired violations under that policy/offense count\n# TYPE {metric_name} gauge\n"""
 
     for metric in unexpired_violations_metrics:
-        policy_name     = metric['policy__name']
-        offense_count   = metric['offense_count']
-        violation_count = metric['count']
-        exported_str  += f'{metric_name}{{policy="{policy_name}", offense_count="{offense_count}"}} {violation_count}'
+        policy_name = metric["policy__name"]
+        offense_count = metric["offense_count"]
+        violation_count = metric["count"]
+        exported_str += f'{metric_name}{{policy="{policy_name}", offense_count="{offense_count}"}} {violation_count}'
 
     return HttpResponse(exported_str, content_type="text")

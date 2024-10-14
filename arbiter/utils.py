@@ -11,8 +11,6 @@ from arbiter.conf import (
     ARBITER_EMAIL_DOMAIN,
 )
 
-TEST = "test"
-
 logger = logging.getLogger(__name__)
 
 
@@ -63,22 +61,10 @@ def strip_port(host: str) -> str:
     return host.split(":")[0]
 
 
-def default_user_lookup(uid: int) -> tuple[str, str, str]:
-    username = default_username_lookup(uid=uid)
+def default_user_lookup(username: str) -> tuple[str, str, str]:
     realname = default_realname_lookup(username=username)
     email = default_email_lookup(username=username)
     return username, realname, email
-
-
-def default_username_lookup(uid: int) -> str:
-    username = f"unknown username"
-    try:
-        pwd_info = getpwuid(uid)
-        usr = pwd_info.pw_name
-        username = usr.rstrip() or username
-    except KeyError:
-        pass
-    return username
 
 
 def default_email_lookup(username: str) -> str:
