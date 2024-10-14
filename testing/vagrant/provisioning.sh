@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# turn on accounting for vagrant user
+sudo systemctl set-property "user-1000.slice" CPUAccounting=true
+sudo systemctl set-property "user-1000.slice" MemoryAccounting=true
+
 # add additional users for running loads under
 for i in 1 2 3 4 5 6
 do
