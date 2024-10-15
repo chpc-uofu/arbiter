@@ -14,6 +14,7 @@ from logging import getLogger
 from arbiter.utils import strip_port
 from arbiter.conf import PROMETHEUS_CONNECTION
 from arbiter import models
+import datetime
 
 LOGGER = getLogger(__name__)
 
@@ -132,11 +133,11 @@ class PropertyAdmin(admin.ModelAdmin):
 
 @admin.register(models.Policy)
 class PolicyAdmin(admin.ModelAdmin):
-    list_display = ["name", "penalty_link", "display_description", "domain", "is_base_policy"]
+    list_display = ["name_link", "penalty_link", "display_description", "domain", "is_base_policy"]
     change_form_template = "arbiter/policy.html"
     add_form_template = "arbiter/add_policy.html"
     
-    @admin.display(description="Penalty", ordering="policy__penalty__name")
+    @admin.display(description="Penalty", ordering="penalty__name")
     def penalty_link(self, policy: models.Policy):
         url = resolve_url(
             admin_urlname(models.Penalty._meta, "change"),
@@ -145,6 +146,23 @@ class PolicyAdmin(admin.ModelAdmin):
         return mark_safe(
             f'<a href="{url}" title="{str(policy.penalty)}">{policy.penalty.name}</a>'
         )
+    
+    @admin.display(description="Name")
+    def name_link(self, policy: models.Policy):
+
+        url = resolve_url(
+            admin_urlname(models.Policy._meta, "change"),
+            policy.id,
+        )
+
+        if policy.is_base_policy:
+            return mark_safe(
+                f'<a href="{url}?base_policy=true" title="{str(policy)}">{policy.name}</a>'
+            )
+        else: 
+            return mark_safe(
+                f'<a href="{url}" title="{str(policy)}">{policy.name}</a>'
+            )
 
     @admin.display(description="Description")
     def display_description(self, policy: models.Policy):
@@ -269,9 +287,17 @@ class PolicyAdmin(admin.ModelAdmin):
             
         def __init__(self, *args, **kwargs) -> None:
             super().__init__(*args, **kwargs)
+            self.instance.is_base_policy = True
 
         def save(self, commit: bool = ...) -> Any:
             instance = super().save(False)
+            instance.query_params = dict()
+            query = f'systemd_unit_cpu_usage_ns{{instance=~"{self.instance.domain}"}}'
+            instance.query_params["raw"] = query
+
+            if commit:
+                instance.save()
+
             return instance
 
 

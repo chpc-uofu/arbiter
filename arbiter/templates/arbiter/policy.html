@@ -4,7 +4,7 @@
 {% endblock %}
 {% block content %}
 {{block.super}}
-{% if object_id %}
+{% if object_id and not base_policy %}
     <form action="{% url 'convert_policy' id=object_id %}" method="post" name="convert-form">
         {% csrf_token %}
     {% if raw %}
