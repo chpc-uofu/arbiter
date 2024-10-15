@@ -101,6 +101,8 @@ class Penalty(models.Model):
     class Meta:
         verbose_name_plural = "Penalties"
 
+    is_default_status = models.BooleanField(default=False, null=False, editable=False)
+
     name = models.CharField(max_length=255, default="Penalty")
     limits = models.ManyToManyField(Limit)
     duration = models.DurationField(default=timedelta(minutes=5))
@@ -123,6 +125,8 @@ class Policy(models.Model):
 
     class Meta:
         verbose_name_plural = "Policies"
+
+    is_base_policy = models.BooleanField(default=False, null=False, editable=False)
 
     name = models.CharField(max_length=255, unique=True)
     domain = models.CharField(max_length=1024)

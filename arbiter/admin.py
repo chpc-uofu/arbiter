@@ -132,9 +132,10 @@ class PropertyAdmin(admin.ModelAdmin):
 
 @admin.register(models.Policy)
 class PolicyAdmin(admin.ModelAdmin):
-    list_display = ["name", "penalty_link", "display_description", "domain"]
+    list_display = ["name", "penalty_link", "display_description", "domain", "is_base_policy"]
     change_form_template = "arbiter/policy.html"
-
+    add_form_template = "arbiter/add_policy.html"
+    
     @admin.display(description="Penalty", ordering="policy__penalty__name")
     def penalty_link(self, policy: models.Policy):
         url = resolve_url(
@@ -260,6 +261,19 @@ class PolicyAdmin(admin.ModelAdmin):
                 instance.save()
 
             return instance
+        
+    class BaseForm(forms.ModelForm):
+        class Meta:
+            model = models.Policy
+            fields = ['name', 'domain', 'description', 'penalty']
+            
+        def __init__(self, *args, **kwargs) -> None:
+            super().__init__(*args, **kwargs)
+
+        def save(self, commit: bool = ...) -> Any:
+            instance = super().save(False)
+            return instance
+
 
     def get_form(
         self,
@@ -268,13 +282,17 @@ class PolicyAdmin(admin.ModelAdmin):
         change: bool = ...,
         **kwargs: Any,
     ) -> Any:
+        if request.GET.get("base_policy") in ["True", "true", "yes", "t", "y"]:
+            return PolicyAdmin.BaseForm
         if not obj:
             return PolicyAdmin.BuilderForm
+        if obj.is_base_policy:
+            return PolicyAdmin.BaseForm
         if obj.is_raw_query:
             return PolicyAdmin.RawForm
         else:
             return PolicyAdmin.BuilderForm
-
+        
     def changeform_view(
         self,
         request: HttpRequest,
@@ -282,9 +300,12 @@ class PolicyAdmin(admin.ModelAdmin):
         form_url: str = ...,
         extra_context: dict[str, bool] | None = ...,
     ) -> Any:
+
         extra_context = extra_context or dict()
         if object_id is not None:
             extra_context["raw"] = models.Policy.objects.get(id=object_id).is_raw_query
+        if request.GET.get("base_policy") in ["True", "true", "yes", "t", "y"]:
+            extra_context["base_policy"] = True
 
         return super().changeform_view(request, object_id, form_url, extra_context)
 
