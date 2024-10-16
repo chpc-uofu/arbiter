@@ -101,11 +101,11 @@ class Penalty(models.Model):
     class Meta:
         verbose_name_plural = "Penalties"
 
-    is_default_status = models.BooleanField(default=False, null=False, editable=False)
+    is_base_constraint = models.BooleanField(default=False, null=False, editable=False)
 
     name = models.CharField(max_length=255, default="Penalty")
     limits = models.ManyToManyField(Limit)
-    duration = models.DurationField(default=timedelta(minutes=5))
+    duration = models.DurationField(default=timedelta(minutes=5), null=True)
     repeat_offense_scale = models.FloatField(
         default=1.0,
         help_text="How much to scale penalty for repeat offenses (default 1.0)",
@@ -208,7 +208,9 @@ class Target(models.Model):
     class Meta:
         verbose_name_plural = "Targets"
         constraints = [
-            models.UniqueConstraint(fields=["unit", "host", "username"], name="unique_target"),
+            models.UniqueConstraint(
+                fields=["unit", "host", "username"], name="unique_target"
+            ),
         ]
 
     unit = models.CharField(max_length=255)
@@ -233,11 +235,13 @@ class Violation(models.Model):
     the unit is "in" violation
     """
 
+    is_base_status = models.BooleanField(default=False, editable=False)
+
     target = models.ForeignKey(Target, on_delete=models.CASCADE)
     policy = models.ForeignKey(Policy, on_delete=models.CASCADE)
-    expiration = models.DateTimeField()
+    expiration = models.DateTimeField(null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
-    offense_count = models.IntegerField(default=1)
+    offense_count = models.IntegerField(default=1, null=True)
 
     @property
     def duration(self) -> timedelta:
@@ -245,6 +249,8 @@ class Violation(models.Model):
 
     @property
     def expired(self) -> bool:
+        if not self.expiration:
+            return False
         return self.expiration < timezone.now()
 
     def __str__(self) -> str:

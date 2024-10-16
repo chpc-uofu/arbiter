@@ -1,7 +1,8 @@
 import logging
 import aiohttp
 import http
-from pwd import getpwuid, getpwnam
+import re
+from pwd import getpwnam
 from arbiter.conf import (
     WARDEN_DISABLE_AUTH,
     WARDEN_DISABLE_SSL,
@@ -12,6 +13,13 @@ from arbiter.conf import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def get_uid(unit: str) -> int | None:
+    match = re.search(r"user-(\d+)\.slice", unit)
+    if not match:
+        return None
+    return int(match.group(1))
 
 
 async def set_property(
@@ -28,9 +36,6 @@ async def set_property(
     else:
         endpoint = f"https://{target.host}:{WARDEN_PORT}/control"
 
-    logger.info(
-        f"setting property {prop['name']} with value {prop['value']} for {target.unit} on {endpoint}"
-    )
     payload = {"unit": target.unit, "property": prop}
 
     if WARDEN_DISABLE_AUTH:
@@ -47,7 +52,8 @@ async def set_property(
         ) as response:
             status = response.status
             message = await response.json()
-    except (aiohttp.ClientConnectionError, aiohttp.ClientError) as e:
+    # TODO: handle specific exceptions
+    except Exception as e:
         status = http.HTTPStatus.SERVICE_UNAVAILABLE
         message = f"Service Unavailable : {e}"
 

@@ -14,7 +14,6 @@ from logging import getLogger
 from arbiter.utils import strip_port
 from arbiter.conf import PROMETHEUS_CONNECTION
 from arbiter import models
-import datetime
 
 LOGGER = getLogger(__name__)
 
@@ -49,21 +48,21 @@ class ViolationsAdmin(admin.ModelAdmin):
 
     @admin.display(description="Recorded Memory Usage")
     def plot_mem_usage(self, violation: models.Violation):
-        if violation.pk is not None:
+        if violation.pk is not None and not violation.is_base_status:
             return mark_safe(
                 f"<div hx-get='{reverse('user-violation-memory-graph', kwargs={'violation_id':violation.id})}' hx-trigger='load' hx-target='this' hx-swap='innerHTML' hx-indicator='dots'></div>"
             )
         else:
-            return "No data available"
+            return None
 
     @admin.display(description="Recorded CPU Usage")
     def plot_cpu_usage(self, violation: models.Violation):
-        if violation.pk is not None:
+        if violation.pk is not None and not violation.is_base_status:
             return mark_safe(
                 f"<div hx-get='{reverse('user-violation-cpu-graph', kwargs={'violation_id': violation.id})}' hx-trigger='load' hx-target='this' hx-swap='innerHTML' hx-indicator='dots'></div>"
             )
         else:
-            return "No data available"
+            return None
 
     @admin.display(description="Status")
     def status(self, violation: models.Violation):
@@ -97,7 +96,11 @@ class ViolationsAdmin(admin.ModelAdmin):
 
 @admin.register(models.Penalty)
 class PenaltyAdmin(admin.ModelAdmin):
-    list_display = ["name", "duration", "limits_list"]
+    list_display = ["name", "duration", "limits_list", "is_base_constraint"]
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.filter(is_base_constraint=False)
 
     @admin.display(description="Limits", ordering="limits")
     def limits_list(self, penalty: models.Penalty):
@@ -133,12 +136,29 @@ class PropertyAdmin(admin.ModelAdmin):
 
 @admin.register(models.Policy)
 class PolicyAdmin(admin.ModelAdmin):
-    list_display = ["name_link", "penalty_link", "display_description", "domain", "is_base_policy"]
+    list_display = [
+        "name_link",
+        "penalty_link",
+        "display_description",
+        "domain",
+        "is_base_policy",
+    ]
     change_form_template = "arbiter/policy.html"
     add_form_template = "arbiter/add_policy.html"
-    
+
+    def delete_model(self, request, obj):
+        if obj.is_base_policy:
+            obj.penalty.delete()
+        return super().delete_model(request, obj)
+
+    def delete_queryset(self, request, queryset):
+        for item in queryset:
+            return self.delete_model(request, item)
+
     @admin.display(description="Penalty", ordering="penalty__name")
     def penalty_link(self, policy: models.Policy):
+        if policy.is_base_policy:
+            return None
         url = resolve_url(
             admin_urlname(models.Penalty._meta, "change"),
             policy.penalty.id,
@@ -146,10 +166,9 @@ class PolicyAdmin(admin.ModelAdmin):
         return mark_safe(
             f'<a href="{url}" title="{str(policy.penalty)}">{policy.penalty.name}</a>'
         )
-    
+
     @admin.display(description="Name")
     def name_link(self, policy: models.Policy):
-
         url = resolve_url(
             admin_urlname(models.Policy._meta, "change"),
             policy.id,
@@ -159,10 +178,8 @@ class PolicyAdmin(admin.ModelAdmin):
             return mark_safe(
                 f'<a href="{url}?base_policy=true" title="{str(policy)}">{policy.name}</a>'
             )
-        else: 
-            return mark_safe(
-                f'<a href="{url}" title="{str(policy)}">{policy.name}</a>'
-            )
+        else:
+            return mark_safe(f'<a href="{url}" title="{str(policy)}">{policy.name}</a>')
 
     @admin.display(description="Description")
     def display_description(self, policy: models.Policy):
@@ -205,6 +222,10 @@ class PolicyAdmin(admin.ModelAdmin):
 
         def __init__(self, *args, **kwargs) -> None:
             super().__init__(*args, **kwargs)
+
+            self.fields["penalty"].queryset = models.Penalty.objects.filter(
+                is_base_constraint=False
+            )
 
             if self.instance.pk:
                 query_params = self.instance.query_params
@@ -259,6 +280,10 @@ class PolicyAdmin(admin.ModelAdmin):
         def __init__(self, *args, **kwargs) -> None:
             super().__init__(*args, **kwargs)
 
+            self.fields["penalty"].queryset = models.Penalty.objects.filter(
+                is_base_constraint=False
+            )
+
             self.fields["query_params"].widget = self.fields[
                 "query_params"
             ].hidden_widget()
@@ -279,27 +304,88 @@ class PolicyAdmin(admin.ModelAdmin):
                 instance.save()
 
             return instance
-        
+
     class BaseForm(forms.ModelForm):
         class Meta:
             model = models.Policy
-            fields = ['name', 'domain', 'description', 'penalty']
-            
+            fields = ["name", "domain", "description"]
+
+        cpu_default = forms.FloatField(
+            label="CPU", help_text="Number of cores", required=True
+        )
+        mem_default = forms.FloatField(
+            label="Memory", help_text="Memory in GiB", required=True
+        )
+
         def __init__(self, *args, **kwargs) -> None:
             super().__init__(*args, **kwargs)
             self.instance.is_base_policy = True
+            if hasattr(self.instance, "penalty"):
+                cpu = self.instance.penalty.limits.filter(
+                    property__name="CPUQuotaPerSecUSec"
+                )
+                cpu_initial = int(cpu.first().value) if cpu.exists() else 0
+                mem = self.instance.penalty.limits.filter(property__name="MemoryMax")
+                mem_initial = int(mem.first().value) if mem.exists() else 0
+                self.fields["cpu_default"].initial = (
+                    cpu_initial if cpu_initial == 0 else (cpu_initial / 1_000_000)
+                )
+                self.fields["mem_default"].initial = (
+                    mem_initial if mem_initial == 0 else (mem_initial / 1024**3)
+                )
+            else:
+                self.fields["cpu_default"].initial = 1
+                self.fields["mem_default"].initial = 1
 
         def save(self, commit: bool = ...) -> Any:
+            # FIXME the following creates a penalty to be associated with the base policy, probably a better way ...
             instance = super().save(False)
             instance.query_params = dict()
             query = f'systemd_unit_cpu_usage_ns{{instance=~"{self.instance.domain}"}}'
             instance.query_params["raw"] = query
 
+            cpu_field = self.cleaned_data["cpu_default"]
+            mem_field = self.cleaned_data["mem_default"]
+
+            cpu_value = int(cpu_field * 1_000_000)
+            mem_value = int(mem_field * 1024**3)
+
+            cpu_property, _ = models.Property.objects.get_or_create(
+                name="CPUQuotaPerSecUSec",
+                type=models.Property.Type.INTEGER,
+                operation="<",
+            )
+            mem_property, _ = models.Property.objects.get_or_create(
+                name="MemoryMax", type=models.Property.Type.INTEGER, operation="<"
+            )
+
+            cpu_limit, _ = models.Limit.objects.get_or_create(
+                property=cpu_property, value=cpu_value
+            )
+            mem_limit, _ = models.Limit.objects.get_or_create(
+                property=mem_property, value=mem_value
+            )
+
+            name = f"{instance.name}"
+
+            duration = None
+
+            penalty, _ = models.Penalty.objects.get_or_create(
+                is_base_constraint=True, name=name, duration=duration
+            )
+            penalty.limits.set((cpu_limit, mem_limit))
+
+            instance.penalty = penalty
+
             if commit:
+                cpu_property.save()
+                mem_property.save()
+                cpu_limit.save()
+                mem_limit.save()
+                penalty.save()
                 instance.save()
 
             return instance
-
 
     def get_form(
         self,
@@ -318,7 +404,7 @@ class PolicyAdmin(admin.ModelAdmin):
             return PolicyAdmin.RawForm
         else:
             return PolicyAdmin.BuilderForm
-        
+
     def changeform_view(
         self,
         request: HttpRequest,
@@ -326,7 +412,6 @@ class PolicyAdmin(admin.ModelAdmin):
         form_url: str = ...,
         extra_context: dict[str, bool] | None = ...,
     ) -> Any:
-
         extra_context = extra_context or dict()
         if object_id is not None:
             extra_context["raw"] = models.Policy.objects.get(id=object_id).is_raw_query
@@ -393,6 +478,19 @@ class TargetAdmin(admin.ModelAdmin):
     list_display = ["username", "host"]
     list_filter = ["host"]
     search_fields = ["username", "host"]
+
+    def has_change_permission(
+        self, request: HttpRequest, obj: Any | None = ...
+    ) -> bool:
+        return False
+
+    def has_add_permission(self, request: HttpRequest) -> bool:
+        return False
+
+    def has_delete_permission(
+        self, request: HttpRequest, obj: Any | None = ...
+    ) -> bool:
+        return False
 
 
 admin.site.register(models.Target, TargetAdmin)

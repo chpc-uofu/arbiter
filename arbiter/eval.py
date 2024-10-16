@@ -5,9 +5,10 @@ import aiohttp
 from django.utils import timezone
 import logging
 from arbiter.models import *
-from arbiter.email import send_violation_email
+from arbiter.email import send_violation_emails
 from collections import defaultdict
-from arbiter.utils import set_property, strip_port
+from arbiter.utils import set_property, strip_port, get_uid
+from django.db.models import Q
 from typing import TYPE_CHECKING
 from arbiter.conf import (
     PROMETHEUS_CONNECTION,
@@ -21,6 +22,41 @@ if TYPE_CHECKING:
     from django.db.models import QuerySet
 
 logger = logging.getLogger(__name__)
+
+
+def create_violation(target: Target, policy: Policy) -> Violation:
+    unit_violations = Violation.objects.filter(policy=policy, target=target)
+
+    if policy.is_base_policy:
+        if unit_violations.exists():
+            return None
+        return Violation(
+            target=target,
+            policy=policy,
+            expiration=None,
+            offense_count=None,
+            is_base_status=True,
+        )
+
+    in_grace = unit_violations.filter(
+        expiration__gte=timezone.now() - policy.grace_period
+    ).exists()
+    if not in_grace:
+        num_offense = unit_violations.filter(
+            timestamp__gte=timezone.now() - policy.lookback_window
+        ).count()
+        expiration = timezone.now() + policy.penalty.duration * (
+            1 + policy.penalty.repeat_offense_scale * num_offense
+        )
+        offense_count = num_offense + 1
+        return Violation(
+            target=target,
+            policy=policy,
+            expiration=expiration,
+            offense_count=offense_count,
+        )
+
+    return None
 
 
 def query_violations(policies: list[Policy]) -> list[Violation]:
@@ -37,32 +73,18 @@ def query_violations(policies: list[Policy]) -> list[Violation]:
             host = strip_port(result["metric"]["instance"])
             username = result["metric"]["username"]
 
-            target, _ = Target.objects.get_or_create(unit=unit, host=host, username=username)
-
-            if target.uid < ARBITER_MIN_UID:
+            if get_uid(unit) < ARBITER_MIN_UID:
                 continue
 
-            unit_violations = Violation.objects.filter(policy=policy, target=target)
-            in_grace = unit_violations.filter(
-                expiration__gte=timezone.now() - policy.grace_period
-            ).exists()
+            target, created = Target.objects.get_or_create(
+                unit=unit, host=host, username=username
+            )
+            if created:
+                logger.info(f"new target {target}")
 
-            if not in_grace:
-                num_offense = unit_violations.filter(
-                    timestamp__gte=timezone.now() - policy.lookback_window
-                ).count()
-                expiration = timezone.now() + (
-                    policy.penalty.duration
-                    * (1 + policy.penalty.repeat_offense_scale * num_offense)
-                )
-
-                new_violation = Violation(
-                    target=target,
-                    policy=policy,
-                    expiration=expiration,
-                    offense_count=num_offense + 1,
-                )
-                violations.append(new_violation)
+            if violation := create_violation(target, policy):
+                violations.append(violation)
+                logger.info(f"{violation}")
 
     return violations
 
@@ -102,8 +124,10 @@ async def apply_limits(
         payload = limit.property_json()
         status, message = await set_property(target, session, payload)
         if status == http.HTTPStatus.OK:
-            logger.info(f"applied limits {limits} to {target}")
+            logger.info(f"successfully applied limit {limit} to {target}")
             applied.append(limit)
+        else:
+            logger.warning(f"could not apply {limit} to {target}: {message}")
 
     return (target, applied)
 
@@ -179,11 +203,12 @@ def create_event_for_eval(violations):
 
 def evaluate(policies: "QuerySet[Policy]" = None):
     policies = policies or Policy.objects.all()
-
     violations = query_violations(policies)
     Violation.objects.bulk_create(violations, ignore_conflicts=True)
 
-    unexpired = Violation.objects.filter(expiration__gt=timezone.now())
+    unexpired = Violation.objects.filter(
+        Q(expiration__gt=timezone.now()) | Q(expiration__isnull=True)
+    )
     unexpired = unexpired.prefetch_related("policy__penalty__limits__property")
 
     targets = Target.objects.prefetch_related("last_applied__property").all()
@@ -193,7 +218,9 @@ def evaluate(policies: "QuerySet[Policy]" = None):
     applicable_limits = {target: [] for target in targets}
     for v in unexpired:
         for host in affected_hosts[v.policy.domain]:
-            target, _ = targets.get_or_create(unit=v.target.unit, host=host, username=v.target.username)
+            target, _ = targets.get_or_create(
+                unit=v.target.unit, host=host, username=v.target.username
+            )
 
             target.last_applied.prefetch_related("property")
             if target not in applicable_limits:
@@ -205,8 +232,7 @@ def evaluate(policies: "QuerySet[Policy]" = None):
     create_event_for_eval(violations)
 
     if ARBITER_NOTIFY_USERS:
-        for violation in violations:
-            send_violation_email(violation)
+        send_violation_emails(violations)
 
     if ARBITER_PERMISSIVE_MODE:
         return

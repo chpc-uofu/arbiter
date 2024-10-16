@@ -3,10 +3,10 @@
 {{block.super}}
 {% endblock %}
 {% block content %}
-{{block.super}}
 {% if base_policy %}
-    <a href="{{ request.path }}"">Create Usage Policy</a>
+    <a href="{{ request.path }}" class="button">Create Usage Policy</a>
 {% else %}
-    <a href="{{ request.path }}?base_policy=true"">Create Base Policy</a>
+    <a href="{{ request.path }}?base_policy=true" class="button">Create Base Policy</a>
 {% endif %}
+{{block.super}}
 {% endblock %}
