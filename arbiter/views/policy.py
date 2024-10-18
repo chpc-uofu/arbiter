@@ -45,8 +45,8 @@ class UsagePolicyForm(forms.ModelForm):
     mem = forms.FloatField(label="Memory in GiB", required=True)
     class Meta:
         model = UsagePolicy
-        fields = ["name", "domain", "description", "duration", "scale", "query", "grace"]
-        widgets = {'grace': forms.TimeInput(), "lookback": forms.TimeInput()}
+        fields = ["name", "domain", "description", "penalty_duration", "repeated_offense_scalar", "query", "grace_period", "repeated_offense_lookback"]
+        widgets = {'grace_period': forms.TimeInput(), "repeated_offense_lookback": forms.TimeInput()}
 
 
 def new_usage_policy(request):
@@ -99,7 +99,7 @@ class BasePolicyForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if constraints := self.instance.constraints:
+        if constraints := self.instance.penalty_constraints:
             for c in constraints:
                 if c["name"] == "CPUQuotaPerSecUSec":
                     self.fields['cpu'].initial = usec_to_cores(c["value"])
@@ -120,7 +120,7 @@ class BasePolicyForm(forms.ModelForm):
         cpu_quota = Limit.cpu_quota(self.cleaned_data['cpu'])
         memory_max = Limit.memory_max(self.cleaned_data['mem'])
         constraints = Limit.to_json(cpu_quota, memory_max)
-        policy.constraints = constraints
+        policy.penalty_constraints = constraints
         policy.save()
 
 

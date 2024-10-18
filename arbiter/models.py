@@ -33,12 +33,15 @@ class Policy(models.Model):
     domain = models.CharField(max_length=1024)
     description = models.TextField(max_length=1024, blank=True)
 
-    constraints = models.JSONField()
-    duration = models.DurationField(null=True)
-    scale = models.FloatField(null=True)
+    penalty_constraints = models.JSONField()
+    penalty_duration = models.DurationField(null=True)
+
+    repeated_offense_scalar = models.FloatField(null=True)
+    repeated_offense_lookback = models.DurationField(null=True)
+    grace_period = models.DurationField(null=True)
 
     query = models.TextField(max_length=1024, blank=False, null=False)
-    grace = models.DurationField(default=timedelta(minutes=15), null=True)
+    query_parameters = models.JSONField(null=True)
 
 
 class BasePolicyManager(models.Manager):
@@ -99,7 +102,7 @@ class Target(models.Model):
         return f"{self.username}@{self.host}"
 
 
-class Status(models.Model):
+class Violation(models.Model): #TODO violation
     is_base_status = models.BooleanField(default=False, editable=False)
 
     target = models.ForeignKey(Target, on_delete=models.CASCADE)
