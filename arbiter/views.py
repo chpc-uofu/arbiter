@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from arbiter.models import Policy, Violation, Target, Property, Limit
+from arbiter.models import Policy, Status
 from django.db.models import Count
 from django.shortcuts import redirect
 from django.contrib import messages
@@ -140,7 +140,7 @@ def violation_usage(request, violation_id, usage_type):
             context={"warning": "You do not have permission to view usage graphs"},
         )
 
-    violation = Violation.objects.filter(pk=violation_id).first()
+    violation = Status.objects.filter(pk=violation_id).first()
     if not violation:
         return render(
             request,
@@ -175,57 +175,8 @@ def violation_memory_usage(request, violation_id):
     return violation_usage(request, violation_id, plots.MEM_USAGE)
 
 
-async def _set_property_and_update_target(
-    context, target: Target, property: Property, value: str
-):
-    property_payload = {"name": property.name, "value": value}
-    try:
-        async with aiohttp.ClientSession() as session:
-            status, message = await set_property(target, session, property_payload)
-        if status == 200:
-            context["info"] = "Set property successfully"
-        else:
-            context["error"] = f"Failed to set property: {message}"
-    except Exception as e:
-        context["error"] = f"Failed to set property: Service Unavailable {repr(e)}"
-
-
 def apply_property_for_user(request):
-    context = dict()
-    if not request.user.has_perm("arbiter.change_penalty"):
-        context["error"] = "You do not have permission to execute commands"
-        return render(request, "arbiter/message.html", context)
-
-    username = request.POST.get("username", "")
-    prop = request.POST.get("property", "")
-    value = request.POST.get("value", "")
-    host = request.POST.get("host", "")
-
-    if not (len(username) > 0 and len(prop) > 0 and len(host) > 0 and len(value) > 0):
-        context["error"] = "Please select a unit, property and host"
-        return render(request, "arbiter/message.html", context)
-
-    property = Property.objects.filter(name=prop).first()
-    if not property:
-        context["error"] = f"Property {prop} not found"
-        return render(request, "arbiter/message.html", context)
-
-    target = Target.objects.filter(username=username, host=host).first()
-    if not target:
-        context["error"] = "Target does not exist"
-        return render(request, "arbiter/message.html", context)
-
-    asyncio.run(_set_property_and_update_target(context, target, property, value))
-    if context.get("info"):
-        limit, created = Limit.objects.get_or_create(value=value, property=property)
-        target.last_applied.remove(
-            *target.last_applied.filter(property__name=property.name)
-        )
-        if limit.value != Limit.UNSET_LIMIT:
-            target.last_applied.add(limit)
-        target.save()
-
-    return render(request, "arbiter/message.html", context)
+    return render(request, "arbiter/message.html")
 
 
 def dashboard_command(request, command):
@@ -264,7 +215,7 @@ def expire_violation(request, violation_id):
         messages.error(request, "You do not have permission to execute commands")
         return redirect("admin:arbiter_violation_changelist")
 
-    violation = Violation.objects.filter(pk=violation_id).first()
+    violation = Status.objects.filter(pk=violation_id).first()
 
     if not violation:
         messages.error(request, "Violation not found")
@@ -284,7 +235,7 @@ def expire_violation(request, violation_id):
 def violation_metrics_scrape(request):
     # arbiter_violations{policy="foobar", offense_count=1} 2
     unexpired_violations_metrics = (
-        Violation.objects.filter(expiration__gte=timezone.now())
+        Status.objects.filter(expiration__gte=timezone.now())
         .values("policy__name", "offense_count")
         .annotate(count=Count("*"))
     )

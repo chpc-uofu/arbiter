@@ -5,7 +5,7 @@
 {% block content %}
 {{block.super}}
 {% if object_id and not base_policy %}
-    <form action="{% url 'convert_policy' id=object_id %}" method="post" name="convert-form">
+    <form action="{% url 'arbiter:convert_policy' id=object_id %}" method="post" name="convert-form">
         {% csrf_token %}
     {% if raw %}
         <input type="submit" class="default" name="action" value="To Builder Query">

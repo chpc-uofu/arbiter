@@ -2,7 +2,7 @@ from plotly.graph_objects import Figure
 from datetime import datetime, timedelta, timezone
 from prometheus_api_client import MetricRangeDataFrame
 import plotly.express as px
-from arbiter.models import Violation
+from arbiter.models import Status
 from django.utils.timezone import get_current_timezone, localtime
 
 from typing import TypeAlias
@@ -151,7 +151,7 @@ def usage_figures(
     return chart, pie
 
 
-def violation_usage_figures(violation: Violation, usage_type: str, step: str = "30s"):
+def violation_usage_figures(violation: Status, usage_type: str, step: str = "30s"):
     username = violation.target.username
     host = violation.target.host
     start = violation.timestamp - violation.policy.timewindow
@@ -169,11 +169,11 @@ def violation_usage_figures(violation: Violation, usage_type: str, step: str = "
     return Figure(), Figure()
 
 
-def violation_cpu_usage_figures(violation: Violation, step: str = "30s"):
+def violation_cpu_usage_figures(violation: Status, step: str = "30s"):
     return violation_usage_figures(violation, CPU_USAGE, step)
 
 
-def violation_mem_usage_figures(violation: Violation, step: str = "30s"):
+def violation_mem_usage_figures(violation: Status, step: str = "30s"):
     return violation_usage_figures(violation, MEM_USAGE, step)
 
 

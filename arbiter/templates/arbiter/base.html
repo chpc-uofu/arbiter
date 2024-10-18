@@ -1,0 +1,43 @@
+{% block extrastyle %}
+{{ block.super }}
+<style> 
+
+#navbar {
+  position: sticky;
+  top: 0;
+}
+
+#navbar ul { 
+	margin: 0; 
+	padding: 5px; 
+	list-style-type: none; 
+	text-align: center; 
+} 
+ 
+#navbar ul li {  
+	display: inline; 
+}
+
+#navbar .active {
+    color: cadetblue;
+}
+
+</style>
+{% endblock %}
+
+{% block content_title %}
+    {% if navbar %}
+        <div id="navbar">
+            <ul>
+            {% for item in navbar %}
+                <li>{{ item.render | safe }}</li>
+            {% endfor %}
+            </ul>
+        </nav>
+    {% endif %}
+{% endblock %}
+
+
+{% block content %}
+
+{% endblock %}
