@@ -17,16 +17,6 @@ class PolicyAdmin(admin.ModelAdmin):
     list_display = ["name", "description", "domain", "is_base_policy"]
 
 
-@admin.register(models.BasePolicy)
-class BasePolicyAdmin(admin.ModelAdmin):
-    list_display = ["name", "description", "domain", "is_base_policy"]
-
-
-@admin.register(models.UsagePolicy)
-class UsagePolicyAdmin(admin.ModelAdmin):
-    list_display = ["name", "description", "domain", "is_base_policy"]
- 
-
 class DashboardAdmin(admin.ModelAdmin):
     class Dashboard(Model):
         class Meta:

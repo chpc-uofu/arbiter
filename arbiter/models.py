@@ -3,12 +3,16 @@ from django.db import models
 from datetime import timedelta
 from django.utils import timezone
 from typing import List, Dict
+from dataclasses import dataclass, asdict
 
 
+@dataclass
 class Limit:
-    def __init__(self, name:str, value:int):
-        self.name = name
-        self.value = value
+    name: str
+    value: int
+
+    def json(self):
+        return asdict(self)
 
     @staticmethod
     def memory_max(max_bytes: int) -> "Limit":
@@ -20,8 +24,81 @@ class Limit:
     
     @staticmethod
     def to_json(*args: "Limit") -> List[Dict]:
-        return [dict(name=a.name, value=a.value) for a in args]
+        return [a.json() for a in args]
+
+@dataclass
+class QueryParameters:
+    proc_whitelist: str | None # prom matcher regex
+    user_whitelist: str | None # prom matcher regex
+    cpu_threshold: int  # nanoseconds
+    mem_threshold: int  # bytes
+
+    def json(self):
+        return asdict(self)
+
+@dataclass
+class Query:
+    query: str
+    params: QueryParameters | None
+
+    cpu_metric = 'systemd_unit_proc_cpu_usage_ns'
+    mem_metric = 'systemd_unit_proc_memory_bytes'
+
+    def json(self):
+        params = self.params.json() if self.params else None
+        return {"query": self.query, "params": params}
+
+    @staticmethod
+    def raw_query(query:str) -> "Query":
+        return Query(query=query, params=None)
     
+    @staticmethod
+    def build_query(lookback: timedelta, domain: str, params: QueryParameters) -> "Query":
+        
+        sum_by_labels = 'unit, instance, username'
+
+        filters = f'instance=~"{domain}"'
+
+        lookback = f'{lookback.total_seconds()}s'
+        
+        if params.user_whitelist:
+            filters += f', user!~"{params.user_whitelist}"'
+        
+        if params.proc_whitelist:
+            proc_filter = filters + f', proc=~"{params.proc_whitelist}"'
+            cpu_proc = f"systemd_unit_proc_cpu_usage_ns{{{proc_filter}}}[{lookback}]"
+            cpu_offset = f"(sum by ({sum_by_labels}) (rate({cpu_proc})))"
+            mem_proc = f"systemd_unit_proc_memory_bytes{{{proc_filter}}}[{lookback}]"
+            mem_offset = f"(sum by ({sum_by_labels}) (avg_over_time({mem_proc})))"
+
+        if params.cpu_threshold is not None:
+            cpu_unit = f'systemd_unit_cpu_usage_ns{{ {filters} }}[{lookback}]'
+            cpu_total = f'(sum by ({sum_by_labels}) (rate({cpu_unit})))'
+            if params.proc_whitelist:
+                cpu = f'(({cpu_total} - {cpu_offset}) / {params.cpu_threshold}) > 1.0'
+            else:
+                cpu = f'({cpu_total} / {params.cpu_threshold}) > 1.0'
+
+        if params.mem_threshold is not None:
+            mem_unit = f'systemd_unit_memory_bytes{{{filters}}}[{lookback}]'
+            mem_total = f'(sum by ({sum_by_labels}) (avg_over_time({mem_unit})))'
+            if params.proc_whitelist:
+                mem = f'(({mem_total} - {mem_offset}) / {params.mem_threshold}) > 1.0'
+            else:
+                mem = f'({mem_total} / {params.mem_threshold}) > 1.0'
+
+        if params.mem_threshold and params.cpu_threshold:
+            query = f'{cpu} or {mem}'
+        elif params.cpu_threshold:
+            query = cpu
+        elif params.mem_threshold:
+            query = mem
+        else:
+            query = None
+
+        return Query(query=query, params=params)
+
+
 
 class Policy(models.Model):
     class Meta:
@@ -31,17 +108,17 @@ class Policy(models.Model):
 
     name = models.CharField(max_length=255, unique=True)
     domain = models.CharField(max_length=1024)
+    lookback = models.DurationField(default=timedelta(minutes=15))
     description = models.TextField(max_length=1024, blank=True)
 
-    penalty_constraints = models.JSONField()
-    penalty_duration = models.DurationField(null=True)
+    penalty_constraints = models.JSONField(null=False)
+    penalty_duration = models.DurationField(null=True, default=timedelta(minutes=15))
 
-    repeated_offense_scalar = models.FloatField(null=True)
-    repeated_offense_lookback = models.DurationField(null=True)
-    grace_period = models.DurationField(null=True)
+    repeated_offense_scalar = models.FloatField(null=True, default=1.0)
+    repeated_offense_lookback = models.DurationField(null=True, default=timedelta(hours=3))
+    grace_period = models.DurationField(null=True, default=timedelta(minutes=5))
 
-    query = models.TextField(max_length=1024, blank=False, null=False)
-    query_parameters = models.JSONField(null=True)
+    query = models.JSONField()
 
 
 class BasePolicyManager(models.Manager):
