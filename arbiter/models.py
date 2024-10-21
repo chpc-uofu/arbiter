@@ -38,7 +38,7 @@ class QueryParameters:
 
 @dataclass
 class Query:
-    query: str
+    raw: str
     params: QueryParameters | None
 
     cpu_metric = 'systemd_unit_proc_cpu_usage_ns'
@@ -46,11 +46,11 @@ class Query:
 
     def json(self):
         params = self.params.json() if self.params else None
-        return {"query": self.query, "params": params}
+        return {"raw": self.raw, "params": params}
 
     @staticmethod
     def raw_query(query:str) -> "Query":
-        return Query(query=query, params=None)
+        return Query(raw=query, params=None)
     
     @staticmethod
     def build_query(lookback: timedelta, domain: str, params: QueryParameters) -> "Query":
@@ -59,7 +59,7 @@ class Query:
 
         filters = f'instance=~"{domain}"'
 
-        lookback = f'{lookback.total_seconds()}s'
+        lookback = f'{int(lookback.total_seconds())}s'
         
         if params.user_whitelist:
             filters += f', user!~"{params.user_whitelist}"'
@@ -96,7 +96,7 @@ class Query:
         else:
             query = None
 
-        return Query(query=query, params=params)
+        return Query(raw=query, params=params)
 
 
 
@@ -120,6 +120,8 @@ class Policy(models.Model):
 
     query = models.JSONField()
 
+    def __str__(self):
+        return f"{self.name} on {self.domain}"
 
 class BasePolicyManager(models.Manager):
     def get_queryset(self):
@@ -166,14 +168,14 @@ class Target(models.Model):
     unit = models.CharField(max_length=255)
     host = models.CharField(max_length=255)
     username = models.CharField(max_length=255)
-    uid = models.IntegerField(null=True)
-    last_applied = models.JSONField()
+    last_applied = models.JSONField(blank=True, null=True)
 
-    def save(self, **kwargs):
+    @property
+    def uid(self):
         match = re.search(r"user-(\d+)\.slice", self.unit)
         if match:
-            self.uid = int(match.group(1))
-        return super().save(**kwargs)
+            return int(match.group(1))
+        return -1
 
     def __str__(self) -> str:
         return f"{self.username}@{self.host}"
@@ -197,6 +199,9 @@ class Violation(models.Model): #TODO violation
         if not self.expiration:
             return False
         return self.expiration < timezone.now()
+    
+    def __str__(self):
+        return f'{self.target} - {self.policy}'
 
 
 class Event(models.Model):

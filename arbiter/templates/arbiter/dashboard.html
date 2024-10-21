@@ -1,4 +1,4 @@
-{% extends 'admin/change_list.html'%}
+{% extends 'arbiter/base.html'%}
 {% block extrastyle %}
 {{block.super}}
 <script src="https://unpkg.com/htmx.org@1.9.6"
@@ -184,6 +184,7 @@
                 <p><code>cgroup-agent</code> instances up: {{ agents|length }}</p>
                 <p>Last-Evaluated: {{last_evaluated | naturaltime}} </p>
             </div>
+
             <div class="commands-box">
                 <!-- <h3>Commands:</h3>
                 <hr class="box-divider"> -->
@@ -192,7 +193,7 @@
                         {% csrf_token %}
                         <h3>Run Arbiter Evaluation Loop:</h3>
                         <input type="submit" value="Evaluate"
-                            hx-post="{% url 'dashboard-command' command='evaluate'%}" hx-swap="innerHTML"
+                            hx-post="{% url 'arbiter:dashboard-command' command='evaluate'%}" hx-swap="innerHTML"
                             hx-target="#message-container">
                     </form>
                     <hr class="box-divider">
@@ -203,12 +204,13 @@
                             <h4>Before:</h4><input type="datetime-local" name="before">
                         </div>
                         <input type="submit" value="Clean"
-                            hx-post="{% url 'dashboard-command' command='clean'%}" hx-swap="innerHTML"
+                            hx-post="{% url 'arbiter:dashboard-command' command='clean'%}" hx-swap="innerHTML"
                             hx-include="[name='before']"
                             hx-target="#message-container">
                     </form>
                 </div>
             </div>
+
             <div class="apply-box">
                 <form>
                     {% csrf_token %}
@@ -226,19 +228,21 @@
                         <h3>Username</h3>
                         <input type="text" name="username" placeholder="">
 
-                        <h3>Property</h3>
-                        <select name="property">
-                            {% for property in properties %}
-                            <option value="{{property.name}}">{{property.name}}</option>
+                        <h3>Limit</h3>
+                        <select name="limit">
+                            {% for limit in limits %}
+                            <option value="{{limit.name}}">{{limit.name}}</option>
                             {% endfor %}
                         </select>
                         <h3>Value</h3>
                         <input type="text" name="value" placeholder="0">
-                        <input type="button" value="Apply Property" hx-post="{% url 'apply-property' %}"
+                        <input type="button" value="Apply Limit" 
+                            hx-post="{% url 'arbiter:dashboard-command' command='apply' %}"
                             hx-swap="innerHTML" hx-target="#message-container"
-                            hx-include="[name='host'],[name='username'],[name='property'],[name='value']">
+                            hx-include="[name='host'],[name='username'],[name='limit'],[name='value']">
                 </form>
             </div>
+
         </div>
     </div>
 </div>
@@ -261,7 +265,7 @@
                 {% for violation in violations %}
                 <tr>
                     <td>
-                        <a href="{% url 'admin:arbiter_violation_change' violation.id %}">
+                        <a href="{% url 'arbiter:violation_change' violation.id %}">
                             <p>{{violation}}</p>
                         </a>
                     </td>
@@ -317,10 +321,10 @@
                     </div>
                 </div>
                 <div class="options-column">
-                    <input type="button" value="View Memory" hx-get="{% url 'user-proc-memory-graph' %}"
+                    <input type="button" value="View Memory" hx-get="{% url 'arbiter:user-proc-memory-graph' %}"
                         hx-swap="innerHTML" hx-target="#chart-div"
                         hx-include="[id='usage-user-input'], [id='usage-host'], [id='username'], [name='step-value'], [name='step-unit'], [name='end-time'], [name='start-time']">
-                    <input type="button" value="View CPU" hx-get="{% url 'user-proc-cpu-graph' %}" hx-swap="innerHTML"
+                    <input type="button" value="View CPU" hx-get="{% url 'arbiter:user-proc-cpu-graph' %}" hx-swap="innerHTML"
                         hx-target="#chart-div"
                         hx-include="[id='usage-user-input'], [id='username'], [id='usage-host'], [name='step-value'], [name='step-unit'], [name='end-time'], [name='start-time']">
                 </div>

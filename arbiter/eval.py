@@ -66,7 +66,7 @@ def query_violations(policies: list[Policy]) -> list[Violation]:
     """
     violations = []
     for policy in policies:
-        query = policy.query
+        query = policy.query["raw"]
         response = PROMETHEUS_CONNECTION.custom_query(query)
         for result in response:
             unit = result["metric"]["unit"]

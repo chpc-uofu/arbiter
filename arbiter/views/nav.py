@@ -16,9 +16,8 @@ def navbar(request):
     routes = {
         "Base Policy": reverse("arbiter:list-base-policy"),
         "Usage Policy": reverse("arbiter:list-usage-policy"),
-        "Status": "",
-        "Constraint": "",
-        "Dash": "",
+        "Violation": reverse("arbiter:list-violation"),
+        "Dashboard": reverse("arbiter:view-dashboard")
     }
 
     items = []
