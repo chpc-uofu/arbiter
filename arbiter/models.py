@@ -30,8 +30,8 @@ class Limit:
 class QueryParameters:
     proc_whitelist: str | None # prom matcher regex
     user_whitelist: str | None # prom matcher regex
-    cpu_threshold: int  # nanoseconds
-    mem_threshold: int  # bytes
+    cpu_threshold:  int | None # nanoseconds
+    mem_threshold:  int | None # bytes
 
     def json(self):
         return asdict(self)

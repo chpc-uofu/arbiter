@@ -4,7 +4,7 @@
 
 <form action="{{ request.path }}" method="post">
     {% csrf_token %}
-    {{ form.as_p }}
+    {{ form  }}
     <input type="submit" name="save" value="save"/>
     <input type="submit" name="delete" value="delete"/>
 </form>

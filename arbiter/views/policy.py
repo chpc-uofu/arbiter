@@ -84,16 +84,17 @@ class UsagePolicyListView(ListView):
 
 
 class UsagePolicyForm(forms.ModelForm):
-    cpu_limit = forms.FloatField(label="Penalty CPU Limit")
-    mem_limit = forms.FloatField(label="Penalty Memory Limit")
+    cpu_limit = forms.FloatField(label="Penalty CPU Limit", required=False)
+    mem_limit = forms.FloatField(label="Penalty Memory Limit", required=False)
     proc_whitelist = forms.CharField(label="Query Process Whitelist", required=False)
     user_whitelist = forms.CharField(label="Query User Whitelist", required=False)
-    cpu_threshold = forms.FloatField(label="Query CPU Threshold")
-    mem_threshold = forms.FloatField(label="Query Memory Threshold")
+    cpu_threshold = forms.FloatField(label="Query CPU Threshold", required=False)
+    mem_threshold = forms.FloatField(label="Query Memory Threshold", required=False)
 
     class Meta:
         model = UsagePolicy
-        fields = ["name", "domain", "description", "penalty_duration", "repeated_offense_scalar", "grace_period", "repeated_offense_lookback", "lookback"]
+        fields = ["name", "domain", "description", "penalty_duration", "repeated_offense_scalar", 
+                  "grace_period", "repeated_offense_lookback", "lookback"]
         widgets = {'grace_period': forms.TimeInput(), "repeated_offense_lookback": forms.TimeInput()}
 
     
@@ -101,51 +102,63 @@ class UsagePolicyForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if constraints := self.instance.penalty_constraints:
             for c in constraints:
-                if c["name"] == "CPUQuotaPerSecUSec":
+                if c["name"] == "CPUQuotaPerSecUSec" and c["value"]:
                     self.fields['cpu_limit'].initial = usec_to_cores(c["value"])
-                if c["name"] == "MemoryMax":
+                if c["name"] == "MemoryMax" and c["value"]:
                     self.fields['mem_limit'].initial = bytes_to_gib(c["value"])
 
         if query := self.instance.query:
-            self.fields['cpu_threshold'].initial = nsec_to_cores(query["params"]["cpu_threshold"])
-            self.fields['mem_threshold'].initial = bytes_to_gib(query["params"]["mem_threshold"])
+            if cpu_threshold := query["params"]["cpu_threshold"]:
+                self.fields['cpu_threshold'].initial = nsec_to_cores(cpu_threshold)
+            if mem_threshold := query["params"]["mem_threshold"]:
+                self.fields['mem_threshold'].initial = bytes_to_gib(mem_threshold)
             self.fields['proc_whitelist'].initial = query["params"]["proc_whitelist"]
             self.fields['user_whitelist'].initial = query["params"]["user_whitelist"]
 
     def clean_cpu_limit(self):
-        cpu = self.cleaned_data["cpu_limit"]
-        return cores_to_usec(cpu)
+        if cpu := self.cleaned_data["cpu_limit"]:
+            return cores_to_usec(cpu)
+        return None
     
     def clean_mem_limit(self):
-        mem = self.cleaned_data["mem_limit"]
-        return gib_to_bytes(mem)
+        if mem := self.cleaned_data["mem_limit"]:
+            return gib_to_bytes(mem)
+        return None
     
     def clean_cpu_threshold(self):
-        cpu = self.cleaned_data["cpu_threshold"]
-        return cores_to_nsec(cpu)
+        if cpu := self.cleaned_data["cpu_threshold"]:
+            return cores_to_nsec(cpu)
+        return None
     
     def clean_mem_threshold(self):
-        mem = self.cleaned_data["mem_threshold"]
-        b = gib_to_bytes(mem)
-            #self.add_error('mem_threshold', "Please specify time at address if less than 3 years.")
-        return b
+        if mem := self.cleaned_data["mem_threshold"]:
+            return gib_to_bytes(mem)
+        return None
     
     def clean_user_whitelist(self):
-        whitelist = self.cleaned_data["user_whitelist"] or None
-        return whitelist
+        return self.cleaned_data["user_whitelist"] or None
     
     def clean_proc_whitelist(self):
-        whitelist = self.cleaned_data["proc_whitelist"] or None
-        return whitelist
+        return self.cleaned_data["proc_whitelist"] or None
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        if not (cleaned_data["cpu_threshold"] or cleaned_data["mem_threshold"]):
+            raise forms.ValidationError("At least one threshold (CPU or memory) is required.")
+        if not (cleaned_data["cpu_limit"] or cleaned_data["mem_limit"]):
+            raise forms.ValidationError("At least one limit (CPU or memory) is required.")
     
     def save(self, commit=True):
         policy = super().save(commit=False)
         policy.is_base_policy=True
+        limits = []
+        if mem_limit := self.cleaned_data["mem_limit"]:
+            limits.append(Limit.memory_max(mem_limit).json())
 
-        policy.penalty_constraints = Limit.to_json(
-            Limit.cpu_quota(self.cleaned_data["cpu_limit"]),
-            Limit.memory_max(self.cleaned_data['mem_limit']),
-        )
+        if cpu_limit := self.cleaned_data["cpu_limit"]:
+            limits.append(Limit.cpu_quota(cpu_limit).json())
+
+        policy.penalty_constraints = limits
         params = QueryParameters(
             cpu_threshold=self.cleaned_data["cpu_threshold"],
             mem_threshold=self.cleaned_data["mem_threshold"],
@@ -179,13 +192,13 @@ def change_usage_policy(request, id):
         return redirect("arbiter:change-base-policy", id)
 
     if request.method == "POST":
-        if "save" in request.POST:
-            form = UsagePolicyForm(request.POST, instance=policy)
-            if form.is_valid():
-                form.save()
+        form = UsagePolicyForm(request.POST, instance=policy)
+        if "save" in request.POST and form.is_valid():
+            form.save()
+            return redirect(f"arbiter:list-base-policy")
         if "delete" in request.POST:
             policy.delete()
-        return redirect(f"arbiter:list-base-policy")
+            return redirect(f"arbiter:list-base-policy")
     else:
         form = UsagePolicyForm(instance=policy)
 
@@ -202,8 +215,8 @@ class BasePolicyListView(ListView):
     
 
 class BasePolicyForm(forms.ModelForm):
-    cpu = forms.FloatField(label="CPU Cores", required=True)
-    mem = forms.FloatField(label="Memory in GiB", required=True)
+    cpu = forms.FloatField(label="CPU Cores", required=False)
+    mem = forms.FloatField(label="Memory in GiB", required=False)
 
     class Meta:
         model = BasePolicy
@@ -213,26 +226,35 @@ class BasePolicyForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if constraints := self.instance.penalty_constraints:
             for c in constraints:
-                if c["name"] == "CPUQuotaPerSecUSec":
+                if c["name"] == "CPUQuotaPerSecUSec" and c["value"]:
                     self.fields['cpu'].initial = usec_to_cores(c["value"])
-                if c["name"] == "MemoryMax":
+                if c["name"] == "MemoryMax" and c["value"]:
                     self.fields['mem'].initial = bytes_to_gib(c["value"])
 
     def clean_cpu(self):
-        cpu = self.cleaned_data["cpu"]
-        return cores_to_usec(cpu)
+        if cpu := self.cleaned_data["cpu"]:
+            return cores_to_usec(cpu)
+        return None
     
     def clean_mem(self):
-        mem = self.cleaned_data["mem"]
-        return gib_to_bytes(mem)
-
+        if mem := self.cleaned_data["mem"]:
+            return gib_to_bytes(mem)
+        return None
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        if not (cleaned_data["cpu"] or cleaned_data["mem"]):
+            raise forms.ValidationError("Either CPU or Memory must be set")
+        
     def save(self, commit=True):
         policy = super().save(commit=False)
         policy.is_base_policy=True
-        cpu_quota = Limit.cpu_quota(self.cleaned_data['cpu'])
-        memory_max = Limit.memory_max(self.cleaned_data['mem'])
-        constraints = Limit.to_json(cpu_quota, memory_max)
-        policy.penalty_constraints = constraints
+        limits = []
+        if cpu_limit := self.cleaned_data['cpu']:
+            limits.append(Limit.cpu_quota(cpu_limit).json())
+        if mem_limit := self.cleaned_data['mem']:
+            limits.append(Limit.memory_max(mem_limit).json())
+        policy.penalty_constraints = limits
         policy.query = Query.raw_query(f'systemd_unit_cpu_usage_ns{{instance=~"{policy.domain}"}}').json()
         policy.save()
 
@@ -241,9 +263,6 @@ def new_base_policy(request):
     if request.method == "POST":
         form = BasePolicyForm(request.POST)
         if form.is_valid():
-            name = form.cleaned_data["name"]
-            if Policy.objects.filter(name=name).exists():
-                raise forms.ValidationError("Policy with that name already exists")
             form.save()
             return redirect(f"arbiter:list-base-policy")
     else:
@@ -256,15 +275,15 @@ def change_base_policy(request, id):
 
     if not policy.is_base_policy:
         return redirect("arbiter:change-usage-policy", id)
-
+    
     if request.method == "POST":
-        if "save" in request.POST:
-            form = BasePolicyForm(request.POST, instance=policy)
-            if form.is_valid():
-                form.save()
+        form = BasePolicyForm(request.POST, instance=policy)
+        if "save" in request.POST and form.is_valid():
+            form.save()
+            return redirect(f"arbiter:list-base-policy")
         if "delete" in request.POST:
             policy.delete()
-        return redirect(f"arbiter:list-base-policy")
+            return redirect(f"arbiter:list-base-policy")
     else:
         form = BasePolicyForm(instance=policy)
 

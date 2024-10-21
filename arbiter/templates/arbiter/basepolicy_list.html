@@ -10,10 +10,12 @@
 {% for policy in object_list %}
     <li>
         <a href="{% url 'arbiter:change-base-policy' policy.id%}">{{policy.name}}</a>
-        {{ policy.domain}} - {{ policy.description}} 
-    </li>
+        {{ policy.domain}} - {{ policy.description}}
+    </li></br>
 {% empty %}
-    <li>No Base Policies.</li>
+    <li>
+        No Base Policies.
+    </li>
 {% endfor %}
 </ul>
 
