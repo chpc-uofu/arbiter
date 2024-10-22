@@ -129,6 +129,10 @@ class Policy(models.Model):
     def raw(self) -> str:
         return self.query["raw"]
 
+    @property 
+    def query_params(self) -> dict:
+        return self.query["params"]
+
     def __str__(self):
         return f"{self.name} on {self.domain}"
 
@@ -145,8 +149,8 @@ class BasePolicy(Policy):
 
     def save(self, **kwargs):
         self.is_base_policy = True
-        query = f'systemd_unit_cpu_usage_ns{{instance=~"{self.domain}}}"'
-        self.query_params = {"raw": query}
+        query = f'systemd_unit_cpu_usage_ns{{instance=~"{self.domain}"}}'
+        self.query = Query.raw_query(query).json()
         return super().save(**kwargs)
 
 

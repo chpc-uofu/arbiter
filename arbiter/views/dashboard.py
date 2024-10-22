@@ -68,9 +68,11 @@ def apply(request):
             return HttpResponse(f"Invalid value {value}")  
         
         if prop == "CPUQuotaPerSecUSec":
-            limit = Limit.cpu_quota(cores_to_usec(v))
+            v = cores_to_usec(v) if v != -1 else v
+            limit = Limit.cpu_quota(v)
         elif prop == "MemoryMax":
-            limit = Limit.memory_max(gib_to_bytes(v))
+            v = cores_to_usec(v) if v != -1 else v
+            limit = Limit.memory_max(v)
         else:
             return HttpResponse(f"Invalid property '{prop}'")
 

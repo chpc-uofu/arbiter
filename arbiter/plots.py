@@ -154,7 +154,7 @@ def usage_figures(
 def violation_usage_figures(violation: Violation, usage_type: str, step: str = "30s"):
     username = violation.target.username
     host = violation.target.host
-    start = violation.timestamp - violation.policy.timewindow
+    start = violation.timestamp - violation.policy.lookback
     end = violation.expiration
     penalized = violation.timestamp
     step = align_with_prom_limit(violation.timestamp, violation.expiration, step)

@@ -79,10 +79,10 @@ def create_violation(target: Target, policy: Policy) -> Violation:
     ).exists()
     if not in_grace:
         num_offense = unit_violations.filter(
-            timestamp__gte=timezone.now() - policy.lookback_window
+            timestamp__gte=timezone.now() - policy.lookback
         ).count()
-        expiration = timezone.now() + policy.penalty.duration * (
-            1 + policy.penalty.repeat_offense_scale * num_offense
+        expiration = timezone.now() + policy.penalty_duration * (
+            1 + policy.repeated_offense_scalar * num_offense
         )
         offense_count = num_offense + 1
         return Violation(
@@ -138,10 +138,10 @@ def resolve_limits(target: Target, limits: list[Limit]) -> list[Limit]:
     for current in target.last_applied:
         if current in resolved:
             resolved.remove(current)
-        elif current not in resolved:
+        elif current.name not in [r.name for r in resolved]:
             resolved.append(Limit(name=current.name, value=UNSET_VALUE))
 
-    logger.info(f"Resolved: {resolved}")
+    logger.info(f"RESOLVED: {resolved}")
     return resolved
 
 
@@ -152,9 +152,10 @@ def reduce_limits(limits: list[Limit]) -> list[Limit]:
 
     reduced = []
     for candidates in limit_map.values():
-        reduced.append(functools.reduce(lambda a, b : a < b, candidates))
+        compare = lambda a, b: a if a.value < b.value else b
+        reduced.append(functools.reduce(compare, candidates))
 
-    logger.info(f"Reduced: {reduced}")
+    logger.info(f"REDUCED: {reduced}")
     return reduced
 
 
@@ -170,6 +171,7 @@ async def apply_target_limits(applicable: dict[Target, list[Limit]]):
     async with aiohttp.ClientSession() as session, asyncio.TaskGroup() as tg:
         tasks = []
         for target, limit_list in applicable.items():
+            logger.info(f"APPLICABLE {limit_list}")
             reduced = reduce_limits(limit_list)
             resolved = resolve_limits(target, reduced)
             tasks.append(tg.create_task(apply_limits(resolved, target, session)))
@@ -183,7 +185,6 @@ async def apply_target_limits(applicable: dict[Target, list[Limit]]):
         await update_limits(target, applications)
 
     return final_applications
-
 
 def create_event_for_eval(violations):
     violations_json = []
@@ -245,5 +246,6 @@ def evaluate(policies=None):
 
     try:
         asyncio.run(apply_target_limits(to_apply))
-    except Exception as e:
-        logger.error(f"{e}")
+    except ExceptionGroup as e:
+        for err in e.exceptions:
+            logger.error(f"{err}")
