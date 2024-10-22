@@ -100,5 +100,5 @@ def test_query_violations(db, short_low_harsh_policy):
 
 @pytest.mark.django_db(transaction=True)
 def test_get_affected_hosts(db, harsh_mixed_violation):
-    affected = get_affected_hosts(harsh_mixed_violation.policy.domain)
+    affected = hosts_in_domain(harsh_mixed_violation.policy.domain)
     assert TEST_HOST in affected

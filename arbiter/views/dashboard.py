@@ -1,12 +1,18 @@
 import logging
+import asyncio
+import aiohttp
+import http
 
 from django.shortcuts import render
 from django.core.management import call_command
 from django.http import HttpResponse
+from django.core.management.base import CommandError
+from django.contrib.auth.decorators import permission_required
 
 from arbiter.conf import PROMETHEUS_CONNECTION
-from arbiter.utils import strip_port
-from arbiter.models import Violation, Event, Limit
+from arbiter.utils import strip_port, cores_to_usec, gib_to_bytes
+from arbiter.models import Violation, Event, Limit, Target
+from arbiter.eval import set_property
 
 from .nav import navbar
 
@@ -14,7 +20,6 @@ LOGGER = logging.getLogger(__name__)
 
 
 def view_dashboard(request):
-
         agents = []
         try:
             result = PROMETHEUS_CONNECTION.custom_query('up{job=~"cgroup-warden.*"} > 0')
@@ -35,33 +40,68 @@ def view_dashboard(request):
 
         return render(request, "arbiter/dashboard.html", context)
 
-
-def run_command(command, *args, **options) -> str:
-    try:
-        call_command(command, *args, **options)
-        return f"Ran '{command}' successfully!"
-    except Exception as e:
-        return f"Could not execute command {command}: {e}"
-
-
-def dashboard_command(request, command):
+@permission_required('arbiter.execute_commands')
+def apply(request):
     
-    if not request.user.has_perm("arbiter.change_dashboard"):
-        error = "You do not have permission to execute commands"
-        return render(request, "arbiter/message.html", {"error": error})
+    async def apply_single_limit(target: Target, limit: Limit):
+        async with aiohttp.ClientSession() as session:
+            return await set_property(target, session, limit)
 
-    match command:
-        case "evaluate":
-            message = run_command(command)
-        case "clean":
-            if not (before := request.POST.get("before")):
-                message = "Please provide a time to clean violations before."
-            else:
-                message = run_command(command, before=before.strip())
-        case "apply":
-            message = "Applied limit successfully"
-        case _:
-            message = f"Invalid command '{command}'"
+    if request.method == "POST":
+        if not (username := request.POST.get("username")):
+            return HttpResponse("Username is required.")
+        if not (host := request.POST.get("host")):
+            return HttpResponse("Host is required.")
         
-    return HttpResponse(message)
-    
+        target = Target.objects.filter(username=username, host=host).first()
+        if not target:
+            return HttpResponse(f"No Target with name {username} on {host} found.")
+        
+        if not (prop := request.POST.get("prop")):
+            return HttpResponse("Property is required.")
+        if not (value := request.POST.get("value")):
+            return HttpResponse("Value is required")
+        
+        try:
+            v = float(value)
+        except ValueError:
+            return HttpResponse(f"Invalid value {value}")  
+        
+        if prop == "CPUQuotaPerSecUSec":
+            limit = Limit.cpu_quota(cores_to_usec(v))
+        elif prop == "MemoryMax":
+            limit = Limit.memory_max(gib_to_bytes(v))
+        else:
+            return HttpResponse(f"Invalid property '{prop}'")
+
+        status, message = asyncio.run(apply_single_limit(target, limit))
+        if status == http.HTTPStatus.OK:
+            current = [l for l in target.last_applied if l.name != limit.name]
+            if limit.value != -1:
+                current.append(limit)
+            target.set_limits(current)
+            target.save()
+                
+        return HttpResponse(f'{message}')
+
+
+@permission_required('arbiter.execute_commands')
+def clean(request):
+    if request.method == "POST":
+        if not (before := request.POST.get("before", "").strip()):
+            return HttpResponse("Before is required for cleaning.")
+        try:
+            call_command('clean', before=before)
+        except CommandError as e:
+            return HttpResponse(f'Could not run clean: {e}')
+        return HttpResponse("Ran clean successfully.")
+
+
+@permission_required('arbiter.execute_commands')
+def evaluate(request):
+    if request.method == "POST":
+        try:
+            call_command('evaluate')
+        except CommandError as e:
+            return HttpResponse(f'Could not run clean: {e}')
+    return HttpResponse("Ran evaluate successfully.")

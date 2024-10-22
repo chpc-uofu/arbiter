@@ -193,7 +193,7 @@
                         {% csrf_token %}
                         <h3>Run Arbiter Evaluation Loop:</h3>
                         <input type="submit" value="Evaluate"
-                            hx-post="{% url 'arbiter:dashboard-command' command='evaluate'%}" hx-swap="innerHTML"
+                            hx-post="{% url 'arbiter:evaluate' %}" hx-swap="innerHTML"
                             hx-target="#message-container">
                     </form>
                     <hr class="box-divider">
@@ -204,7 +204,7 @@
                             <h4>Before:</h4><input type="datetime-local" name="before">
                         </div>
                         <input type="submit" value="Clean"
-                            hx-post="{% url 'arbiter:dashboard-command' command='clean'%}" hx-swap="innerHTML"
+                            hx-post="{% url 'arbiter:clean' %}" hx-swap="innerHTML"
                             hx-include="[name='before']"
                             hx-target="#message-container">
                     </form>
@@ -228,8 +228,8 @@
                         <h3>Username</h3>
                         <input type="text" name="username" placeholder="">
 
-                        <h3>Limit</h3>
-                        <select name="limit">
+                        <h3>Property</h3>
+                        <select name="prop">
                             {% for limit in limits %}
                             <option value="{{limit.name}}">{{limit.name}}</option>
                             {% endfor %}
@@ -237,9 +237,9 @@
                         <h3>Value</h3>
                         <input type="text" name="value" placeholder="0">
                         <input type="button" value="Apply Limit" 
-                            hx-post="{% url 'arbiter:dashboard-command' command='apply' %}"
+                            hx-post="{% url 'arbiter:apply' %}"
                             hx-swap="innerHTML" hx-target="#message-container"
-                            hx-include="[name='host'],[name='username'],[name='limit'],[name='value']">
+                            hx-include="[name='host'],[name='username'],[name='prop'],[name='value']">
                 </form>
             </div>
 
@@ -265,7 +265,7 @@
                 {% for violation in violations %}
                 <tr>
                     <td>
-                        <a href="{% url 'arbiter:violation_change' violation.id %}">
+                        <a href="{% url 'arbiter:change-violation' violation.id %}">
                             <p>{{violation}}</p>
                         </a>
                     </td>

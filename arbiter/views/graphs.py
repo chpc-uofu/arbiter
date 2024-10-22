@@ -7,49 +7,7 @@ from django.core.management import call_command
 from django.utils.safestring import mark_safe
 import arbiter.plots as plots
 from django.utils import timezone
-import aiohttp
-import asyncio
 from django.http import HttpResponse
-from arbiter.utils import set_property
-
-
-def convert_policy(request, id: int):
-    selected_policy = Policy.objects.filter(pk=id).first()
-
-    if not selected_policy:
-        messages.error(request, "Policy not found")
-        return redirect(f"admin:arbiter_policy_changelist")
-
-    match request.POST.get("action"):
-        case "To Raw Query":
-            if selected_policy.is_raw_query:
-                messages.error(request, "Policy already uses a raw query")
-                return redirect("admin:arbiter_policy_change", selected_policy.pk)
-
-            selected_policy.query_params["raw"] = selected_policy.query
-            selected_policy.save()
-
-        case "To Builder Query":
-            if not selected_policy.is_raw_query:
-                messages.error(request, "Policy already uses a builder query")
-                return redirect("admin:arbiter_policy_change", selected_policy.pk)
-            selected_policy.query_params.pop("raw")
-            selected_policy.query_params[
-                "cpu_threshold"
-            ] = selected_policy.query_params.get("cpu_threshold", 1.0)
-            selected_policy.query_params[
-                "memory_threshold"
-            ] = selected_policy.query_params.get("memory_threshold", 1.0)
-            selected_policy.query_params[
-                "time_window"
-            ] = selected_policy.query_params.get("time_window", "15m")
-            selected_policy.save()
-        case _:
-            messages.error(request, "Action not recognized")
-            return redirect("admin:arbiter_policy_change", selected_policy.pk)
-
-    return redirect(f"admin:arbiter_policy_change", selected_policy.pk)
-
 
 def user_proc_graph(request, usage_type):
     if not request.user.has_perm("arbiter.change_dashboard"):
@@ -179,61 +137,7 @@ def apply_property_for_user(request):
     return render(request, "arbiter/message.html")
 
 
-def dashboard_command(request, command):
-    context = dict()
-    args = dict()
-    if not request.user.has_perm("arbiter.change_dashboard"):
-        context["error"] = "You do not have permission to execute commands"
-        return render(request, "arbiter/message.html", context)
-
-    if command == "evaluate":
-        message = f"Ran evaluation loop successfully. Check the logs for violations"
-
-    elif command == "clean":
-        if not request.POST.get("before", "").strip():
-            context["error"] = "Please provide a time to clean violations before."
-            return render(request, "arbiter/message.html", context)
-        else:
-            args["before"] = request.POST.get("before")
-
-        message = f"Cleaned violation history successfully."
-
-    else:
-        message = f"Executed the command <dfn>{command}</dfn> successfully!"
-
-    try:
-        call_command(command, **args)
-        context["info"] = mark_safe(message)
-    except Exception as e:
-        context["error"] = mark_safe(f"Could not execute command {command}: {e}")
-
-    return render(request, "arbiter/message.html", context)
-
-
-def expire_violation(request, violation_id):
-    if not request.user.has_perm("arbiter.delete_violation"):
-        messages.error(request, "You do not have permission to execute commands")
-        return redirect("admin:arbiter_violation_changelist")
-
-    violation = Violation.objects.filter(pk=violation_id).first()
-
-    if not violation:
-        messages.error(request, "Violation not found")
-        return redirect("admin:arbiter_dashboard_changelist")
-
-    if violation.expired:
-        messages.warning(request, "Violation was already expired")
-        return redirect("admin:arbiter_violation_changelist")
-
-    violation.expiration = timezone.now()
-    violation.save()
-    messages.info(request, "Violation expired successfully")
-
-    return redirect("admin:arbiter_violation_changelist")
-
-
 def violation_metrics_scrape(request):
-    # arbiter_violations{policy="foobar", offense_count=1} 2
     unexpired_violations_metrics = (
         Violation.objects.filter(expiration__gte=timezone.now())
         .values("policy__name", "offense_count")

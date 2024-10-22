@@ -16,7 +16,9 @@ urlpatterns = [
     path("violation/<int:violation_id>", violation.change_violation, name="change-violation"),
 
     path("dashboard/", dashboard.view_dashboard, name="view-dashboard"),
-    path("dashboard/command/<str:command>", dashboard.dashboard_command, name="dashboard-command"),
+    path("dashboard/clean", dashboard.clean, name="clean"),
+    path("dashboard/apply", dashboard.apply, name="apply"),
+    path("dashboard/evaluate", dashboard.evaluate, name="evaluate"),
 
     path("graphs/proc/cpu", graphs.user_proc_cpu_graph, name="user-proc-cpu-graph"),
     path("graphs/proc/memory",graphs.user_proc_memory_graph, name="user-proc-memory-graph"),

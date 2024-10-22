@@ -1,29 +1,19 @@
-import logging
-import aiohttp
-import http
 import re
 from pwd import getpwnam
-from arbiter.conf import (
-    WARDEN_DISABLE_AUTH,
-    WARDEN_DISABLE_SSL,
-    WARDEN_DISABLE_TLS,
-    WARDEN_PORT,
-    WARDEN_BEARER,
-    ARBITER_EMAIL_DOMAIN,
-)
+from arbiter.conf import ARBITER_EMAIL_DOMAIN
 
 
 USEC_PER_SEC = 1_000_000
 BYTES_PER_GIB = 1024**3
 NSEC_PER_SEC = 1000**3
-
 SEC_PER_MIN = 60
 SEC_PER_HOUR = 60**2
 SEC_PER_DAY = 60**2 * 24
 SEC_PER_WEEK = 60**2 * 24 * 7
 
 
-logger = logging.getLogger(__name__)
+def strip_port(host: str) -> str:
+    return host.split(":")[0]
 
 
 def get_uid(unit: str) -> int | None:
@@ -31,51 +21,6 @@ def get_uid(unit: str) -> int | None:
     if not match:
         return None
     return int(match.group(1))
-
-
-async def set_property(
-    target, session: aiohttp.ClientSession, prop: dict[str, str]
-) -> tuple[http.HTTPStatus, str]:
-    """
-    Sets a systemd property for a unit on host by sending a control request to cgroup-agent.
-    A property is a JSON object with the name and value of a property.For example,
-    prop = {"name" : "CPUQuotaPerSecUSec, "value", "1000000000"}
-    """
-
-    if WARDEN_DISABLE_TLS:
-        endpoint = f"http://{target.host}:{WARDEN_PORT}/control"
-    else:
-        endpoint = f"https://{target.host}:{WARDEN_PORT}/control"
-
-    payload = {"unit": target.unit, "property": prop}
-
-    if WARDEN_DISABLE_AUTH:
-        auth_header = None
-    else:
-        auth_header = {"Authorization": "Bearer " + WARDEN_BEARER}
-    try:
-        async with session.post(
-            url=endpoint,
-            json=payload,
-            timeout=5,
-            headers=auth_header,
-            ssl=WARDEN_DISABLE_SSL,
-        ) as response:
-            status = response.status
-            message = await response.json()
-    # TODO: handle specific exceptions
-    except Exception as e:
-        status = http.HTTPStatus.SERVICE_UNAVAILABLE
-        message = f"Service Unavailable : {e}"
-
-    return status, message
-
-
-def strip_port(host: str) -> str:
-    """
-    Strips the port from a host string
-    """
-    return host.split(":")[0]
 
 
 def default_user_lookup(username: str) -> tuple[str, str, str]:

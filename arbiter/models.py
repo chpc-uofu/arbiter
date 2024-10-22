@@ -1,9 +1,11 @@
-import re
-from django.db import models
 from datetime import timedelta
-from django.utils import timezone
 from typing import List, Dict
 from dataclasses import dataclass, asdict
+
+from django.db import models
+from django.utils import timezone
+
+from arbiter.utils import get_uid
 
 
 @dataclass
@@ -23,9 +25,9 @@ class Limit:
         return Limit(name="CPUQuotaPerSecUSec", value=usec_per_sec)
     
     @staticmethod
-    def to_json(*args: "Limit") -> List[Dict]:
-        return [a.json() for a in args]
-
+    def load(json: Dict) -> "Limit":
+        return Limit(name=json["name"], value=json["value"])
+    
 @dataclass
 class QueryParameters:
     proc_whitelist: str | None # prom matcher regex
@@ -40,9 +42,6 @@ class QueryParameters:
 class Query:
     raw: str
     params: QueryParameters | None
-
-    cpu_metric = 'systemd_unit_proc_cpu_usage_ns'
-    mem_metric = 'systemd_unit_proc_memory_bytes'
 
     def json(self):
         params = self.params.json() if self.params else None
@@ -120,6 +119,16 @@ class Policy(models.Model):
 
     query = models.JSONField()
 
+    @property
+    def constraints(self) -> List[Limit]:
+        if not self.penalty_constraints:
+            return []
+        return [Limit(name=l["name"], value=l["value"]) for l in self.penalty_constraints]
+
+    @property
+    def raw(self) -> str:
+        return self.query["raw"]
+
     def __str__(self):
         return f"{self.name} on {self.domain}"
 
@@ -168,14 +177,20 @@ class Target(models.Model):
     unit = models.CharField(max_length=255)
     host = models.CharField(max_length=255)
     username = models.CharField(max_length=255)
-    last_applied = models.JSONField(blank=True, null=True)
+    limits = models.JSONField(default=list)
 
     @property
     def uid(self):
-        match = re.search(r"user-(\d+)\.slice", self.unit)
-        if match:
-            return int(match.group(1))
-        return -1
+        return get_uid(self.unit)
+    
+    @property
+    def last_applied(self) -> List[Limit]:
+        if not self.limits:
+            return []
+        return [Limit(name=l["name"], value=l["value"]) for l in self.limits]
+    
+    def set_limits(self, limits: List[Limit]):
+        self.limits = [l.json() for l in limits]
 
     def __str__(self) -> str:
         return f"{self.username}@{self.host}"
