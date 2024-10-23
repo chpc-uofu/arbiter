@@ -1,9 +1,11 @@
-from django.urls import path
+from django.urls import path, include
 from arbiter.views import base_policy, graphs, usage_policy, violation, dashboard
 
 app_name = "arbiter" 
 
 urlpatterns = [
+    path("accounts/", include("django.contrib.auth.urls")),
+
     path("policy/base/add/", base_policy.new_base_policy, name="new-base-policy"),
     path("policy/base/", base_policy.BasePolicyListView.as_view(), name="list-base-policy"),
     path("policy/base/<int:policy_id>", base_policy.change_base_policy, name="change-base-policy"),
@@ -15,16 +17,13 @@ urlpatterns = [
     path("violation/", violation.ViolationListView.as_view(), name="list-violation"),
     path("violation/<int:violation_id>", violation.change_violation, name="change-violation"),
 
-    path("dashboard/", dashboard.view_dashboard, name="view-dashboard"),
-    path("dashboard/clean", dashboard.clean, name="clean"),
-    path("dashboard/apply", dashboard.apply, name="apply"),
-    path("dashboard/evaluate", dashboard.evaluate, name="evaluate"),
+    path("", dashboard.view_dashboard, name="view-dashboard"),
+    path("clean", dashboard.clean, name="clean"),
+    path("apply", dashboard.apply, name="apply"),
+    path("evaluate", dashboard.evaluate, name="evaluate"),
 
     path("graphs/proc/cpu", graphs.user_proc_cpu_graph, name="user-proc-cpu-graph"),
     path("graphs/proc/memory",graphs.user_proc_memory_graph, name="user-proc-memory-graph"),
-
-    path("graphs/violation/<int:violation_id>/cpu", graphs.violation_cpu_usage, name="user-violation-cpu-graph"),
-    path("graphs/violation/<int:violation_id>/memory", graphs.violation_memory_usage, name="user-violation-memory-graph"),
     
     path("metrics", graphs.violation_metrics_scrape, name="violation_metric_scrape"),
 ]

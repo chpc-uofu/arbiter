@@ -8,12 +8,8 @@ from testing.conf import *
 from testing.test_arbiter import create_violation
 from time import sleep
 
-from testing.fixtures.policies import *
-from testing.fixtures.limits import *
-from testing.fixtures.violations import *
-from testing.fixtures.penalties import *
-from testing.fixtures.properties import *
-from testing.fixtures.targets import *
+from testing.fixtures.targets import target1
+from testing.fixtures.policies import short_low_harsh_policy
 
 ########## CONSTANT DEFINITIONS ##########
 
@@ -113,39 +109,39 @@ def test_get_metrics(target1, short_low_harsh_policy):
 
 
 def test_set_mem_accounting():
-    set_and_verify_unit_property({"name": "MemoryAccounting", "value": "false"})
-    set_and_verify_unit_property({"name": "MemoryAccounting", "value": "true"})
+    set_and_verify_unit_property({"name": "MemoryAccounting", "value": False})
+    set_and_verify_unit_property({"name": "MemoryAccounting", "value": True})
 
 
 def test_set_cpu_accounting():
-    set_and_verify_unit_property({"name": "CPUAccounting", "value": "false"})
-    set_and_verify_unit_property({"name": "CPUAccounting", "value": "true"})
+    set_and_verify_unit_property({"name": "CPUAccounting", "value": False})
+    set_and_verify_unit_property({"name": "CPUAccounting", "value": True})
 
 
 def test_set_mem_limit():
-    set_and_verify_unit_property({"name": "MemoryMax", "value": str(8 * GIB)})
-    set_and_verify_unit_property({"name": "MemoryMax", "value": str(UNSET)})
+    set_and_verify_unit_property({"name": "MemoryMax", "value": 8 * GIB})
+    set_and_verify_unit_property({"name": "MemoryMax", "value": UNSET})
 
 
 def test_set_cpu_limit():
-    set_and_verify_unit_property({"name": "CPUQuotaPerSecUSec", "value": "500000"})
-    set_and_verify_unit_property({"name": "CPUQuotaPerSecUSec", "value": str(UNSET)})
+    set_and_verify_unit_property({"name": "CPUQuotaPerSecUSec", "value": 500000})
+    set_and_verify_unit_property({"name": "CPUQuotaPerSecUSec", "value": UNSET})
 
 
 def test_fail_read_only():
-    set_and_fail_unit_property({"name": "MemoryCurrent", "value": "800000"})
+    set_and_fail_unit_property({"name": "MemoryCurrent", "value": 800000})
 
 
 def test_fail_invalid_property():
-    set_and_fail_unit_property({"name": "NotAProperty", "value": "800000"})
+    set_and_fail_unit_property({"name": "NotAProperty", "value": 800000})
 
 
 def test_fail_invalid_value():
-    set_and_fail_unit_property({"name": "MemoryMax", "value": "true"})
+    set_and_fail_unit_property({"name": "MemoryMax", "value": True})
 
 
 def test_fail_write():
-    property = {"name": "MemoryMax", "value": "800000"}
+    property = {"name": "MemoryMax", "value": 800000}
     payload = {
         "unit": "NotASlice",
         "property": property,
@@ -170,6 +166,6 @@ def test_fail_malformed():
 
 
 def test_malformed_target():
-    property = {"name": "MemoryMax", "value": "800000"}
+    property = {"name": "MemoryMax", "value": 800000}
     r = set_property(property, unit="NOT FOUND")
     assert r.status_code == http.HTTPStatus.BAD_REQUEST

@@ -8,12 +8,9 @@ import asyncio
 
 from arbiter.eval import *
 from arbiter.models import Target
-from testing.fixtures.limits import *
-from testing.fixtures.violations import *
-from testing.fixtures.policies import *
-from testing.conf import *
-from testing.fixtures.targets import TargetTuple
 
+from testing.conf import *
+import testing.fixtures 
 
 ########## HELPER FUNCTIONS ##########
 def launch_ssh_process(command, user):
@@ -41,15 +38,14 @@ async def run_apply_with_session(limits, target):
 
 ########## Begin Tests ##########
 @pytest.mark.asyncio
-async def test_set_property(db):
-    target = TargetTuple(TEST_USER1_SLICE, TEST_HOST)
-    property = {"name": "MemoryAccounting", "value": "false"}
+async def test_set_property(db, target1):
+    prop = {"name": "MemoryAccounting", "value": False}
     async with aiohttp.ClientSession() as session:
-        status, message = await set_property(target, session, property)
+        status, message = await set_property(target1, session, prop)
         print(message)
         assert status == HTTPStatus.OK
-        property = {"name": "MemoryAccounting", "value": "true"}
-        status, message = await set_property(target, session, property)
+        prop = {"name": "MemoryAccounting", "value": True}
+        status, message = await set_property(target1, session, prop)
         assert status == HTTPStatus.OK
 
 

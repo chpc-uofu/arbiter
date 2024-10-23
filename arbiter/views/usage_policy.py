@@ -2,19 +2,23 @@ from django.shortcuts import render, redirect
 from django import forms
 from django.views.generic.list import ListView
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
+from django.urls import reverse_lazy
 
 from arbiter.models import UsagePolicy, Limit, Query, QueryParameters
 from arbiter.utils import usec_to_cores, bytes_to_gib, cores_to_usec, gib_to_bytes, cores_to_nsec, nsec_to_cores
 
 from .nav import navbar
 
-
-class UsagePolicyListView(ListView):
+class UsagePolicyListView(LoginRequiredMixin, ListView):
     model = UsagePolicy
+    login_url = reverse_lazy("arbiter:login")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["navbar"] = navbar(self.request)
+        context["can_create"] = self.request.user.has_perm("arbiter.add_usagepolicy")
         return context
 
 
@@ -33,7 +37,7 @@ class UsagePolicyForm(forms.ModelForm):
         widgets = {'grace_period': forms.TimeInput(), "repeated_offense_lookback": forms.TimeInput()}
 
     
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, disabled=False, **kwargs):
         super().__init__(*args, **kwargs)
         if constraints := self.instance.penalty_constraints:
             for c in constraints:
@@ -49,6 +53,11 @@ class UsagePolicyForm(forms.ModelForm):
                 self.fields['mem_threshold'].initial = bytes_to_gib(mem_threshold)
             self.fields['proc_whitelist'].initial = query["params"]["proc_whitelist"]
             self.fields['user_whitelist'].initial = query["params"]["user_whitelist"]
+
+        if disabled:
+            for field in self.fields.values():
+                field.widget.attrs['disabled'] = True
+
 
     def clean_cpu_limit(self):
         if cpu := self.cleaned_data["cpu_limit"]:
@@ -109,25 +118,42 @@ class UsagePolicyForm(forms.ModelForm):
         policy.save()
 
 
+@login_required(login_url=reverse_lazy("arbiter:login"))
 def new_usage_policy(request):
+    can_change = request.user.has_perm("arbiter.add_usagepolicy")
+
+    if not can_change:
+        messages.error(request, "You do not have permissions to create a Usage Policy")
+        return redirect("arbiter:view-dashboard")
+
     if request.method == "POST":
-        form = UsagePolicyForm(request.POST)
+        form = UsagePolicyForm(request.POSt)
         if form.is_valid():
             form.save()
             messages.success(request, "Successfully created usage policy.")
             return redirect(f"arbiter:list-usage-policy")
     else:
         form = UsagePolicyForm()
-    return render(request, "arbiter/change_view.html", {"form": form, "navbar": navbar(request)})
+
+    context = {"form": form, "navbar": navbar(request), "can_change": can_change}
+    return render(request, "arbiter/change_view.html", context)
 
 
+@login_required(login_url=reverse_lazy("arbiter:login"))
 def change_usage_policy(request, policy_id):
     policy = UsagePolicy.objects.filter(pk=policy_id).first()
+    
+    can_change = request.user.has_perm("arbiter.change_usagepolicy")
 
     if not policy:
-        messages.error("Usage Policy not found.")
+        messages.error(request, "Usage Policy not found.")
+        return redirect("arbiter:list-usage-policy")
 
     if request.method == "POST":
+        if not can_change:
+            messages.error(request, "You do not have permissions to change a Usage Policy")
+            return redirect(request.path_info)
+
         form = UsagePolicyForm(request.POST, instance=policy)
         if "save" in request.POST and form.is_valid():
             form.save()
@@ -138,7 +164,10 @@ def change_usage_policy(request, policy_id):
             messages.success(request, "Successfully removed usage policy.")
             return redirect(f"arbiter:list-usage-policy")
     else:
-        form = UsagePolicyForm(instance=policy)
+        if can_change:
+            form = UsagePolicyForm(instance=policy)
+        else:
+            form = UsagePolicyForm(instance=policy, disabled=True)
 
-    context = {"form": form, "navbar": navbar(request)}
+    context = {"form": form, "navbar": navbar(request), "can_change": can_change}
     return render(request, "arbiter/change_view.html", context)

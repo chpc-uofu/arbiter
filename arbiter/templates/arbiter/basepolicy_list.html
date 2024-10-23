@@ -4,13 +4,14 @@
 
 <h1>Base Policies</h1>
 
-<a href="{% url 'arbiter:new-base-policy'%}">New Base Policy</a> 
+{% if can_create %}
+    <a href="{% url 'arbiter:new-base-policy'%}">New Base Policy</a> 
+{% endif %}
 
 <ul>
 {% for policy in object_list %}
     <li>
         <a href="{% url 'arbiter:change-base-policy' policy.id%}">{{policy.name}}</a>
-        {{ policy.domain}} - {{ policy.description}}
     </li></br>
 {% empty %}
     <li>

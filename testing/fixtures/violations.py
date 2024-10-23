@@ -1,6 +1,6 @@
 import pytest
 from arbiter.models import Violation, Target
-from fixtures.policies import short_low_harsh_policy
+from .policies import short_low_harsh_policy
 from datetime import datetime
 from django.utils.timezone import make_aware
 

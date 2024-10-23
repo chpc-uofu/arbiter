@@ -13,12 +13,6 @@ import arbiter.eval
 from arbiter.models import Target, Violation
 
 from testing.conf import *
-from testing.fixtures.policies import *
-from testing.fixtures.limits import *
-from testing.fixtures.violations import *
-from testing.fixtures.penalties import *
-from testing.fixtures.properties import *
-from testing.fixtures.targets import *
 
 
 logger = logging.getLogger(__name__)
@@ -63,7 +57,7 @@ def create_violating_command(policy: arbiter.models.Policy) -> str:
 
 
 def get_violations(target: arbiter.eval.Target):
-    now_tz = django.utils.timezone.make_aware(datetime.now())
+    now_tz = django.utils.timezone.make_aware(django.utils.timezone.datetime.now())
     violations = arbiter.models.Violation.objects.filter(
         unit=target.unit,
         host=target.host,

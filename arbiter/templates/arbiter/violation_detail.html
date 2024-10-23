@@ -23,11 +23,16 @@
     </li>
 </ul>
 
-<form action="{{ request.path }}" method="post">
-    {% csrf_token %}
-    <input type="submit" name="expire" value="expire"/>
-    <input type="submit" name="delete" value="delete"/>
-</form>
+{% if can_change %}
+    <form action="{{ request.path }}" method="post">
+        {% csrf_token %}
+
+        {% if not violation.expired %}
+            <input type="submit" name="expire" value="expire"/>
+        {% end if %}
+        <input type="submit" name="delete" value="delete"/>
+    </form>
+{% endif %}
 
 {% endblock content %}
 

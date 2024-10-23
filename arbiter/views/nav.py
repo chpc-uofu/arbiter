@@ -1,6 +1,4 @@
 from django.urls import reverse
-from collections import defaultdict
-
 
 class BarItem:
     def __init__(self, name, url, attributes = None):
@@ -13,12 +11,11 @@ class BarItem:
         return f'<a {attributes} href="{self.url}">{self.name}</a>'
 
 def navbar(request):
-    routes = {
-        "Base Policy": reverse("arbiter:list-base-policy"),
-        "Usage Policy": reverse("arbiter:list-usage-policy"),
-        "Violation": reverse("arbiter:list-violation"),
-        "Dashboard": reverse("arbiter:view-dashboard")
-    }
+
+    routes = {"Home": reverse("arbiter:view-dashboard")}
+    routes["Base Policy"] = reverse("arbiter:list-base-policy")
+    routes["Usage Policy"] = reverse("arbiter:list-usage-policy")
+    routes["Violations"] = reverse("arbiter:list-violation")
 
     items = []
 

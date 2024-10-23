@@ -4,7 +4,9 @@
 
 <h1>Usage Policies</h1>
 
-<a href="{% url 'arbiter:new-usage-policy'%}">New Usage Policy</a> 
+{% if can_create %}
+    <a href="{% url 'arbiter:new-usage-policy'%}">New Usage Policy</a> 
+{% endif %}
 
 <ul>
 {% for policy in object_list %}
