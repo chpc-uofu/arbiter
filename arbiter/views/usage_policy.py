@@ -127,7 +127,7 @@ def new_usage_policy(request):
         return redirect("arbiter:view-dashboard")
 
     if request.method == "POST":
-        form = UsagePolicyForm(request.POSt)
+        form = UsagePolicyForm(request.POST)
         if form.is_valid():
             form.save()
             messages.success(request, "Successfully created usage policy.")

@@ -12,7 +12,6 @@
 {% for policy in object_list %}
     <li>
         <a href="{% url 'arbiter:change-usage-policy' policy.id%}">{{policy.name}}</a>
-        {{ policy.domain}} - {{ policy.description}} 
     </li></br>
 {% empty %}
     <li>No Usage Policies.</li>
