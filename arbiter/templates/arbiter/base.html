@@ -39,15 +39,12 @@
     {% endif %}
 
     {% if user.is_authenticated %}
-    Hi {{ user.username }}!
-
-    <form action="{%url 'arbiter:logout' %}?next={% url 'arbiter:view-dashboard' %} "method="post">
-        {% csrf_token %}
-        <button type="submit">Log Out</button>
-    </form>
+        <form action="{% url 'arbiter:logout' %}" method="post">
+            {% csrf_token %}
+            <button type="submit">Log Out</button>
+        </form>
     {% else %}
-    <p>You are not logged in</p>
-    <a href="{% url 'arbiter:login' %}">Log In</a>
+        <a href="{% url 'arbiter:login' %}">Log In</a>
     {% endif %}
 
 

@@ -85,6 +85,7 @@ STATIC_URL = "static/"
 
 LOGIN_URL = "/arbiter/accounts/login/"
 LOGIN_REDIRECT_URL = "/arbiter/"
+LOGOUT_REDIRECT_URL = "/arbiter/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
