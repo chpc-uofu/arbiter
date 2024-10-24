@@ -1,4 +1,3 @@
-from prometheus_api_client import PrometheusConnect
 from pathlib import Path
 import os
 

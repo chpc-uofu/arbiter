@@ -1,4 +1,3 @@
-from datetime import datetime
 import time
 import pytest
 import multiprocessing
@@ -14,6 +13,15 @@ import arbiter.eval
 from arbiter.models import Target, Violation
 
 from testing.conf import *
+
+
+from testing.conf import *
+from testing.fixtures.policies import *
+from testing.fixtures.limits import *
+from testing.fixtures.violations import *
+from testing.fixtures.penalties import *
+from testing.fixtures.properties import *
+from testing.fixtures.targets import *
 
 
 logger = logging.getLogger(__name__)
@@ -54,7 +62,6 @@ def create_violating_command(policy: arbiter.models.Policy) -> str:
     if not time:
         time = 10
     command += f" --timeout {time}s"
-    logger.info(command)
     return command
 
 

@@ -6,7 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse_lazy
 
-from arbiter.models import UsagePolicy, Limit, Query, QueryParameters
+from arbiter.models import UsagePolicy, Limit, QueryData, QueryParameters
 from arbiter.utils import usec_to_cores, bytes_to_gib, cores_to_usec, gib_to_bytes, cores_to_nsec, nsec_to_cores
 
 from .nav import navbar
@@ -46,13 +46,13 @@ class UsagePolicyForm(forms.ModelForm):
                 if c["name"] == "MemoryMax" and c["value"]:
                     self.fields['mem_limit'].initial = bytes_to_gib(c["value"])
 
-        if query := self.instance.query:
-            if cpu_threshold := query["params"]["cpu_threshold"]:
+        if query_data := self.instance.query_data:
+            if cpu_threshold := query_data["params"]["cpu_threshold"]:
                 self.fields['cpu_threshold'].initial = nsec_to_cores(cpu_threshold)
-            if mem_threshold := query["params"]["mem_threshold"]:
+            if mem_threshold := query_data["params"]["mem_threshold"]:
                 self.fields['mem_threshold'].initial = bytes_to_gib(mem_threshold)
-            self.fields['proc_whitelist'].initial = query["params"]["proc_whitelist"]
-            self.fields['user_whitelist'].initial = query["params"]["user_whitelist"]
+            self.fields['proc_whitelist'].initial = query_data["params"]["proc_whitelist"]
+            self.fields['user_whitelist'].initial = query_data["params"]["user_whitelist"]
 
         if disabled:
             for field in self.fields.values():
@@ -109,7 +109,7 @@ class UsagePolicyForm(forms.ModelForm):
             user_whitelist=self.cleaned_data["user_whitelist"],
             proc_whitelist=self.cleaned_data["proc_whitelist"],
         )
-        policy.query = Query.build_query(
+        policy.query_data = QueryData.build_query(
             lookback=policy.lookback,
             domain=policy.domain, 
             params=params

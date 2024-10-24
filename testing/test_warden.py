@@ -8,8 +8,13 @@ from testing.conf import *
 from testing.test_arbiter import create_violation
 from time import sleep
 
-from testing.fixtures.targets import target1
-from testing.fixtures.policies import short_low_harsh_policy
+from testing.fixtures.policies import *
+from testing.fixtures.limits import *
+from testing.fixtures.violations import *
+from testing.fixtures.penalties import *
+from testing.fixtures.properties import *
+from testing.fixtures.targets import *
+
 
 ########## CONSTANT DEFINITIONS ##########
 

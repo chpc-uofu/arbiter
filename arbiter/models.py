@@ -156,7 +156,7 @@ class BasePolicy(Policy):
     def save(self, **kwargs):
         self.is_base_policy = True
         query = f'systemd_unit_cpu_usage_ns{{instance=~"{self.domain}"}}'
-        self.query = QueryData.raw_query(query).json()
+        self.query_data = QueryData.raw_query(query).json()
         return super().save(**kwargs)
 
 

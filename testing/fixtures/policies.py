@@ -3,7 +3,6 @@ from arbiter.models import Policy, QueryData, QueryParameters
 from fixtures.penalties import *
 from datetime import timedelta
 from .limits import *
-from .constraints import harsh_constraints
 
 
 CPU_LOW_THRESHOLD = 0.9
@@ -14,6 +13,7 @@ MEM_MID_THRESHOLD = 1.75
 DOMAIN = ".*"
 
 SHORT_WINDOW=timedelta(seconds=10)
+SHORT_WINDOW_SEC = 10
 
 
 @pytest.fixture

@@ -96,7 +96,7 @@ def create_violation(target: Target, policy: Policy) -> Violation:
 def query_violations(policies: list[Policy]) -> list[Violation]:
     violations = []
     for policy in policies:
-        response = PROMETHEUS_CONNECTION.custom_query(policy.raw)
+        response = PROMETHEUS_CONNECTION.custom_query(policy.query)
         for result in response:
             unit = result["metric"]["unit"]
             host = strip_port(result["metric"]["instance"])
@@ -135,8 +135,7 @@ async def apply_limits(limits: list[Limit], target: Target, session: aiohttp.Cli
 
     applied = []
     for limit in limits:
-        payload = limit.json()
-        status, message = await set_property(target, session, payload)
+        status, message = await set_property(target, session, limit)
         if status == http.HTTPStatus.OK:
             logger.info(f"successfully applied limit {limit} to {target}")
             applied.append(limit)

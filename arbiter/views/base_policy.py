@@ -6,7 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 
-from arbiter.models import BasePolicy, Limit, Query
+from arbiter.models import BasePolicy, Limit, QueryData
 from arbiter.utils import usec_to_cores, bytes_to_gib, cores_to_usec, gib_to_bytes
 
 from .nav import navbar
@@ -69,7 +69,7 @@ class BasePolicyForm(forms.ModelForm):
         if mem_limit := self.cleaned_data['mem']:
             limits.append(Limit.memory_max(mem_limit).json())
         policy.penalty_constraints = limits
-        policy.query = Query.raw_query(f'systemd_unit_cpu_usage_ns{{instance=~"{policy.domain}"}}').json()
+        policy.query_data = QueryData.raw_query(f'systemd_unit_cpu_usage_ns{{instance=~"{policy.domain}"}}').json()
         policy.save()
 
 
