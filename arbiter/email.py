@@ -14,6 +14,12 @@ logger = logging.getLogger(__name__)
 user_lookup = import_string(ARBITER_USER_LOOKUP)
 
 
+def send_violation_emails(violations: list[Violation]) -> None:
+    for violation in violations:
+        if not violation.is_base_status:
+            send_violation_email(violation)
+
+
 def send_violation_email(violation: Violation | None):
     cpu_chart, cpu_pie = plots.violation_cpu_usage_figures(violation)
     mem_chart, mem_pie = plots.violation_mem_usage_figures(violation)

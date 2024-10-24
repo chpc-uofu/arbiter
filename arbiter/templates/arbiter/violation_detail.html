@@ -1,0 +1,39 @@
+{% extends "arbiter/base.html" %}
+
+{% block content %}
+
+<ul>
+    <li>
+        Target: {{ violation.target }}
+    </li>
+    <li>
+        Policy: {{ violation.policy }}
+    </li>
+    <li>
+        Expiration: {{ violation.expiration }}
+    </li>
+    <li>
+        Timestamp: {{ violation.timestamp }}
+    </li>
+    <li>
+        Offense Count: {{ violation.offense_count}}
+    </li>
+    <li>
+        Is Base Status: {{ violation.is_base_status}}
+    </li>
+</ul>
+
+{% if can_change %}
+    <form action="{{ request.path }}" method="post">
+        {% csrf_token %}
+
+        {% if not violation.expired %}
+            <input type="submit" name="expire" value="expire"/>
+        {% endif %}
+        <input type="submit" name="delete" value="delete"/>
+    </form>
+{% endif %}
+
+{% endblock content %}
+
+

@@ -1,239 +1,210 @@
-from django.db import models
 from datetime import timedelta
-from arbiter.utils import set_property
-import asyncio
-import aiohttp
-import re
+from dataclasses import dataclass, asdict
+from arbiter.utils import cores_to_nsec, gib_to_bytes
+
+from django.db import models
 from django.utils import timezone
 
-
-class Property(models.Model):
-    """
-    Represents a systemd property that can be modified per systemd unit.
-    Fields 'type' and 'operation' are used to specify how a string representing
-    the property value should be cast, and how to judge a property value as more 'severe'.
-
-    Example :
-        name = 'CPUQuotaPerSecUSec' # name of valid systemd property that can be modified
-        type = 'int'                # the data type of this property
-        operation = '<'             # the more 'severe' property is the lesser one
-    """
-
-    class Meta:
-        verbose_name_plural = "Properties"
-
-    name = models.CharField(max_length=255, unique=True)
-
-    class Type(models.TextChoices):
-        INTEGER = ("int", "Integer")
-        FLOAT = ("float", "Floating Point")
-        BOOLEAN = ("bool", "Boolean")
-
-    type = models.CharField(max_length=255, choices=Type.choices)
-
-    class OP(models.TextChoices):
-        GREATER = (">", "Greater Than")
-        LESS = ("<", "Less Than")
-        ENABLED = ("==", "Enabled")
-
-    operation = models.CharField(max_length=255, choices=OP.choices)
-
-    compare = {
-        ">": lambda a, b: a > b,
-        "<": lambda a, b: a < b,
-        "==": lambda a, b: a and not b or a,
-    }
-
-    cast = {
-        "int": lambda x: int(x),
-        "float": lambda x: float(x),
-        "bool": lambda x: bool(x),
-    }
-
-    def __str__(self) -> str:
-        return f"Name:{self.name} Type:{self.type} Operation:{self.operation}"
+from arbiter.utils import get_uid
 
 
-class Limit(models.Model):
-    """
-    Represents a systemd property with a value. Used to represent a resource limit to be
-    applied to units.
-    """
+@dataclass
+class Limit:
+    name: str
+    value: int
 
-    UNSET_LIMIT = "-1"
-    property = models.ForeignKey(Property, on_delete=models.CASCADE)
-    value = models.CharField(max_length=255)
+    UNSET_LIMIT = -1
 
-    def property_json(self) -> dict[str, str]:
-        return {"name": self.property.name, "value": self.value}
+    def json(self):
+        return asdict(self)
 
     @staticmethod
-    def compare(a: "Limit", b: "Limit") -> "Limit":
-        a_val = Property.cast[a.property.type](a.value)
-        b_val = Property.cast[b.property.type](b.value)
-        return a if Property.compare[a.property.operation](a_val, b_val) else b
+    def memory_max(max_bytes: int) -> "Limit":
+        return Limit(name="MemoryMax", value=max_bytes)
+    
+    @staticmethod
+    def cpu_quota(usec_per_sec: int) -> "Limit":
+        return Limit(name="CPUQuotaPerSecUSec", value=usec_per_sec)
+    
+    @staticmethod
+    def to_json(*limits: "Limit") -> dict:
+        return {l.name: l.value for l in limits}
+    
+    @staticmethod
+    def from_json(json : dict) -> list["Limit"]:
+        limits = []
+        for name, value in json.items():
+            limits.append(Limit(name=name, value=value))
 
-    def __str__(self) -> str:
-        return f"{self.property.name} : {self.value}"
+        return limits
+    
+    @staticmethod
+    def compare(limit1, limit2):
+        if limit1.value < limit2.value:
+            return limit1
+        else:
+            return limit2
+
+@dataclass
+class QueryParameters:
+    cpu_threshold: int  # nanoseconds
+    mem_threshold: int  # bytes
+    proc_whitelist: str | None = None # prom matcher regex
+    user_whitelist: str | None = None # prom matcher regex
+
+    def json(self):
+        return asdict(self)
+
+@dataclass
+class QueryData:
+    query: str
+    params: QueryParameters | None
+
+    def json(self):
+        json_params = self.params.json() if self.params else None
+        return {"query": self.query, "params": json_params}
 
     @staticmethod
-    async def _update_target_limits(limit, targets) -> None:
-        async with aiohttp.ClientSession() as session:
-            tasks = [
-                set_property(target, session, limit.property_json())
-                for target in targets
-            ]
-            await asyncio.gather(*tasks)
+    def raw_query(query:str) -> "QueryData":
+        return QueryData(query=query, params=None)
+    
+    @staticmethod
+    def build_query(lookback: timedelta, domain: str, params: QueryParameters) -> "QueryData":
+        
+        sum_by_labels = 'unit, instance, username'
 
-    def save(self, **kwargs) -> None:
-        if self.pk:
-            targets_to_update = list(self.target_set.all())
-            asyncio.run(self._update_target_limits(self, targets_to_update))
+        filters = f'instance=~"{domain}"'
 
-        return super().save(**kwargs)
+        lookback = f'{int(lookback.total_seconds())}s'
+        
+        if params.user_whitelist:
+            filters += f', user!~"{params.user_whitelist}"'
+        
+        if params.proc_whitelist:
+            proc_filter = filters + f', proc=~"{params.proc_whitelist}"'
+            cpu_proc = f"systemd_unit_proc_cpu_usage_ns{{{proc_filter}}}[{lookback}]"
+            cpu_offset = f"(sum by ({sum_by_labels}) (rate({cpu_proc})))"
+            mem_proc = f"systemd_unit_proc_memory_bytes{{{proc_filter}}}[{lookback}]"
+            mem_offset = f"(sum by ({sum_by_labels}) (avg_over_time({mem_proc})))"
 
+        if params.cpu_threshold is not None:
+            cpu_unit = f'systemd_unit_cpu_usage_ns{{ {filters} }}[{lookback}]'
+            cpu_total = f'(sum by ({sum_by_labels}) (rate({cpu_unit})))'
+            if params.proc_whitelist:
+                cpu = f'(({cpu_total} - {cpu_offset}) / {cores_to_nsec(params.cpu_threshold)}) > 1.0'
+            else:
+                cpu = f'({cpu_total} / {cores_to_nsec(params.cpu_threshold)}) > 1.0'
 
-class Penalty(models.Model):
-    """
-    Represents a set of limits to be applied to a unit@host for a set period of time.
-    """
+        if params.mem_threshold is not None:
+            mem_unit = f'systemd_unit_memory_bytes{{{filters}}}[{lookback}]'
+            mem_total = f'(sum by ({sum_by_labels}) (avg_over_time({mem_unit})))'
+            if params.proc_whitelist:
+                mem = f'(({mem_total} - {mem_offset}) / {gib_to_bytes(params.mem_threshold)}) > 1.0'
+            else:
+                mem = f'({mem_total} / {gib_to_bytes(params.mem_threshold)}) > 1.0'
 
-    class Meta:
-        verbose_name_plural = "Penalties"
+        if params.mem_threshold and params.cpu_threshold:
+            query = f'{cpu} or {mem}'
+        elif params.cpu_threshold:
+            query = cpu
+        elif params.mem_threshold:
+            query = mem
+        else:
+            query = None
 
-    name = models.CharField(max_length=255, default="Penalty")
-    limits = models.ManyToManyField(Limit)
-    duration = models.DurationField(default=timedelta(minutes=5))
-    repeat_offense_scale = models.FloatField(
-        default=1.0,
-        help_text="How much to scale penalty for repeat offenses (default 1.0)",
-    )
+        return QueryData(query=query, params=params)
 
-    def __str__(self) -> str:
-        return f"{self.name}"
 
 
 class Policy(models.Model):
-    """
-    Represents a 'rule' that when broken is enforced. The policy applies to a domain of hosts, and
-    has a penalty associated with it if it is broken. The query property is a PromQL query used to
-    calculate when the policy has been violated, and is generated by the fields in query_params.
-    However, the policy may be anything at all, represented as the 'raw' field in query_params.
-    """
-
     class Meta:
         verbose_name_plural = "Policies"
 
+    is_base_policy = models.BooleanField(default=False, null=False, editable=False)
+
     name = models.CharField(max_length=255, unique=True)
     domain = models.CharField(max_length=1024)
+    lookback = models.DurationField(default=timedelta(minutes=15))
     description = models.TextField(max_length=1024, blank=True)
-    penalty = models.ForeignKey(Penalty, on_delete=models.CASCADE)
-    query_params = models.JSONField()
-    timewindow = models.DurationField(
-        default=timedelta(minutes=5),
-        help_text="How far back Arbiter looks at usage (default 5m)",
-    )
-    query = models.TextField(max_length=1024, blank=True)
-    grace_period = models.DurationField(
-        default=timedelta(minutes=3),
-        help_text="How long after a violation/penalty expires until the unit/host can violate this policy again",
-    )
-    lookback_window = models.DurationField(
-        default=timedelta(hours=3),
-        help_text="How far back arbiter looks for prior violations to scale penalty (default 3h)",
-    )
+    penalty_constraints = models.JSONField(null=False)
+    penalty_duration = models.DurationField(null=True, default=timedelta(minutes=15))
 
-    def build_query(self):
-        if self.is_raw_query:
-            return self.query_params["raw"]
-        else:
-            query = ""
-            user_filters = f'instance=~"{self.domain}"'
-            process_cpu_whitelist = ""
-            process_mem_whitelist = ""
-            timewindow = f"{int(self.timewindow.total_seconds())}s"
+    repeated_offense_scalar = models.FloatField(null=True, default=1.0)
+    repeated_offense_lookback = models.DurationField(null=True, default=timedelta(hours=3))
+    grace_period = models.DurationField(null=True, default=timedelta(minutes=5))
 
-            if self.query_params.get("process_whitelist"):
-                process_cpu_whitelist = (
-                    f"- ignoring(job) (sum by (unit, instance, username) (rate(systemd_unit_proc_cpu_usage_ns"
-                    f'{{{user_filters}, proc=~"{self.query_params["process_whitelist"]}"}}[{timewindow}]) or 0*systemd_unit_cpu_usage_ns{{instance=~"{self.domain}"}}))'
-                )
-                process_mem_whitelist = (
-                    f"- ignoring(job) (sum by (unit, instance, username) (avg_over_time(systemd_unit_proc_memory_bytes"
-                    f'{{{user_filters}, proc=~"{self.query_params["process_whitelist"]}"}}[{timewindow}]) or 0*systemd_unit_cpu_usage_ns{{instance=~"{self.domain}"}}))'
-                )
-
-            if self.query_params.get("unit_whitelist"):
-                user_filters += f', unit !~ "{self.query_params["unit_whitelist"]}"'
-
-            if "cpu_threshold" in self.query_params:
-                query += (
-                    f"(sum by (unit, instance, username) (rate(systemd_unit_cpu_usage_ns{{{user_filters}}}"
-                    f"[{timewindow}]){process_cpu_whitelist})"
-                    f' / {1000**3 * self.query_params["cpu_threshold"]}) > 1.0'
-                )
-                # if both thresholds in params, put a or between the checks
-                if "memory_threshold" in self.query_params:
-                    query += " or "
-
-            if "memory_threshold" in self.query_params:
-                query += (
-                    f"(sum by (unit, instance, username) (avg_over_time(systemd_unit_memory_current_bytes"
-                    f"{{{user_filters}}}[{timewindow}]){process_mem_whitelist})"
-                    f'/ {1024**3 * self.query_params["memory_threshold"]}) > 1.0'
-                )
-            return query
+    query_data = models.JSONField()
 
     @property
-    def is_raw_query(self):
-        return "raw" in self.query_params
+    def query(self):
+        query_str = self.query_data.get("query", None)
+
+        return query_str
+
+
+
+class BasePolicy(Policy):
+    class Meta:
+        proxy = True
+
+    class BasePolicyManager(models.Manager):
+        def get_queryset(self):
+            return super().get_queryset().filter(is_base_policy=True)
+        
+    objects =  BasePolicyManager()
 
     def save(self, **kwargs):
-        self.query = self.build_query()
+        self.is_base_policy = True
+        query = f'systemd_unit_cpu_usage_ns{{instance=~"{self.domain}"}}'
+        self.query_data = QueryData.raw_query(query).json()
         return super().save(**kwargs)
 
-    def __str__(self) -> str:
-        return f"{self.name} on ({self.domain})"
+
+class UsagePolicy(Policy):
+
+    class UsagePolicyManager(models.Manager):
+        def get_queryset(self):
+            return super().get_queryset().filter(is_base_policy=False)
+        
+    objects = UsagePolicyManager()
+    class Meta:
+        proxy = True
+
+    def save(self, **kwargs):
+        self.is_base_policy = False
+        return super().save(**kwargs)
 
 
 class Target(models.Model):
-    """
-    Respresents a unit-host pairing which limits can be applied on
-    """
-
     class Meta:
         verbose_name_plural = "Targets"
         constraints = [
-            models.UniqueConstraint(fields=["unit", "host", "username"], name="unique_target"),
+            models.UniqueConstraint(
+                fields=["unit", "host", "username"], name="unique_target"
+            ),
         ]
 
     unit = models.CharField(max_length=255)
     host = models.CharField(max_length=255)
     username = models.CharField(max_length=255)
-    last_applied = models.ManyToManyField(Limit)
+    last_applied = models.JSONField(default=dict)
 
+    @property
+    def uid(self):
+        return get_uid(self.unit)
+    
     def __str__(self) -> str:
         return f"{self.username}@{self.host}"
 
-    @property
-    def uid(self) -> int | None:
-        match = re.search(r"user-(\d+)\.slice", self.unit)
-        if not match:
-            return None
-        return int(match.group(1))
-
 
 class Violation(models.Model):
-    """
-    Represents a violation of a policy by a unit on a host. Also stipulates how long
-    the unit is "in" violation
-    """
+    is_base_status = models.BooleanField(default=False, editable=False)
 
     target = models.ForeignKey(Target, on_delete=models.CASCADE)
     policy = models.ForeignKey(Policy, on_delete=models.CASCADE)
-    expiration = models.DateTimeField()
+    expiration = models.DateTimeField(null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
-    offense_count = models.IntegerField(default=1)
+    offense_count = models.IntegerField(default=1, null=True)
 
     @property
     def duration(self) -> timedelta:
@@ -241,19 +212,15 @@ class Violation(models.Model):
 
     @property
     def expired(self) -> bool:
+        if not self.expiration:
+            return False
         return self.expiration < timezone.now()
-
-    def __str__(self) -> str:
-        return (
-            f"Unit {self.target.unit} violated {self.policy.name} on {self.target.host}"
-        )
+    
+    def __str__(self):
+        return f'{self.target} - {self.policy}'
 
 
 class Event(models.Model):
-    """
-    A logging model to show when events happen
-    """
-
     class EventTypes(models.TextChoices):
         APPLY = ("Apply", "Limit Applied on a Target")
         EVALUATION = ("Eval", "Policies Evaluated")

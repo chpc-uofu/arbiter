@@ -1,0 +1,14 @@
+{% extends "arbiter/base.html" %}
+
+{% block content %}
+
+<form action="{{ request.path }}" method="post">
+    {% csrf_token %}
+    {{ form  }}
+    {% if can_change %}
+        <input type="submit" name="save" value="save"/>
+        <input type="submit" name="delete" value="delete"/>
+    {% endif %}
+</form>
+
+{% endblock content %}

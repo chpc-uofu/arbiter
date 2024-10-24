@@ -2,67 +2,118 @@ import functools
 import http
 import asyncio
 import aiohttp
-from django.utils import timezone
 import logging
-from arbiter.models import *
-from arbiter.email import send_violation_email
-from collections import defaultdict
-from arbiter.utils import set_property, strip_port
-from typing import TYPE_CHECKING
+import collections
+
+from django.db.models import Q
+from django.utils import timezone
+
+from arbiter.utils import strip_port, get_uid
+from arbiter.models import Target, Violation, Policy, Limit, Event
+from arbiter.email import send_violation_emails
 from arbiter.conf import (
     PROMETHEUS_CONNECTION,
     WARDEN_JOB,
     ARBITER_PERMISSIVE_MODE,
     ARBITER_NOTIFY_USERS,
     ARBITER_MIN_UID,
+    WARDEN_DISABLE_AUTH,
+    WARDEN_DISABLE_SSL,
+    WARDEN_DISABLE_TLS,
+    WARDEN_PORT,
+    WARDEN_BEARER,
 )
-
-if TYPE_CHECKING:
-    from django.db.models import QuerySet
 
 logger = logging.getLogger(__name__)
 
 
+async def set_property(target: Target, session: aiohttp.ClientSession, limit: Limit) -> tuple[http.HTTPStatus, str]:
+    if WARDEN_DISABLE_TLS:
+        endpoint = f"http://{target.host}:{WARDEN_PORT}/control"
+    else:
+        endpoint = f"https://{target.host}:{WARDEN_PORT}/control"
+
+    payload = {"unit": target.unit, "property": limit.json()}
+
+    if WARDEN_DISABLE_AUTH:
+        auth_header = None
+    else:
+        auth_header = {"Authorization": "Bearer " + WARDEN_BEARER}
+    try:
+        async with session.post(
+            url=endpoint,
+            json=payload,
+            timeout=5,
+            headers=auth_header,
+            ssl=WARDEN_DISABLE_SSL,
+        ) as response:
+            status = response.status
+            message = await response.text()
+        
+    except Exception as e:
+        status = http.HTTPStatus.SERVICE_UNAVAILABLE
+        message = f"Service Unavailable : {e}"
+
+    return status, message
+
+
+def create_violation(target: Target, policy: Policy) -> Violation:
+    unit_violations = Violation.objects.filter(policy=policy, target=target)
+
+    if policy.is_base_policy:
+        if unit_violations.exists():
+            return None
+        return Violation(
+            target=target,
+            policy=policy,
+            expiration=None,
+            offense_count=None,
+            is_base_status=True,
+        )
+
+    in_grace = unit_violations.filter(
+        expiration__gte=timezone.now() - policy.grace_period
+    ).exists()
+
+    if not in_grace:
+        num_offense = unit_violations.filter(
+            timestamp__gte=timezone.now() - policy.repeated_offense_lookback
+        ).count()
+        expiration = timezone.now() + policy.penalty_duration * (
+            1 + policy.repeated_offense_scalar * num_offense
+        )
+        offense_count = num_offense + 1
+        return Violation(
+            target=target,
+            policy=policy,
+            expiration=expiration,
+            offense_count=offense_count,
+        )
+
+    return None
+
+
 def query_violations(policies: list[Policy]) -> list[Violation]:
-    """
-    Queries prometheus for violations of each policy given, and returns
-    a list of all violations.
-    """
     violations = []
     for policy in policies:
-        query = policy.query
-        response = PROMETHEUS_CONNECTION.custom_query(query)
+        response = PROMETHEUS_CONNECTION.custom_query(policy.query)
         for result in response:
             unit = result["metric"]["unit"]
             host = strip_port(result["metric"]["instance"])
             username = result["metric"]["username"]
 
-            target, _ = Target.objects.get_or_create(unit=unit, host=host, username=username)
-
-            if target.uid < ARBITER_MIN_UID:
+            if get_uid(unit) < ARBITER_MIN_UID:
                 continue
 
-            unit_violations = Violation.objects.filter(policy=policy, target=target)
-            in_grace = unit_violations.filter(
-                expiration__gte=timezone.now() - policy.grace_period
-            ).exists()
+            target, created = Target.objects.get_or_create(
+                unit=unit, host=host, username=username
+            )
+            if created:
+                logger.info(f"new target {target}")
 
-            if not in_grace:
-                num_offense = unit_violations.filter(
-                    timestamp__gte=timezone.now() - policy.lookback_window
-                ).count()
-                expiration = timezone.now() + (
-                    policy.penalty.duration
-                    * (1 + policy.penalty.repeat_offense_scale * num_offense)
-                )
-
-                new_violation = Violation(
-                    target=target,
-                    policy=policy,
-                    expiration=expiration,
-                    offense_count=num_offense + 1,
-                )
-                violations.append(new_violation)
+            if violation := create_violation(target, policy):
+                violations.append(violation)
+                logger.info(f"New violation of '{policy}' by '{target}'")
 
     return violations
 
@@ -77,85 +128,72 @@ def get_affected_hosts(domain) -> list[str]:
     return [strip_port(r["metric"]["instance"]) for r in result]
 
 
-async def apply_limits(
-    limits: list[Limit],
-    target: Target,
-    session: aiohttp.ClientSession,
-):
+async def apply_limits(limits: list[Limit], target: Target, session: aiohttp.ClientSession):
     """
     For a given target, attempt to apply a number of property limits on that target.
     """
 
-    to_apply = {limit.property.name: limit for limit in limits}
-    async for limit in target.last_applied.all():
-        prop = limit.property.name
-
-        if prop in to_apply and to_apply[prop].value == limit.value:
-            to_apply.pop(prop)
-
-        elif prop not in to_apply:
-            unset = Limit(property=limit.property, value=Limit.UNSET_LIMIT)
-            to_apply[prop] = unset
-
     applied = []
-    for limit in to_apply.values():
-        payload = limit.property_json()
-        status, message = await set_property(target, session, payload)
+    for limit in limits:
+        status, message = await set_property(target, session, limit)
         if status == http.HTTPStatus.OK:
-            logger.info(f"applied limits {limits} to {target}")
+            logger.info(f"successfully applied limit {limit} to {target}")
             applied.append(limit)
+        else:
+            logger.warning(f"could not apply {limit} to {target}: {message}")
 
     return (target, applied)
 
 
 def reduce_limits(limits: list[Limit]) -> list[Limit]:
-    """
-    Takes a list of many possible limits of many properties,
-    and reduces them to just one possible limit per property,
-    depending on how they are compared.
-    """
-
-    limit_map = defaultdict(list)
+    limit_map = collections.defaultdict(list)
     for limit in limits:
-        limit_map[limit.property.name].append(limit)
+        limit_map[limit.name].append(limit)
 
     reduced = []
     for candidates in limit_map.values():
-        reduced.append(functools.reduce(Limit.compare, candidates))
+        compare = lambda a, b: a if a.value < b.value else b
+        reduced.append(functools.reduce(compare, candidates))
 
+    logger.info(f"REDUCED: {reduced}")
     return reduced
 
 
-async def reduce_and_apply_limits(
-    applicable: dict[Target, list[Limit]],
-):
-    """
-    For each target with applicable limits, first reduce the list of limits (taking
-    the 'harshest' limit defined by the property operator) and then apply those limits.
-    """
+def resolve_limits(target: Target, limits: list[Limit]) -> list[Limit]:
+    resolved = limits[:]
+    for current in Limit.from_json(target.last_applied):
+        if current in resolved:
+            resolved.remove(current)
+        elif current.name not in [r.name for r in resolved]:
+            resolved.append(Limit(name=current.name, value=Limit.UNSET_LIMIT))
 
+    return resolved
+
+
+async def reduce_and_apply_limits(applicable: dict[Target, list[Limit]]):
     async with aiohttp.ClientSession() as session, asyncio.TaskGroup() as tg:
         tasks = []
         for target, limit_list in applicable.items():
+            logger.info(f"APPLICABLE {limit_list}")
             reduced = reduce_limits(limit_list)
-            tasks.append(tg.create_task(apply_limits(reduced, target, session)))
+            resolved = resolve_limits(target, reduced)
+            tasks.append(tg.create_task(apply_limits(resolved, target, session)))
 
     final_applications = {}
     for task in tasks:
         target, applications = task.result()
         final_applications[target] = applications
-
         if not applications:
             continue
 
         current = []
-        for old in target.last_applied.all():
-            if old.property.name not in [a.property.name for a in applications]:
+        for old in Limit.from_json(target.last_applied):
+            if old.name not in [a.name for a in applications]:
                 current.append(old)
 
         not_unset = [a for a in applications if a.value != Limit.UNSET_LIMIT]
         current.extend(not_unset)
-        await target.last_applied.aset(current)
+        target.last_applied = Limit.to_json(*current)
         await target.asave()
 
     return final_applications
@@ -177,42 +215,45 @@ def create_event_for_eval(violations):
     )
 
 
-def evaluate(policies: "QuerySet[Policy]" = None):
+def evaluate(policies=None):
     policies = policies or Policy.objects.all()
 
     violations = query_violations(policies)
     Violation.objects.bulk_create(violations, ignore_conflicts=True)
 
-    unexpired = Violation.objects.filter(expiration__gt=timezone.now())
-    unexpired = unexpired.prefetch_related("policy__penalty__limits__property")
+    unexpired = Violation.objects.filter(
+        Q(expiration__gt=timezone.now()) | Q(expiration__isnull=True)
+    )
+    unexpired = unexpired.prefetch_related("policy")
 
-    targets = Target.objects.prefetch_related("last_applied__property").all()
+    targets = Target.objects.all()
     affected_hosts = {
         policy.domain: get_affected_hosts(policy.domain) for policy in policies
     }
     applicable_limits = {target: [] for target in targets}
     for v in unexpired:
         for host in affected_hosts[v.policy.domain]:
-            target, _ = targets.get_or_create(unit=v.target.unit, host=host, username=v.target.username)
+            target, _ = targets.get_or_create(
+                unit=v.target.unit, host=host, username=v.target.username
+            )
 
-            target.last_applied.prefetch_related("property")
             if target not in applicable_limits:
                 applicable_limits[target] = []
 
-            limits = v.policy.penalty.limits.all()
+            limits = Limit.from_json(v.policy.penalty_constraints)
             applicable_limits[target].extend(limits)
 
     create_event_for_eval(violations)
 
-    if ARBITER_NOTIFY_USERS:
-        for violation in violations:
-            send_violation_email(violation)
+    if not ARBITER_NOTIFY_USERS:
+        send_violation_emails(violations)
 
     if ARBITER_PERMISSIVE_MODE:
         return
 
     try:
         asyncio.run(reduce_and_apply_limits(applicable_limits))
-    except Exception as e:
-        logger.error(f"Error: {e}")
-        return
+    except ExceptionGroup as eg:
+        for e in eg.exceptions:
+            logger.error(f"Error: {e} ")
+        

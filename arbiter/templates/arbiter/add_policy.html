@@ -1,0 +1,12 @@
+{% extends "admin/change_form.html" %}
+{% block submit_buttons_bottom %}
+{{block.super}}
+{% endblock %}
+{% block content %}
+{% if base_policy %}
+    <a href="{{ request.path }}" class="button">Create Usage Policy</a>
+{% else %}
+    <a href="{{ request.path }}?base_policy=true" class="button">Create Base Policy</a>
+{% endif %}
+{{block.super}}
+{% endblock %}

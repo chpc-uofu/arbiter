@@ -7,6 +7,7 @@ from django.utils.timezone import get_current_timezone, localtime
 
 from typing import TypeAlias
 
+from arbiter.utils import nsec_to_cores, bytes_to_gib
 
 from arbiter.conf import PROMETHEUS_CONNECTION
 
@@ -154,16 +155,18 @@ def usage_figures(
 def violation_usage_figures(violation: Violation, usage_type: str, step: str = "30s"):
     username = violation.target.username
     host = violation.target.host
-    start = violation.timestamp - violation.policy.timewindow
+    start = violation.timestamp - violation.policy.lookback
     end = violation.expiration
     penalized = violation.timestamp
     step = align_with_prom_limit(violation.timestamp, violation.expiration, step)
 
     if usage_type == CPU_USAGE:
-        threshold = violation.policy.query_params.get("cpu_threshold", None)
+        if threshold := violation.policy.query_params.get("cpu_threshold", None):
+            threshold = nsec_to_cores(threshold)
         return cpu_usage_figures(username, host, start, end, threshold, penalized, step)
     if usage_type == MEM_USAGE:
-        threshold = violation.policy.query_params.get("memory_threshold", None)
+        if threshold := violation.policy.query_params.get("mem_threshold", None):
+            threshold = bytes_to_gib(threshold)
         return mem_usage_figures(username, host, start, end, threshold, penalized, step)
 
     return Figure(), Figure()

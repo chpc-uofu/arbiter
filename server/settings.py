@@ -1,4 +1,3 @@
-from prometheus_api_client import PrometheusConnect
 from pathlib import Path
 import os
 
@@ -83,8 +82,11 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+LOGIN_URL = "/arbiter/accounts/login/"
+LOGIN_REDIRECT_URL = "/arbiter/"
+LOGOUT_REDIRECT_URL = "/arbiter/"
 
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 LOGGING = {
     "version": 1,
