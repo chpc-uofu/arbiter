@@ -18,7 +18,6 @@ from testing.conf import *
 from testing.conf import *
 from testing.fixtures.policies import *
 from testing.fixtures.limits import *
-from testing.fixtures.violations import *
 from testing.fixtures.penalties import *
 from testing.fixtures.properties import *
 from testing.fixtures.targets import *
@@ -106,7 +105,6 @@ def test_single_target_single_policy(short_low_harsh_policy, target1):
 
     # make sure correct limits were applied
     should_be = short_low_harsh_policy.penalty_constraints
-    print(Violation.objects.all())
     assert db_target1.last_applied == should_be
 
     # now wait out violation and make sure limits were removed
@@ -247,7 +245,6 @@ def test_single_target_distinct_policy(
 
     # penalty for violation of soft policy has a longer duration, so it is still active
     db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
-    print(Violation.objects.all().values("policy__name", "expiration"))
     assert db_target1 != None
     should_be = short_mid_soft_policy.penalty_constraints
     assert db_target1.last_applied == should_be
