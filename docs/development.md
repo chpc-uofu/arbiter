@@ -1,6 +1,3 @@
-# Contribution Guide 
-Contributions are made submitting pull requests or submitting issues. 
-
 # Development
 
 ## Environment
@@ -26,7 +23,7 @@ Arbiter has two main components, the web server and the evaluation loop.
 5. Now that everything is set up, you can start up the evaluation loop to run forever, by using `python3 manage.py evaluate` with along with how long you want to wait between each loop using the `--seconds`, `--minutes`, and `--hours` arguments. If no furation arguments are provided, the loop runs once and exits. Additionally, you can specifiy only certain Policies to evaluate if you want using `--policies` and a list of Policy names.
 
 ## Running cgroup-warden
-The following describes how to get a single `cgroup-warden` up for testing. See [TESTING.md](testing/TESTING.md) for details.
+The following describes how to get a single `cgroup-warden` up for testing. See [TESTING.md](TESTING.md) for details.
 1. Open a local terminal (not in devcontainer) 
 2. `cd testing/vagrant`
 3. `vagrant up`
