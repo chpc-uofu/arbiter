@@ -14,6 +14,10 @@ from arbiter.conf import (
 
 logger = logging.getLogger(__name__)
 
+USEC_PER_SEC = 1_000_000
+BYTES_PER_GIB = 1024**3
+NSEC_PER_SEC = 1000**3
+
 
 def get_uid(unit: str) -> int | None:
     match = re.search(r"user-(\d+)\.slice", unit)
@@ -51,7 +55,7 @@ async def set_property(
             ssl=WARDEN_DISABLE_SSL,
         ) as response:
             status = response.status
-            message = await response.json()
+            message = await response.text()
     # TODO: handle specific exceptions
     except Exception as e:
         status = http.HTTPStatus.SERVICE_UNAVAILABLE
@@ -86,3 +90,29 @@ def default_realname_lookup(username: str) -> str:
     except KeyError:
         pass
     return realname
+
+def cores_to_usec(cores: float) -> int:
+    usec = cores * USEC_PER_SEC
+    if usec < 1:
+        return 1
+    return int(usec)
+
+
+def cores_to_nsec(cores: float) -> int:
+    nsec = cores * NSEC_PER_SEC
+    if nsec < 1:
+        return 1
+    return int(nsec)
+
+
+def usec_to_cores(usec: int) -> float:
+    return usec / USEC_PER_SEC
+
+
+def nsec_to_cores(nsec: int) -> float:
+    return nsec / NSEC_PER_SEC
+
+
+def gib_to_bytes(gib: float) -> int:
+    _bytes = gib * BYTES_PER_GIB
+    return int(_bytes)

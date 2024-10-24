@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from arbiter.models import Policy, Violation 
+from arbiter.models import Policy, Violation
 from django.db.models import Count
 from django.shortcuts import redirect
 from django.contrib import messages

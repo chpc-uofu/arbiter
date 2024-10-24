@@ -4,12 +4,15 @@ from datetime import timedelta
 from django.utils import timezone
 from typing import List, Dict
 from dataclasses import dataclass, asdict
+from arbiter.utils import cores_to_nsec, gib_to_bytes
 
 
 @dataclass
 class Limit:
     name: str
     value: int
+
+    UNSET_LIMIT = -1
 
     def json(self):
         return asdict(self)
@@ -23,43 +26,58 @@ class Limit:
         return Limit(name="CPUQuotaPerSecUSec", value=usec_per_sec)
     
     @staticmethod
-    def to_json(*args: "Limit") -> List[Dict]:
-        return [a.json() for a in args]
+    def to_json(*limits: "Limit") -> dict:
+        return {l.name: l.value for l in limits}
+    
+    @staticmethod
+    def from_json(json : dict) -> list["Limit"]:
+        limits = []
+        for name, value in json.items():
+            limits.append(Limit(name=name, value=value))
+
+        return limits
+    
+    @staticmethod
+    def compare(limit1, limit2):
+        if limit1.value < limit2.value:
+            return limit1
+        else:
+            return limit2
 
 @dataclass
 class QueryParameters:
-    proc_whitelist: str | None # prom matcher regex
-    user_whitelist: str | None # prom matcher regex
     cpu_threshold: int  # nanoseconds
     mem_threshold: int  # bytes
+    proc_whitelist: str | None = None # prom matcher regex
+    user_whitelist: str | None = None # prom matcher regex
 
     def json(self):
         return asdict(self)
 
 @dataclass
-class Query:
+class QueryData:
     query: str
     params: QueryParameters | None
 
-    cpu_metric = 'systemd_unit_proc_cpu_usage_ns'
-    mem_metric = 'systemd_unit_proc_memory_bytes'
+    CPU_METRIC = 'systemd_unit_proc_cpu_usage_ns'
+    MEM_METRIC = 'systemd_unit_proc_memory_bytes'
 
     def json(self):
-        params = self.params.json() if self.params else None
-        return {"query": self.query, "params": params}
+        json_params = self.params.json() if self.params else None
+        return {"query": self.query, "params": json_params}
 
     @staticmethod
-    def raw_query(query:str) -> "Query":
-        return Query(query=query, params=None)
+    def raw_query(query:str) -> "QueryData":
+        return QueryData(query=query, params=None)
     
     @staticmethod
-    def build_query(lookback: timedelta, domain: str, params: QueryParameters) -> "Query":
+    def build_query(lookback: timedelta, domain: str, params: QueryParameters) -> "QueryData":
         
         sum_by_labels = 'unit, instance, username'
 
         filters = f'instance=~"{domain}"'
 
-        lookback = f'{lookback.total_seconds()}s'
+        lookback = f'{int(lookback.total_seconds())}s'
         
         if params.user_whitelist:
             filters += f', user!~"{params.user_whitelist}"'
@@ -75,17 +93,17 @@ class Query:
             cpu_unit = f'systemd_unit_cpu_usage_ns{{ {filters} }}[{lookback}]'
             cpu_total = f'(sum by ({sum_by_labels}) (rate({cpu_unit})))'
             if params.proc_whitelist:
-                cpu = f'(({cpu_total} - {cpu_offset}) / {params.cpu_threshold}) > 1.0'
+                cpu = f'(({cpu_total} - {cpu_offset}) / {cores_to_nsec(params.cpu_threshold)}) > 1.0'
             else:
-                cpu = f'({cpu_total} / {params.cpu_threshold}) > 1.0'
+                cpu = f'({cpu_total} / {cores_to_nsec(params.cpu_threshold)}) > 1.0'
 
         if params.mem_threshold is not None:
             mem_unit = f'systemd_unit_memory_bytes{{{filters}}}[{lookback}]'
             mem_total = f'(sum by ({sum_by_labels}) (avg_over_time({mem_unit})))'
             if params.proc_whitelist:
-                mem = f'(({mem_total} - {mem_offset}) / {params.mem_threshold}) > 1.0'
+                mem = f'(({mem_total} - {mem_offset}) / {gib_to_bytes(params.mem_threshold)}) > 1.0'
             else:
-                mem = f'({mem_total} / {params.mem_threshold}) > 1.0'
+                mem = f'({mem_total} / {gib_to_bytes(params.mem_threshold)}) > 1.0'
 
         if params.mem_threshold and params.cpu_threshold:
             query = f'{cpu} or {mem}'
@@ -96,7 +114,7 @@ class Query:
         else:
             query = None
 
-        return Query(query=query, params=params)
+        return QueryData(query=query, params=params)
 
 
 
@@ -110,7 +128,6 @@ class Policy(models.Model):
     domain = models.CharField(max_length=1024)
     lookback = models.DurationField(default=timedelta(minutes=15))
     description = models.TextField(max_length=1024, blank=True)
-
     penalty_constraints = models.JSONField(null=False)
     penalty_duration = models.DurationField(null=True, default=timedelta(minutes=15))
 
@@ -118,18 +135,24 @@ class Policy(models.Model):
     repeated_offense_lookback = models.DurationField(null=True, default=timedelta(hours=3))
     grace_period = models.DurationField(null=True, default=timedelta(minutes=5))
 
-    query = models.JSONField()
+    query_data = models.JSONField()
 
+    @property
+    def query(self):
+        query_str = self.query_data.get("query", None)
 
-class BasePolicyManager(models.Manager):
-    def get_queryset(self):
-        return super().get_queryset().filter(is_base_policy=True)
+        return query_str
+
 
 
 class BasePolicy(Policy):
     class Meta:
         proxy = True
-    
+
+    class BasePolicyManager(models.Manager):
+        def get_queryset(self):
+            return super().get_queryset().filter(is_base_policy=True)
+        
     objects =  BasePolicyManager()
 
     def save(self, **kwargs):
@@ -139,12 +162,12 @@ class BasePolicy(Policy):
         return super().save(**kwargs)
 
 
-class UsagePolicyManager(models.Manager):
-    def get_queryset(self):
-        return super().get_queryset().filter(is_base_policy=False)
-
-
 class UsagePolicy(Policy):
+
+    class UsagePolicyManager(models.Manager):
+        def get_queryset(self):
+            return super().get_queryset().filter(is_base_policy=False)
+        
     objects = UsagePolicyManager()
     class Meta:
         proxy = True
@@ -167,7 +190,7 @@ class Target(models.Model):
     host = models.CharField(max_length=255)
     username = models.CharField(max_length=255)
     uid = models.IntegerField(null=True)
-    last_applied = models.JSONField()
+    last_applied = models.JSONField(default=dict)
 
     def save(self, **kwargs):
         match = re.search(r"user-(\d+)\.slice", self.unit)

@@ -41,12 +41,13 @@ def create_violation(target: Target, policy: Policy) -> Violation:
     in_grace = unit_violations.filter(
         expiration__gte=timezone.now() - policy.grace_period
     ).exists()
+
     if not in_grace:
         num_offense = unit_violations.filter(
-            timestamp__gte=timezone.now() - policy.lookback_window
+            timestamp__gte=timezone.now() - policy.repeated_offense_lookback
         ).count()
-        expiration = timezone.now() + policy.penalty.duration * (
-            1 + policy.penalty.repeat_offense_scale * num_offense
+        expiration = timezone.now() + policy.penalty_duration * (
+            1 + policy.repeated_offense_scalar * num_offense
         )
         offense_count = num_offense + 1
         return Violation(
@@ -108,20 +109,9 @@ async def apply_limits(
     For a given target, attempt to apply a number of property limits on that target.
     """
 
-    to_apply = {limit.property.name: limit for limit in limits}
-    async for limit in target.last_applied.all():
-        prop = limit.property.name
-
-        if prop in to_apply and to_apply[prop].value == limit.value:
-            to_apply.pop(prop)
-
-        elif prop not in to_apply:
-            unset = Limit(property=limit.property, value=Limit.UNSET_LIMIT)
-            to_apply[prop] = unset
-
     applied = []
-    for limit in to_apply.values():
-        payload = limit.property_json()
+    for limit in limits:
+        payload = limit.json()
         status, message = await set_property(target, session, payload)
         if status == http.HTTPStatus.OK:
             logger.info(f"successfully applied limit {limit} to {target}")
@@ -141,14 +131,25 @@ def reduce_limits(limits: list[Limit]) -> list[Limit]:
 
     limit_map = defaultdict(list)
     for limit in limits:
-        limit_map[limit.property.name].append(limit)
+        limit_map[limit.name].append(limit)
 
     reduced = []
     for candidates in limit_map.values():
         reduced.append(functools.reduce(Limit.compare, candidates))
 
+    logger.info(f"REDUCED: {reduced}")
     return reduced
 
+def resolve_limits(target: Target, limits: list[Limit]) -> list[Limit]:
+    resolved = limits[:]
+    for current in Limit.from_json(target.last_applied):
+        if current in resolved:
+            resolved.remove(current)
+        elif current.name not in [r.name for r in resolved]:
+            resolved.append(Limit(name=current.name, value=Limit.UNSET_LIMIT))
+
+    logger.info(f"RESOLVED: {resolved}")
+    return resolved
 
 async def reduce_and_apply_limits(
     applicable: dict[Target, list[Limit]],
@@ -162,7 +163,8 @@ async def reduce_and_apply_limits(
         tasks = []
         for target, limit_list in applicable.items():
             reduced = reduce_limits(limit_list)
-            tasks.append(tg.create_task(apply_limits(reduced, target, session)))
+            resolved = resolve_limits(target, reduced)
+            tasks.append(tg.create_task(apply_limits(resolved, target, session)))
 
     final_applications = {}
     for task in tasks:
@@ -173,13 +175,13 @@ async def reduce_and_apply_limits(
             continue
 
         current = []
-        for old in target.last_applied.all():
-            if old.property.name not in [a.property.name for a in applications]:
+        for old in Limit.from_json(target.last_applied):
+            if old.name not in [a.name for a in applications]:
                 current.append(old)
 
         not_unset = [a for a in applications if a.value != Limit.UNSET_LIMIT]
         current.extend(not_unset)
-        await target.last_applied.aset(current)
+        target.last_applied = Limit.to_json(*current)
         await target.asave()
 
     return final_applications
@@ -209,9 +211,9 @@ def evaluate(policies: "QuerySet[Policy]" = None):
     unexpired = Violation.objects.filter(
         Q(expiration__gt=timezone.now()) | Q(expiration__isnull=True)
     )
-    unexpired = unexpired.prefetch_related("policy__penalty__limits__property")
+    unexpired = unexpired.prefetch_related("policy")
 
-    targets = Target.objects.prefetch_related("last_applied__property").all()
+    targets = Target.objects.all()
     affected_hosts = {
         policy.domain: get_affected_hosts(policy.domain) for policy in policies
     }
@@ -222,16 +224,15 @@ def evaluate(policies: "QuerySet[Policy]" = None):
                 unit=v.target.unit, host=host, username=v.target.username
             )
 
-            target.last_applied.prefetch_related("property")
             if target not in applicable_limits:
                 applicable_limits[target] = []
 
-            limits = v.policy.penalty.limits.all()
+            limits = Limit.from_json(v.policy.penalty_constraints)
             applicable_limits[target].extend(limits)
 
     create_event_for_eval(violations)
 
-    if ARBITER_NOTIFY_USERS:
+    if not ARBITER_NOTIFY_USERS:
         send_violation_emails(violations)
 
     if ARBITER_PERMISSIVE_MODE:
@@ -239,6 +240,7 @@ def evaluate(policies: "QuerySet[Policy]" = None):
 
     try:
         asyncio.run(reduce_and_apply_limits(applicable_limits))
-    except Exception as e:
-        logger.error(f"Error: {e}")
-        return
+    except ExceptionGroup as eg:
+        for e in eg.exceptions:
+            logger.error(f"Error: {e} ")
+        

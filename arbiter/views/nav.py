@@ -3,14 +3,15 @@ from collections import defaultdict
 
 
 class BarItem:
-    def __init__(self, name, url, attributes = None):
+    def __init__(self, name, url, attributes=None):
         self.name = name
         self.url = url
         self.attr = attributes or {}
 
     def render(self):
-        attributes = ' '.join([f'{k}={v}' for k, v in self.attr.items()])
+        attributes = " ".join([f"{k}={v}" for k, v in self.attr.items()])
         return f'<a {attributes} href="{self.url}">{self.name}</a>'
+
 
 def navbar(request):
     routes = {
