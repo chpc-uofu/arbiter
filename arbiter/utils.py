@@ -15,12 +15,23 @@ SEC_PER_WEEK = 60**2 * 24 * 7
 def strip_port(host: str) -> str:
     return host.split(":")[0]
 
+USEC_PER_SEC = 1_000_000
+BYTES_PER_GIB = 1024**3
+NSEC_PER_SEC = 1000**3
+
 
 def get_uid(unit: str) -> int | None:
     match = re.search(r"user-(\d+)\.slice", unit)
     if not match:
         return None
     return int(match.group(1))
+
+
+def strip_port(host: str) -> str:
+    """
+    Strips the port from a host string
+    """
+    return host.split(":")[0]
 
 
 def default_user_lookup(username: str) -> tuple[str, str, str]:

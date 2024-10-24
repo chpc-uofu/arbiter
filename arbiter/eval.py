@@ -24,8 +24,6 @@ from arbiter.conf import (
     WARDEN_BEARER,
 )
 
-UNSET_VALUE = -1
-
 logger = logging.getLogger(__name__)
 
 
@@ -76,9 +74,10 @@ def create_violation(target: Target, policy: Policy) -> Violation:
     in_grace = unit_violations.filter(
         expiration__gte=timezone.now() - policy.grace_period
     ).exists()
+
     if not in_grace:
         num_offense = unit_violations.filter(
-            timestamp__gte=timezone.now() - policy.lookback
+            timestamp__gte=timezone.now() - policy.repeated_offense_lookback
         ).count()
         expiration = timezone.now() + policy.penalty_duration * (
             1 + policy.repeated_offense_scalar * num_offense
@@ -119,10 +118,25 @@ def query_violations(policies: list[Policy]) -> list[Violation]:
     return violations
 
 
+def get_affected_hosts(domain) -> list[str]:
+    """
+    For a given domain, calculated all other hosts in the domain that
+    the penalty for a violation in that domain would apply to.
+    """
+    up_query = f"up{{job=~'{WARDEN_JOB}', instance=~'{domain}'}}"
+    result = PROMETHEUS_CONNECTION.custom_query(up_query)
+    return [strip_port(r["metric"]["instance"]) for r in result]
+
+
 async def apply_limits(limits: list[Limit], target: Target, session: aiohttp.ClientSession):
+    """
+    For a given target, attempt to apply a number of property limits on that target.
+    """
+
     applied = []
     for limit in limits:
-        status, message = await set_property(target, session, limit)
+        payload = limit.json()
+        status, message = await set_property(target, session, payload)
         if status == http.HTTPStatus.OK:
             logger.info(f"successfully applied limit {limit} to {target}")
             applied.append(limit)
@@ -130,18 +144,6 @@ async def apply_limits(limits: list[Limit], target: Target, session: aiohttp.Cli
             logger.warning(f"could not apply {limit} to {target}: {message}")
 
     return (target, applied)
-
-
-def resolve_limits(target: Target, limits: list[Limit]) -> list[Limit]:
-    resolved = limits[:]
-    for current in target.last_applied:
-        if current in resolved:
-            resolved.remove(current)
-        elif current.name not in [r.name for r in resolved]:
-            resolved.append(Limit(name=current.name, value=UNSET_VALUE))
-
-    logger.info(f"RESOLVED: {resolved}")
-    return resolved
 
 
 def reduce_limits(limits: list[Limit]) -> list[Limit]:
@@ -158,15 +160,18 @@ def reduce_limits(limits: list[Limit]) -> list[Limit]:
     return reduced
 
 
-async def update_limits(target: Target, limits: list[Limit]) -> None:
-    current = [l for l in target.last_applied if l.name not in [a.name for a in limits]]
-    not_unset = [a for a in limits if a.value != UNSET_VALUE]
-    current.extend(not_unset)
-    target.set_limits(current)
-    await target.asave()
+def resolve_limits(target: Target, limits: list[Limit]) -> list[Limit]:
+    resolved = limits[:]
+    for current in Limit.from_json(target.last_applied):
+        if current in resolved:
+            resolved.remove(current)
+        elif current.name not in [r.name for r in resolved]:
+            resolved.append(Limit(name=current.name, value=Limit.UNSET_LIMIT))
+
+    return resolved
 
 
-async def apply_target_limits(applicable: dict[Target, list[Limit]]):
+async def reduce_and_apply_limits(applicable: dict[Target, list[Limit]]):
     async with aiohttp.ClientSession() as session, asyncio.TaskGroup() as tg:
         tasks = []
         for target, limit_list in applicable.items():
@@ -181,9 +186,19 @@ async def apply_target_limits(applicable: dict[Target, list[Limit]]):
         final_applications[target] = applications
         if not applications:
             continue
-        await update_limits(target, applications)
+
+        current = []
+        for old in Limit.from_json(target.last_applied):
+            if old.name not in [a.name for a in applications]:
+                current.append(old)
+
+        not_unset = [a for a in applications if a.value != Limit.UNSET_LIMIT]
+        current.extend(not_unset)
+        target.last_applied = Limit.to_json(*current)
+        await target.asave()
 
     return final_applications
+
 
 def create_event_for_eval(violations):
     violations_json = []
@@ -201,50 +216,45 @@ def create_event_for_eval(violations):
     )
 
 
-def hosts_in_domain(domain) -> list[str]:
-    up_query = f"up{{job=~'{WARDEN_JOB}', instance=~'{domain}'}}"
-    result = PROMETHEUS_CONNECTION.custom_query(up_query)
-    return [strip_port(r["metric"]["instance"]) for r in result]
-
-
-def get_affected_targets(violation: Violation):
-    username = violation.target.username
-    unit = violation.target.unit
-    targets = []
-    for host in hosts_in_domain(violation.policy.domain):
-        t, _ = Target.objects.get_or_create(unit=unit, username=username, host=host)
-        targets.append(t)
-    return targets
-
-
 def evaluate(policies=None):
     policies = policies or Policy.objects.all()
 
     violations = query_violations(policies)
     Violation.objects.bulk_create(violations, ignore_conflicts=True)
 
-    filters = Q(expiration__gt=timezone.now()) | Q(expiration__isnull=True)
-    unexpired = Violation.objects.filter(filters)
+    unexpired = Violation.objects.filter(
+        Q(expiration__gt=timezone.now()) | Q(expiration__isnull=True)
+    )
+    unexpired = unexpired.prefetch_related("policy")
 
-    to_apply = {target: [] for target in Target.objects.all()}
+    targets = Target.objects.all()
+    affected_hosts = {
+        policy.domain: get_affected_hosts(policy.domain) for policy in policies
+    }
+    applicable_limits = {target: [] for target in targets}
+    for v in unexpired:
+        for host in affected_hosts[v.policy.domain]:
+            target, _ = targets.get_or_create(
+                unit=v.target.unit, host=host, username=v.target.username
+            )
 
-    for violation in unexpired:
-        for target in get_affected_targets(violation):
-            if target not in to_apply:
-                to_apply[target] = []
+            if target not in applicable_limits:
+                applicable_limits[target] = []
 
-            to_apply[target].extend(violation.policy.constraints)
+            limits = Limit.from_json(v.policy.penalty_constraints)
+            applicable_limits[target].extend(limits)
 
     create_event_for_eval(violations)
 
-    if ARBITER_NOTIFY_USERS:
+    if not ARBITER_NOTIFY_USERS:
         send_violation_emails(violations)
 
     if ARBITER_PERMISSIVE_MODE:
         return
 
     try:
-        asyncio.run(apply_target_limits(to_apply))
-    except ExceptionGroup as e:
-        for err in e.exceptions:
-            logger.error(f"{err}")
+        asyncio.run(reduce_and_apply_limits(applicable_limits))
+    except ExceptionGroup as eg:
+        for e in eg.exceptions:
+            logger.error(f"Error: {e} ")
+        

@@ -1,7 +1,7 @@
 from django.urls import path, include
 from arbiter.views import base_policy, graphs, usage_policy, violation, dashboard
 
-app_name = "arbiter" 
+app_name = "arbiter"
 
 urlpatterns = [
     path("accounts/", include("django.contrib.auth.urls")),
