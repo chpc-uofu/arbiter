@@ -26,7 +26,6 @@ from arbiter.conf import (
 
 UNSET_VALUE = -1
 
-
 logger = logging.getLogger(__name__)
 
 

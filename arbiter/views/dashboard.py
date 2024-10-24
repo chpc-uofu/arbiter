@@ -71,7 +71,7 @@ def apply(request):
             v = cores_to_usec(v) if v != -1 else v
             limit = Limit.cpu_quota(v)
         elif prop == "MemoryMax":
-            v = cores_to_usec(v) if v != -1 else v
+            v = gib_to_bytes(v) if v != -1 else v
             limit = Limit.memory_max(v)
         else:
             return HttpResponse(f"Invalid property '{prop}'")
