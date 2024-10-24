@@ -155,22 +155,20 @@ class Policy(models.Model):
 
             if self.query_params.get("process_whitelist"):
                 process_cpu_whitelist = (
-                    f"- ignoring(job) (sum by (unit, instance) (rate(systemd_unit_proc_cpu_usage_ns"
+                    f"- ignoring(job) (sum by (unit, instance, username) (rate(systemd_unit_proc_cpu_usage_ns"
                     f'{{{user_filters}, proc=~"{self.query_params["process_whitelist"]}"}}[{timewindow}]) or 0*systemd_unit_cpu_usage_ns{{instance=~"{self.domain}"}}))'
                 )
                 process_mem_whitelist = (
-                    f"- ignoring(job) (sum by (unit, instance) (avg_over_time(systemd_unit_proc_memory_bytes"
+                    f"- ignoring(job) (sum by (unit, instance, username) (avg_over_time(systemd_unit_proc_memory_bytes"
                     f'{{{user_filters}, proc=~"{self.query_params["process_whitelist"]}"}}[{timewindow}]) or 0*systemd_unit_cpu_usage_ns{{instance=~"{self.domain}"}}))'
                 )
 
             if self.query_params.get("unit_whitelist"):
-                user_filters += (
-                    f', unit !~ "{self.query_params["unit_whitelist"]}"'
-                )
+                user_filters += f', unit !~ "{self.query_params["unit_whitelist"]}"'
 
             if "cpu_threshold" in self.query_params:
                 query += (
-                    f"(sum by (unit, instance) (rate(systemd_unit_cpu_usage_ns{{{user_filters}}}"
+                    f"(sum by (unit, instance, username) (rate(systemd_unit_cpu_usage_ns{{{user_filters}}}"
                     f"[{timewindow}]){process_cpu_whitelist})"
                     f' / {1000**3 * self.query_params["cpu_threshold"]}) > 1.0'
                 )
@@ -180,7 +178,7 @@ class Policy(models.Model):
 
             if "memory_threshold" in self.query_params:
                 query += (
-                    f"(sum by (unit, instance) (avg_over_time(systemd_unit_memory_current_bytes"
+                    f"(sum by (unit, instance, username) (avg_over_time(systemd_unit_memory_current_bytes"
                     f"{{{user_filters}}}[{timewindow}]){process_mem_whitelist})"
                     f'/ {1024**3 * self.query_params["memory_threshold"]}) > 1.0'
                 )
@@ -206,17 +204,16 @@ class Target(models.Model):
     class Meta:
         verbose_name_plural = "Targets"
         constraints = [
-            models.UniqueConstraint(
-                fields=["unit", "host"], name="unique_target"
-            ),
+            models.UniqueConstraint(fields=["unit", "host", "username"], name="unique_target"),
         ]
 
     unit = models.CharField(max_length=255)
     host = models.CharField(max_length=255)
+    username = models.CharField(max_length=255)
     last_applied = models.ManyToManyField(Limit)
 
     def __str__(self) -> str:
-        return f"{self.unit}@{self.host}"
+        return f"{self.username}@{self.host}"
 
     @property
     def uid(self) -> int | None:
@@ -247,7 +244,9 @@ class Violation(models.Model):
         return self.expiration < timezone.now()
 
     def __str__(self) -> str:
-        return f"Unit {self.target.unit} violated {self.policy.name} on {self.target.host}"
+        return (
+            f"Unit {self.target.unit} violated {self.policy.name} on {self.target.host}"
+        )
 
 
 class Event(models.Model):
