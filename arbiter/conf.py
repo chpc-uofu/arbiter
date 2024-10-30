@@ -130,7 +130,8 @@ PROMETHEUS_CONNECTION = PrometheusConnect(
     url=PROMETHEUS_URL, auth=auth, disable_ssl=PROMETHEUS_DISABLE_SSL
 )
 
-if not PROMETHEUS_CONNECTION.check_prometheus_connection():
-    raise ImproperlyConfigured(
-        "Prometheus cannot be reached. Is PROMETHEUS_URL, PROMETHEUS_USER, PROMETHEUS_PASS, and PROMETHEUS_DISABLE_SSL properly configured?"
-    )
+# FIXME this will hang if route is not reachable, timeout does not seem to work
+#if not PROMETHEUS_CONNECTION.check_prometheus_connection():
+#    raise ImproperlyConfigured(
+#        "Prometheus cannot be reached. Is PROMETHEUS_URL, PROMETHEUS_USER, PROMETHEUS_PASS, and PROMETHEUS_DISABLE_SSL properly configured?"
+#    )
