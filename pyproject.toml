@@ -29,7 +29,7 @@ pytest-asyncio = "^0.23.2"
 
 
 [tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE="server.settings"
+DJANGO_SETTINGS_MODULE="etc.settings"
 python_files = "testing/**.py"
 filterwarnings = ["ignore::pytest.PytestCacheWarning", "ignore::urllib3.exceptions.InsecureRequestWarning"]
 log_cli = true

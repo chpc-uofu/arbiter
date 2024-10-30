@@ -30,7 +30,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "server.urls"
+ROOT_URLCONF = "arbiter.urls"
 
 TEMPLATES = [
     {
@@ -48,7 +48,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "server.wsgi.application"
+WSGI_APPLICATION = "arbiter.wsgi.application"
 
 DATABASES = {
     "default": {
@@ -82,9 +82,9 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
-LOGIN_URL = "/arbiter/accounts/login/"
-LOGIN_REDIRECT_URL = "/arbiter/"
-LOGOUT_REDIRECT_URL = "/arbiter/"
+LOGIN_URL = "/accounts/login/"
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

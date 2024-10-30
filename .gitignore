@@ -7,3 +7,6 @@ db.sqlite3
 **/__pycache__/
 .pytest_cache/
 testing/warden/cgroup-warden
+etc/*
+!etc/settings.py
+!etc/arbiter.service
