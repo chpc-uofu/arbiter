@@ -8,8 +8,8 @@ User=arbiter3
 Group=arbiter3
 RuntimeDirectory=gunicorn
 Environment=DJANGO_SETTINGS_MODULE="settings"
-WorkingDirectory=/opt/arbiter
-ExecStart=/opt/arbiter/venv/bin/gunicorn --workers=2 --timeout=180 server.wsgi:application
+WorkingDirectory=/srv/arbiter
+ExecStart=venv/bin/gunicorn --workers=2 --timeout=180 --bind 127.0.0.1:443 --certfile certfile.pem --keyfile keyfile.pem
 ExecReload=/bin/kill -s HUP $MAINPID
 KillMode=mixed
 TimeoutStopSec=180
