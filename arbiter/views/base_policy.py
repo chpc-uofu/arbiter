@@ -14,7 +14,7 @@ from .nav import navbar
 
 class BasePolicyListView(LoginRequiredMixin, ListView):
     model = BasePolicy
-    login_url = reverse_lazy("arbiter:login")
+    login_url = reverse_lazy("login")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -73,21 +73,21 @@ class BasePolicyForm(forms.ModelForm):
         policy.save()
 
 
-@login_required(login_url=reverse_lazy("arbiter:login"))
+@login_required(login_url=reverse_lazy("login"))
 def new_base_policy(request):
 
     can_change = request.user.has_perm("arbiter.add_basepolicy")
 
     if not can_change:
         messages.error(request, "You do not have permissions to create a Base Policy")
-        return redirect("arbiter:view-dashboard")
+        return redirect("view-dashboard")
 
     if request.method == "POST":
         form = BasePolicyForm(request.POST)
         if form.is_valid():
             form.save()
             messages.success(request, "Successfully created base policy.")
-            return redirect(f"arbiter:list-base-policy")
+            return redirect(f"list-base-policy")
     else:
         form = BasePolicyForm()
 
@@ -95,7 +95,7 @@ def new_base_policy(request):
     return render(request, "arbiter/change_view.html", context)
 
 
-@login_required(login_url=reverse_lazy("arbiter:login"))
+@login_required(login_url=reverse_lazy("login"))
 def change_base_policy(request, policy_id):
     policy = BasePolicy.objects.filter(pk=policy_id).first()
 
@@ -103,7 +103,7 @@ def change_base_policy(request, policy_id):
 
     if not policy:
         messages.error(request, "Base Policy not found.")
-        return redirect("arbiter:list-base-policy")
+        return redirect("list-base-policy")
 
     if request.method == "POST":
         if not can_change:
@@ -114,11 +114,11 @@ def change_base_policy(request, policy_id):
         if "save" in request.POST and form.is_valid():
             form.save()
             messages.success(request, "Successfully changed base policy.")
-            return redirect(f"arbiter:list-base-policy")
+            return redirect(f"list-base-policy")
         if "delete" in request.POST:
             policy.delete()
             messages.success(request, "Successfully removed base policy.")
-            return redirect(f"arbiter:list-base-policy")
+            return redirect(f"list-base-policy")
     else:
         if can_change:
             form = BasePolicyForm(instance=policy)

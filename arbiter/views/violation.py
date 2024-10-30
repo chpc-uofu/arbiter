@@ -13,7 +13,7 @@ from .nav import navbar
 
 class ViolationListView(LoginRequiredMixin, ListView):
     model = Violation
-    login_url = reverse_lazy("arbiter:login")
+    login_url = reverse_lazy("login")
  
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -21,7 +21,7 @@ class ViolationListView(LoginRequiredMixin, ListView):
         return context
 
 
-@login_required(login_url=reverse_lazy("arbiter:login"))
+@login_required(login_url=reverse_lazy("login"))
 def change_violation(request, violation_id):
     violation = Violation.objects.filter(pk=violation_id).first()
 
@@ -29,7 +29,7 @@ def change_violation(request, violation_id):
 
     if not violation:
         messages.error(request, "Violation not found.")
-        return redirect("arbiter:list-violation")
+        return redirect("list-violation")
     
     if request.method == "POST":
         if not can_change:
@@ -43,11 +43,11 @@ def change_violation(request, violation_id):
                 violation.expiration = timezone.now()
                 violation.save()
                 messages.success(request, "Successfully expired violation.")
-                return redirect("arbiter:list-violation")
+                return redirect("list-violation")
         if "delete" in request.POST:
             violation.delete()
             messages.success(request, "Successfully removed violation.")
-            return redirect("arbiter:list-violation")
+            return redirect("list-violation")
     
     context = {"violation": violation, "navbar": navbar(request), "can_change": can_change}
     return render(request, "arbiter/violation_detail.html", context)

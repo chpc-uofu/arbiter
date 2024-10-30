@@ -13,7 +13,7 @@ from .nav import navbar
 
 class UsagePolicyListView(LoginRequiredMixin, ListView):
     model = UsagePolicy
-    login_url = reverse_lazy("arbiter:login")
+    login_url = reverse_lazy("login")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -118,20 +118,20 @@ class UsagePolicyForm(forms.ModelForm):
         policy.save()
 
 
-@login_required(login_url=reverse_lazy("arbiter:login"))
+@login_required(login_url=reverse_lazy("login"))
 def new_usage_policy(request):
     can_change = request.user.has_perm("arbiter.add_usagepolicy")
 
     if not can_change:
         messages.error(request, "You do not have permissions to create a Usage Policy")
-        return redirect("arbiter:view-dashboard")
+        return redirect("view-dashboard")
 
     if request.method == "POST":
         form = UsagePolicyForm(request.POST)
         if form.is_valid():
             form.save()
             messages.success(request, "Successfully created usage policy.")
-            return redirect(f"arbiter:list-usage-policy")
+            return redirect(f"list-usage-policy")
     else:
         form = UsagePolicyForm()
 
@@ -139,7 +139,7 @@ def new_usage_policy(request):
     return render(request, "arbiter/change_view.html", context)
 
 
-@login_required(login_url=reverse_lazy("arbiter:login"))
+@login_required(login_url=reverse_lazy("login"))
 def change_usage_policy(request, policy_id):
     policy = UsagePolicy.objects.filter(pk=policy_id).first()
     
@@ -147,7 +147,7 @@ def change_usage_policy(request, policy_id):
 
     if not policy:
         messages.error(request, "Usage Policy not found.")
-        return redirect("arbiter:list-usage-policy")
+        return redirect("list-usage-policy")
 
     if request.method == "POST":
         if not can_change:
@@ -158,11 +158,11 @@ def change_usage_policy(request, policy_id):
         if "save" in request.POST and form.is_valid():
             form.save()
             messages.success(request, "Successfully changed usage policy.")
-            return redirect(f"arbiter:list-usage-policy")
+            return redirect(f"list-usage-policy")
         if "delete" in request.POST:
             policy.delete()
             messages.success(request, "Successfully removed usage policy.")
-            return redirect(f"arbiter:list-usage-policy")
+            return redirect(f"list-usage-policy")
     else:
         if can_change:
             form = UsagePolicyForm(instance=policy)

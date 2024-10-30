@@ -1,10 +1,12 @@
 from django.urls import path, include
+from django.contrib import admin
 from arbiter.views import base_policy, graphs, usage_policy, violation, dashboard
 
 app_name = "arbiter"
 
 urlpatterns = [
     path("accounts/", include("django.contrib.auth.urls")),
+    path("admin/", admin.site.urls),
 
     path("policy/base/add/", base_policy.new_base_policy, name="new-base-policy"),
     path("policy/base/", base_policy.BasePolicyListView.as_view(), name="list-base-policy"),

@@ -7,7 +7,7 @@
 <ul>
 {% for violation in object_list %}
     <li>
-        <a href="{% url 'arbiter:change-violation' violation.id%}">{{violation}}</a>
+        <a href="{% url 'change-violation' violation.id%}">{{violation}}</a>
     </li></br>
 {% empty %}
     <li>No Violations.</li>
