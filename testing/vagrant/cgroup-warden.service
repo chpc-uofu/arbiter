@@ -6,7 +6,10 @@ Wants=network.target network-online.target
 After=network.target network-online.target
 
 [Service]
-ExecStart=/usr/sbin/cgroup-warden --certFile /vagrant/cert.pem --keyFile /vagrant/key.pem --bearerToken insecure-95axve4fn4j2u8ih0j1ltg272g1n297l8 --collectProc
+Environment=CGROUP_WARDEN_BEARER_TOKEN=insecure-95axve4fn4j2u8ih0j1ltg272g1n297l8
+Environment=CGROUP_WARDEN_CERTIFICATE=/vagrant/cert.pem
+Environment=CGROUP_WARDEN_PRIVATE_KEY=/vagrant/key.pem
+ExecStart=/usr/sbin/cgroup-warden
 
 [Install]
 WantedBy=multi-user.target
