@@ -35,11 +35,11 @@ class BasePolicyForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         if constraints := self.instance.penalty_constraints:
-            for c in constraints:
-                if c["name"] == "CPUQuotaPerSecUSec" and c["value"]:
-                    self.fields['cpu'].initial = usec_to_cores(c["value"])
-                if c["name"] == "MemoryMax" and c["value"]:
-                    self.fields['mem'].initial = bytes_to_gib(c["value"])
+            for  name, value in constraints.items():
+                if name == "CPUQuotaPerSecUSec":
+                    self.fields['cpu'].initial = usec_to_cores(value)
+                if name == "MemoryMax":
+                    self.fields['mem'].initial = bytes_to_gib(value)
         
         if disabled:
             for field in self.fields.values():
@@ -65,10 +65,10 @@ class BasePolicyForm(forms.ModelForm):
         policy.is_base_policy=True
         limits = []
         if cpu_limit := self.cleaned_data['cpu']:
-            limits.append(Limit.cpu_quota(cpu_limit).json())
+            limits.append(Limit.cpu_quota(cpu_limit))
         if mem_limit := self.cleaned_data['mem']:
-            limits.append(Limit.memory_max(mem_limit).json())
-        policy.penalty_constraints = limits
+            limits.append(Limit.memory_max(mem_limit))
+        policy.penalty_constraints = Limit.to_json(*limits)
         policy.query_data = QueryData.raw_query(f'systemd_unit_cpu_usage_ns{{instance=~"{policy.domain}"}}').json()
         policy.save()
 

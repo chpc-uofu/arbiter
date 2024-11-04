@@ -40,11 +40,11 @@ class UsagePolicyForm(forms.ModelForm):
     def __init__(self, *args, disabled=False, **kwargs):
         super().__init__(*args, **kwargs)
         if constraints := self.instance.penalty_constraints:
-            for c in constraints:
-                if c["name"] == "CPUQuotaPerSecUSec" and c["value"]:
-                    self.fields['cpu_limit'].initial = usec_to_cores(c["value"])
-                if c["name"] == "MemoryMax" and c["value"]:
-                    self.fields['mem_limit'].initial = bytes_to_gib(c["value"])
+            for name, value in constraints.items():
+                if name == "CPUQuotaPerSecUSec":
+                    self.fields['cpu_limit'].initial = usec_to_cores(value)
+                if name == "MemoryMax":
+                    self.fields['mem_limit'].initial = bytes_to_gib(value)
 
         if query_data := self.instance.query_data:
             if cpu_threshold := query_data["params"]["cpu_threshold"]:
@@ -97,12 +97,12 @@ class UsagePolicyForm(forms.ModelForm):
         policy.is_base_policy=True
         limits = []
         if mem_limit := self.cleaned_data["mem_limit"]:
-            limits.append(Limit.memory_max(mem_limit).json())
+            limits.append(Limit.memory_max(mem_limit))
 
         if cpu_limit := self.cleaned_data["cpu_limit"]:
-            limits.append(Limit.cpu_quota(cpu_limit).json())
+            limits.append(Limit.cpu_quota(cpu_limit))
 
-        policy.penalty_constraints = limits
+        policy.penalty_constraints = Limit.to_json(*limits)
         params = QueryParameters(
             cpu_threshold=self.cleaned_data["cpu_threshold"],
             mem_threshold=self.cleaned_data["mem_threshold"],
