@@ -91,17 +91,17 @@ class QueryData:
             cpu_unit = f'systemd_unit_cpu_usage_ns{{ {filters} }}[{lookback}]'
             cpu_total = f'(sum by ({sum_by_labels}) (rate({cpu_unit})))'
             if params.proc_whitelist:
-                cpu = f'(({cpu_total} - {cpu_offset}) / {cores_to_nsec(params.cpu_threshold)}) > 1.0'
+                cpu = f'(({cpu_total} - {cpu_offset}) / {params.cpu_threshold}) > 1.0'
             else:
-                cpu = f'({cpu_total} / {cores_to_nsec(params.cpu_threshold)}) > 1.0'
+                cpu = f'({cpu_total} / {params.cpu_threshold}) > 1.0'
 
         if params.mem_threshold is not None:
             mem_unit = f'systemd_unit_memory_bytes{{{filters}}}[{lookback}]'
             mem_total = f'(sum by ({sum_by_labels}) (avg_over_time({mem_unit})))'
             if params.proc_whitelist:
-                mem = f'(({mem_total} - {mem_offset}) / {gib_to_bytes(params.mem_threshold)}) > 1.0'
+                mem = f'(({mem_total} - {mem_offset}) / {params.mem_threshold}) > 1.0'
             else:
-                mem = f'({mem_total} / {gib_to_bytes(params.mem_threshold)}) > 1.0'
+                mem = f'({mem_total} / {params.mem_threshold}) > 1.0'
 
         if params.mem_threshold and params.cpu_threshold:
             query = f'{cpu} or {mem}'
