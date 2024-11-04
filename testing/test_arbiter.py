@@ -10,6 +10,7 @@ import django.utils.timezone
 
 import arbiter.models
 import arbiter.eval
+from arbiter.utils import nsec_to_cores, bytes_to_gib
 from arbiter.models import Target, Violation
 
 from testing.conf import *
@@ -53,10 +54,10 @@ def create_violating_command(policy: arbiter.models.Policy) -> str:
     command = "stress-ng"
     cpu = policy.query_data.get("params", {}).get("cpu_threshold", None)
     if cpu:
-        command += f" --cpu {math.ceil(cpu)}"
+        command += f" --cpu {math.ceil(nsec_to_cores(cpu))}"
     mem = policy.query_data.get("params", {}).get("mem_threshold", None)
     if mem:
-        command += f" --vm 1 --vm-bytes {math.ceil(mem)}g --vm-populate --vm-keep --vm-madvise willneed"
+        command += f" --vm 1 --vm-bytes {math.ceil(bytes_to_gib(mem))}g --vm-populate --vm-keep --vm-madvise willneed"
     time = int(policy.lookback.total_seconds())
     if not time:
         time = 10
