@@ -161,11 +161,11 @@ def violation_usage_figures(violation: Violation, usage_type: str, step: str = "
     step = align_with_prom_limit(violation.timestamp, violation.expiration, step)
 
     if usage_type == CPU_USAGE:
-        if threshold := violation.policy.query_params.get("cpu_threshold", None):
+        if threshold := violation.policy.query_data.get("cpu_threshold", None):
             threshold = nsec_to_cores(threshold)
         return cpu_usage_figures(username, host, start, end, threshold, penalized, step)
     if usage_type == MEM_USAGE:
-        if threshold := violation.policy.query_params.get("mem_threshold", None):
+        if threshold := violation.policy.query_data.get("mem_threshold", None):
             threshold = bytes_to_gib(threshold)
         return mem_usage_figures(username, host, start, end, threshold, penalized, step)
 
