@@ -245,7 +245,7 @@ def evaluate(policies=None):
 
     create_event_for_eval(violations)
 
-    if not ARBITER_NOTIFY_USERS:
+    if ARBITER_NOTIFY_USERS:
         send_violation_emails(violations)
 
     if ARBITER_PERMISSIVE_MODE:
