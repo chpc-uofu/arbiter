@@ -10,7 +10,7 @@ from django.utils import timezone
 
 from arbiter.utils import strip_port, get_uid
 from arbiter.models import Target, Violation, Policy, Limit, Event
-from arbiter.email import send_violation_emails
+from arbiter.email import send_violation_email
 from arbiter.conf import (
     PROMETHEUS_CONNECTION,
     WARDEN_JOB,
@@ -246,7 +246,11 @@ def evaluate(policies=None):
     create_event_for_eval(violations)
 
     if ARBITER_NOTIFY_USERS:
-        send_violation_emails(violations)
+        for violation in violations:
+            if not violation.is_base_status:
+                message = send_violation_email(violation) 
+                logger.info(message)
+
 
     if ARBITER_PERMISSIVE_MODE:
         return
