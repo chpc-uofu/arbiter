@@ -96,6 +96,9 @@ def create_violation(target: Target, policy: Policy) -> Violation:
 def query_violations(policies: list[Policy]) -> list[Violation]:
     violations = []
     for policy in policies:
+        if not policy.active:
+            continue
+        
         response = PROMETHEUS_CONNECTION.custom_query(policy.query)
         for result in response:
             unit = result["metric"]["unit"]

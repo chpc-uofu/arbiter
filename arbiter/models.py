@@ -134,6 +134,7 @@ class Policy(models.Model):
     grace_period = models.DurationField(null=True, default=timedelta(minutes=5))
 
     query_data = models.JSONField()
+    active  = models.BooleanField(default=True, help_text="Whether or not this policy gets evaluated")
 
     @property
     def query(self):
