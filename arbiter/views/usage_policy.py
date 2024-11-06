@@ -124,14 +124,14 @@ def new_usage_policy(request):
 
     if not can_change:
         messages.error(request, "You do not have permissions to create a Usage Policy")
-        return redirect("view-dashboard")
+        return redirect("arbiter:view-dashboard")
 
     if request.method == "POST":
         form = UsagePolicyForm(request.POST)
         if form.is_valid():
             form.save()
             messages.success(request, "Successfully created usage policy.")
-            return redirect(f"list-usage-policy")
+            return redirect("arbiter:list-usage-policy")
     else:
         form = UsagePolicyForm()
 
@@ -147,7 +147,7 @@ def change_usage_policy(request, policy_id):
 
     if not policy:
         messages.error(request, "Usage Policy not found.")
-        return redirect("list-usage-policy")
+        return redirect("arbiter:list-usage-policy")
 
     if request.method == "POST":
         if not can_change:
@@ -158,11 +158,11 @@ def change_usage_policy(request, policy_id):
         if "save" in request.POST and form.is_valid():
             form.save()
             messages.success(request, "Successfully changed usage policy.")
-            return redirect(f"list-usage-policy")
+            return redirect("arbiter:list-usage-policy")
         if "delete" in request.POST:
             policy.delete()
             messages.success(request, "Successfully removed usage policy.")
-            return redirect(f"list-usage-policy")
+            return redirect("arbiter:list-usage-policy")
     else:
         if can_change:
             form = UsagePolicyForm(instance=policy)

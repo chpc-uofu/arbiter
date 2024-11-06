@@ -193,7 +193,7 @@
                         {% csrf_token %}
                         <h3>Run Arbiter Evaluation Loop:</h3>
                         <input type="submit" value="Evaluate"
-                            hx-post="{% url 'evaluate' %}" hx-swap="innerHTML"
+                            hx-post="{% url 'arbiter:evaluate' %}" hx-swap="innerHTML"
                             hx-target="#message-container">
                     </form>
                     <hr class="box-divider">
@@ -204,7 +204,7 @@
                             <h4>Before:</h4><input type="datetime-local" name="before">
                         </div>
                         <input type="submit" value="Clean"
-                            hx-post="{% url 'clean' %}" hx-swap="innerHTML"
+                            hx-post="{% url 'arbiter:clean' %}" hx-swap="innerHTML"
                             hx-include="[name='before']"
                             hx-target="#message-container">
                     </form>
@@ -237,7 +237,7 @@
                         <h3>Value</h3>
                         <input type="text" name="value" placeholder="0">
                         <input type="button" value="Apply Limit" 
-                            hx-post="{% url 'apply' %}"
+                            hx-post="{% url 'arbiter:apply' %}"
                             hx-swap="innerHTML" hx-target="#message-container"
                             hx-include="[name='host'],[name='username'],[name='prop'],[name='value']">
                 </form>
@@ -265,7 +265,7 @@
                 {% for violation in violations %}
                 <tr>
                     <td>
-                        <a href="{% url 'change-violation' violation.id %}">
+                        <a href="{% url 'arbiter:change-violation' violation.id %}">
                             <p>{{violation}}</p>
                         </a>
                     </td>
@@ -321,10 +321,10 @@
                     </div>
                 </div>
                 <div class="options-column">
-                    <input type="button" value="View Memory" hx-get="{% url 'user-proc-memory-graph' %}"
+                    <input type="button" value="View Memory" hx-get="{% url 'arbiter:user-proc-memory-graph' %}"
                         hx-swap="innerHTML" hx-target="#chart-div"
                         hx-include="[id='usage-user-input'], [id='usage-host'], [id='username'], [name='step-value'], [name='step-unit'], [name='end-time'], [name='start-time']">
-                    <input type="button" value="View CPU" hx-get="{% url 'user-proc-cpu-graph' %}" hx-swap="innerHTML"
+                    <input type="button" value="View CPU" hx-get="{% url 'arbiter:user-proc-cpu-graph' %}" hx-swap="innerHTML"
                         hx-target="#chart-div"
                         hx-include="[id='usage-user-input'], [id='username'], [id='usage-host'], [name='step-value'], [name='step-unit'], [name='end-time'], [name='start-time']">
                 </div>

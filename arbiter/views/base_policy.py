@@ -80,14 +80,14 @@ def new_base_policy(request):
 
     if not can_change:
         messages.error(request, "You do not have permissions to create a Base Policy")
-        return redirect("view-dashboard")
+        return redirect("arbiter:view-dashboard")
 
     if request.method == "POST":
         form = BasePolicyForm(request.POST)
         if form.is_valid():
             form.save()
             messages.success(request, "Successfully created base policy.")
-            return redirect(f"list-base-policy")
+            return redirect("arbiter:list-base-policy")
     else:
         form = BasePolicyForm()
 
@@ -103,7 +103,7 @@ def change_base_policy(request, policy_id):
 
     if not policy:
         messages.error(request, "Base Policy not found.")
-        return redirect("list-base-policy")
+        return redirect("arbiter:list-base-policy")
 
     if request.method == "POST":
         if not can_change:
@@ -114,11 +114,11 @@ def change_base_policy(request, policy_id):
         if "save" in request.POST and form.is_valid():
             form.save()
             messages.success(request, "Successfully changed base policy.")
-            return redirect(f"list-base-policy")
+            return redirect("arbiter:list-base-policy")
         if "delete" in request.POST:
             policy.delete()
             messages.success(request, "Successfully removed base policy.")
-            return redirect(f"list-base-policy")
+            return redirect("arbiter:list-base-policy")
     else:
         if can_change:
             form = BasePolicyForm(instance=policy)
