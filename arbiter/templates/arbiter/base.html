@@ -11,6 +11,7 @@
         {% endblock %}
     </title>
     <link rel="icon" type="image/x-icon" href="{% static 'images/arbiter-favicon.ico' %}">
+    <link rel="stylesheet" href="{% static 'css/django-base.css' %}">
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     {% block extrastyle %}
     {% endblock %}
@@ -18,9 +19,8 @@
 </head>
 <body>
     {% include 'arbiter/navbar.html' %} 
-    {% block messages %}
-    {% if messages %}
-    <ul class="messages">
+    {% block messages %} 
+    <ul class="messagelist" id="messagelist">
         {% for message in messages %}
         <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>
             {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}Important: {% endif %}
@@ -28,16 +28,15 @@
         </li>
         {% endfor %}
     </ul>
-    {% endif %}
+    {% endblock messages %}
     <div class="header">
         {% block header %}
             <h1 class="h1">{% block page-title %}{% endblock %}</h1>
         {% endblock %}
     </div>
-    {% endblock messages %}
     <div class="content">
     {% block content %}
     {% endblock %}
-</div>
+    </div>
 </body>
 </html>
