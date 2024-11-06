@@ -1,0 +1,14 @@
+[Unit]
+Description=Arbiter (Django with Gunicorn)
+After=network.target
+
+[Service]
+Type=notify
+RuntimeDirectory=gunicorn
+Environment=DJANGO_SETTINGS_MODULE="arbiter_django.settings"
+WorkingDirectory=/srv/arbiter3
+ExecStart=/srv/arbiter3/venv/bin/gunicorn arbiter.wsgi --workers=2 --timeout=180 --bind 0.0.0.0:8000 --certfile cert.pem --keyfile privkey.pem
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=180
+PrivateTmp=true

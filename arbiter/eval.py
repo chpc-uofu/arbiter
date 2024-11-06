@@ -17,9 +17,8 @@ from arbiter.conf import (
     ARBITER_PERMISSIVE_MODE,
     ARBITER_NOTIFY_USERS,
     ARBITER_MIN_UID,
-    WARDEN_DISABLE_AUTH,
-    WARDEN_DISABLE_SSL,
-    WARDEN_DISABLE_TLS,
+    WARDEN_VERIFY_SSL,
+    WARDEN_USE_TLS,
     WARDEN_PORT,
     WARDEN_BEARER,
 )
@@ -28,24 +27,24 @@ logger = logging.getLogger(__name__)
 
 
 async def set_property(target: Target, session: aiohttp.ClientSession, limit: Limit) -> tuple[http.HTTPStatus, str]:
-    if WARDEN_DISABLE_TLS:
-        endpoint = f"http://{target.host}:{WARDEN_PORT}/control"
-    else:
+    if WARDEN_USE_TLS:
         endpoint = f"https://{target.host}:{WARDEN_PORT}/control"
+    else:
+        endpoint = f"http://{target.host}:{WARDEN_PORT}/control"
 
     payload = {"unit": target.unit, "property": limit.json()}
 
-    if WARDEN_DISABLE_AUTH:
-        auth_header = None
-    else:
+    if WARDEN_BEARER:
         auth_header = {"Authorization": "Bearer " + WARDEN_BEARER}
+    else:
+        auth_header = None
     try:
         async with session.post(
             url=endpoint,
             json=payload,
             timeout=5,
             headers=auth_header,
-            ssl=WARDEN_DISABLE_SSL,
+            verify_ssl=WARDEN_VERIFY_SSL,
         ) as response:
             status = response.status
             message = await response.text()

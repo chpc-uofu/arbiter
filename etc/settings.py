@@ -1,13 +1,75 @@
 from pathlib import Path
 import os
 
+# Do not use DEBUG = True if running in production
+DEBUG: bool = True
+
+# update with venv/bin python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'
+SECRET_KEY: str = "django-insecure-wgoq*f367%a#m_^zsh=7g!@v+f(pu^ei2#y5gq_q(@y9k0qd^$"
+
+# update to the site you will host arbiter at
+ALLOWED_HOSTS: list[str] = ["host.docker.internal", "localhost"]
+
+# update to your time zone
+TIME_ZONE: str = "America/Denver"
+
+# update to your mail server
+EMAIL_HOST: str = "mailhog"
+
+# update to your mailserver port
+EMAIL_PORT: str = "1025"
+
+# update if your mailserver requires auth
+EMAIL_HOST_USER: str | None = None
+
+# update if your mailserver requires auth
+EMAIL_HOST_PASSWORD: str | None = None
+
+# arbiter will ignore uids below this number
+ARBITER_MIN_UID: int = 1000
+
+# arbiter will not set limits if enabled
+ARBITER_PERMISSIVE_MODE: bool = False
+
+# function arbiter uses to lookup users to email them
+ARBITER_USER_LOOKUP: str = "arbiter.utils.default_user_lookup"
+
+# arbiter will email users if enabled
+ARBITER_NOTIFY_USERS: bool = True
+
+# domain used by the default email resolution function, username@ARBITER_EMAIL_DOMAIN
+ARBITER_EMAIL_DOMAIN: str = "test.site.edu"
+
+# url for the prometheus instance holding cgroup-warden data
+PROMETHEUS_URL: str = "http://prometheus:9090"
+
+# arbiter will not verify certificate of prometheus if enabled
+PROMETHEUS_VERIFY_SSL: bool = False
+
+# update if your prometheus instance requires auth
+PROMETHEUS_USER: str | None = None
+
+# update if you prometheus instance requires auth
+PROMETHEUS_PASS: str | None = None
+
+# update if you have modified the scrape job name of the cgroup-wardens
+WARDEN_JOB: str = "cgroup-warden"
+
+# update if you have modified the port cgroup-warden runs on
+WARDEN_PORT: int = 2112
+
+# verify the ssl certificates of cgroup-warden 
+WARDEN_VERIFY_SSL = False
+
+# use https with cgroup warden
+WARDEN_USE_TLS = True
+
+# use bearer token authentication with cgroup warden
+WARDEN_BEARER: str | None = "insecure-95axve4fn4j2u8ih0j1ltg272g1n297l8"
+
+# Django configuration - modify only if you know what you are doing
+
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-SECRET_KEY = "django-insecure-wgoq*f367%a#m_^zsh=7g!@v+f(pu^ei2#y5gq_q(@y9k0qd^$"
-
-DEBUG = True
-
-ALLOWED_HOSTS = ["host.docker.internal", "localhost"]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -74,8 +136,6 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "America/Denver"
-
 USE_I18N = True
 
 USE_TZ = True
@@ -125,47 +185,3 @@ LOGGING = {
         },
     },
 }
-
-ARBITER_MIN_UID = 1000
-
-ARBITER_PERMISSIVE_MODE = False
-
-ARBITER_USER_LOOKUP = "arbiter.utils.default_user_lookup"
-
-ARBITER_NOTIFY_USERS = True
-
-ARBITER_EMAIL_DOMAIN = "test.site.edu"
-
-EMAIL_HOST = "mailhog"
-
-EMAIL_PORT = "1025"
-
-EMAIL_DISABLE_AUTH = True
-
-EMAIL_HOST_USER = None
-
-EMAIL_HOST_PASSWORD = None
-
-PROMETHEUS_URL = "http://prometheus:9090"
-
-PROMETHEUS_DISABLE_AUTH = True
-
-PROMETHEUS_DISABLE_SSL = True
-
-PROMETHEUS_USER = None
-
-PROMETHEUS_PASS = None
-
-PROMETHUS_BEARER = None
-
-WARDEN_JOB = "cgroup-warden"
-
-WARDEN_PORT = 2112
-
-WARDEN_DISABLE_SSL = False
-
-WARDEN_DISABLE_AUTH = False
-
-WARDEN_DISABLE_TLS = False
-
-WARDEN_BEARER = "insecure-95axve4fn4j2u8ih0j1ltg272g1n297l8"

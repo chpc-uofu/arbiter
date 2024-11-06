@@ -43,11 +43,6 @@ except AttributeError:
     raise ImproperlyConfigured("setting EMAIL_HOST is required")
 
 try:
-    EMAIL_DISABLE_AUTH = ImproperlyConfigured("setting EMAIL_DISABLE_AUTH is required")
-except AttributeError:
-    raise ImproperlyConfigured("setting EMAIL_DISABLE_AUTH is required")
-
-try:
     EMAIL_HOST_USER = settings.EMAIL_HOST_PASSWORD
 except AttributeError:
     raise ImproperlyConfigured("setting EMAIL_HOST_USER is required")
@@ -67,14 +62,9 @@ except AttributeError:
     raise ImproperlyConfigured("setting ARBITER_PROMETHEUS_URL is required")
 
 try:
-    PROMETHEUS_DISABLE_SSL = settings.PROMETHEUS_DISABLE_SSL
+    PROMETHEUS_VERIFY_SSL = settings.PROMETHEUS_VERIFY_SSL
 except AttributeError:
-    raise ImproperlyConfigured("setting PROMETHEUS_DISABLE_SSL is required")
-
-try:
-    PROMETHEUS_DISABLE_AUTH = settings.PROMETHEUS_DISABLE_AUTH
-except AttributeError:
-    raise ImproperlyConfigured("setting PROMETHEUS_DISABLE_AUTH is required")
+    raise ImproperlyConfigured("setting PROMETHEUS_VERIFY_SSL is required")
 
 try:
     PROMETHEUS_USER = settings.PROMETHEUS_USER
@@ -97,22 +87,17 @@ except AttributeError:
 try:
     WARDEN_PORT = settings.WARDEN_PORT
 except AttributeError:
-    raise ImproperlyConfigured("setting WARDEN_JOB_PORT is required")
+    raise ImproperlyConfigured("setting WARDEN_PORT is required")
 
 try:
-    WARDEN_DISABLE_SSL = settings.WARDEN_DISABLE_SSL
+    WARDEN_VERIFY_SSL = settings.WARDEN_VERIFY_SSL
 except AttributeError:
-    raise ImproperlyConfigured("setting WARDEN_DISABLE_SSL is required")
+    raise ImproperlyConfigured("setting WARDEN_VERIFY_SSL is required")
 
 try:
-    WARDEN_DISABLE_TLS = settings.WARDEN_DISABLE_TLS
+    WARDEN_USE_TLS = settings.WARDEN_USE_TLS
 except AttributeError:
     raise ImproperlyConfigured("setting WARDEN_DISABLE_TLS is required")
-
-try:
-    WARDEN_DISABLE_AUTH = settings.WARDEN_DISABLE_AUTH
-except AttributeError:
-    raise ImproperlyConfigured("setting WARDEN_DISABLE_AUTH is required")
 
 try:
     WARDEN_BEARER = settings.WARDEN_BEARER
@@ -121,13 +106,13 @@ except AttributeError:
 
 from prometheus_api_client import PrometheusConnect
 
-if not PROMETHEUS_DISABLE_AUTH:
+if PROMETHEUS_USER and PROMETHEUS_PASS:
     auth = (PROMETHEUS_USER, PROMETHEUS_PASS)
 else:
     auth = None
 
 PROMETHEUS_CONNECTION = PrometheusConnect(
-    url=PROMETHEUS_URL, auth=auth, disable_ssl=PROMETHEUS_DISABLE_SSL
+    url=PROMETHEUS_URL, auth=auth, disable_ssl=(not PROMETHEUS_VERIFY_SSL)
 )
 
 # FIXME this will hang if route is not reachable, timeout does not seem to work
