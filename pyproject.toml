@@ -4,7 +4,7 @@ version = "0.0.0"
 description = ""
 authors = ["Kai Forrest <kai.forrest@utah.edu>", "Jackson McKay <jay.mckay@utah.edu>", "Paul Fischer <p.fischer@utah.edu>"]
 readme = "README.md"
-packages = [{ include = "arbiter" }]
+packages = [{ include = "arbiter" }, { include = "portal" }]
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -18,7 +18,6 @@ plotly = "^5.20.0"
 pyarrow = "^15.0.0"
 kaleido = "0.2.1"
 gunicorn = "^23.0.0"
-configparser = "^7.1.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest-django = "^4.6.0"
@@ -27,7 +26,6 @@ black = "^23.7.0"
 isort = "^5.12.0"
 paramiko = "^3.4.0"
 pytest-asyncio = "^0.23.2"
-
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE="portal.settings"
