@@ -1,6 +1,6 @@
 [django]
-debug = true
-allowed_hosts = ['host.docker.internal', 'localhost']
+debug = false
+allowed_hosts = ['your.site.edu', 'localhost']
 time_zone = 'America/Denver'
 
 [email]
@@ -9,9 +9,10 @@ port = '1025'
 domain = 'test.site.edu'
 
 [prometheus]
-url = 'http://prometheus:9090'
-verify_ssl = false
+url = 'https://your.prometheus.host:9090'
+verify_ssl = true
 
 [warden]
-bearer = 'insecure-95axve4fn4j2u8ih0j1ltg272g1n297l8'
-verify_ssl = false
+bearer = 'super-secret-bearer-token'
+verify_ssl = true
+use_tls = true

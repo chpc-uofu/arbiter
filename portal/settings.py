@@ -2,8 +2,7 @@ import os
 from portal.base import *
 import tomllib
 
-
-conf_file = os.getenv('ARBITER_CONF_FILE', '/opt/arbiter3/config.toml')
+conf_file = os.getenv('ARBITER_CONF_FILE', os.path.join(BASE_DIR, 'config.toml'))
 
 with open(conf_file, "rb") as f:
     config = tomllib.load(f)
