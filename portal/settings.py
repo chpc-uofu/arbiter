@@ -11,23 +11,21 @@ logger = logging.getLogger(__name__)
 
 conf_file = os.getenv('ARBITER_CONF_FILE', os.path.join(BASE_DIR, 'config.toml'))
 
+logger.info(f'reading config from {conf_file}')
+
 
 with open(conf_file, "rb") as f:
     config = tomllib.load(f)
 
     django = config.get('django', {})
 
-    if debug := django.get('debug'):
-        DEBUG = debug
+    DEBUG = django.get('debug') or DEBUG
 
-    if secret_key := django.get('secret_key'):
-        SECRET_KEY = secret_key
+    SECRET_KEY = django.get('secret_key') or SECRET_KEY
 
-    if allowed_hosts := django.get('allowed_hosts'):
-        ALLOWED_HOSTS = allowed_hosts
+    ALLOWED_HOSTS = django.get('allowed_hosts') or ALLOWED_HOSTS
 
-    if time_zone := django.get('time_zone'):
-        TIME_ZONE = time_zone
+    TIME_ZONE = django.get('time_zone') or TIME_ZONE
 
 
     general = config.get('general', {})
@@ -41,37 +39,38 @@ with open(conf_file, "rb") as f:
 
     ARBITER_NOTIFY_USERS = email.get("notify_users", True)
 
-    if ARBITER_NOTIFY_USERS:
+    EMAIL_HOST = email.get('host')
 
-        if not (EMAIL_HOST := email.get('host')):
-            raise ImproperlyConfigured("email.host is required if email.notify_users = true")
+    EMAIL_PORT = email.get('port', '25')
 
-        EMAIL_PORT = email.get('port', '25')
+    EMAIL_HOST_USER = email.get('user')
 
-        EMAIL_HOST_USER = email.get('user')
+    EMAIL_HOST_PASSWORD = email.get('password')
 
-        EMAIL_HOST_PASSWORD = email.get('password')
+    ARBITER_USER_LOOKUP = email.get('lookup_function')
 
-        ARBITER_USER_LOOKUP = email.get('lookup_function')
 
-        if not ARBITER_USER_LOOKUP:
+    if ARBITER_NOTIFY_USERS and not EMAIL_HOST:
+        
+        raise ImproperlyConfigured("email.host is required if email.notify_users = true")
     
-            ARBITER_USER_LOOKUP = 'arbiter.utils.default_user_lookup'
-
-            if not (ARBITER_EMAIL_DOMAIN := email.get('domain')):
-                raise ImproperlyConfigured('email.domain is required if using the default user lookup')
-
+    if ARBITER_NOTIFY_USERS and not ARBITER_USER_LOOKUP:
+        
+        raise ImproperlyConfigured("email.lookup_function is required if email.notify_users = true")
+            
 
     prometheus = config.get('prometheus', {})
 
-    if not (PROMETHEUS_URL := prometheus.get('url')):
-        raise ImproperlyConfigured('prometheus.url is required')
+    PROMETHEUS_URL = prometheus.get('url')
 
     PROMETHEUS_VERIFY_SSL = prometheus.get('verify_ssl', True)
 
     PROMETHEUS_USER = prometheus.get('user', None)
 
     PROMETHEUS_PASS = prometheus.get('password', None)
+    
+    if not PROMETHEUS_URL:
+        raise ImproperlyConfigured('prometheus.url is required')
 
 
     warden = config.get('warden', {})

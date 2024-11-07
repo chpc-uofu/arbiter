@@ -27,51 +27,25 @@ try:
 except AttributeError:
     raise ImproperlyConfigured("setting ARBITER_NOTIFY_USERS is required")
 
-if ARBITER_NOTIFY_USERS:
+try:
+    ARBITER_USER_LOOKUP = settings.ARBITER_USER_LOOKUP
+except AttributeError:
+    raise ImproperlyConfigured("setting ARBITER_USER_LOOKUP is required")
 
-    try:
-        ARBITER_USER_LOOKUP = settings.ARBITER_USER_LOOKUP
-    except AttributeError:
-        raise ImproperlyConfigured("setting ARBITER_USER_LOOKUP is required")
+try:
+    EMAIL_HOST = settings.EMAIL_HOST
+except AttributeError:
+    raise ImproperlyConfigured("setting EMAIL_HOST is required")
 
-    try:
-        ARBITER_EMAIL_DOMAIN = settings.ARBITER_EMAIL_DOMAIN
-    except AttributeError:
-        raise ImproperlyConfigured("setting ARBITER_EMAIL_DOMAIN is required")
+try:
+    EMAIL_HOST_USER = settings.EMAIL_HOST_PASSWORD
+except AttributeError:
+    raise ImproperlyConfigured("setting EMAIL_HOST_USER is required")
 
-    try:
-        EMAIL_HOST = settings.EMAIL_HOST
-    except AttributeError:
-        raise ImproperlyConfigured("setting EMAIL_HOST is required")
-
-    try:
-        EMAIL_HOST_USER = settings.EMAIL_HOST_PASSWORD
-    except AttributeError:
-        raise ImproperlyConfigured("setting EMAIL_HOST_USER is required")
-
-    try:
-        EMAIL_HOST_PASSWORD = settings.EMAIL_HOST_PASSWORD
-    except AttributeError:
-        raise ImproperlyConfigured("setting EMAIL_HOST_PASSWORD is required")
-    
-    if ARBITER_USER_LOOKUP == 'arbiter.utils.default_user_lookup':
-        try:
-            ARBITER_EMAIL_DOMAIN = settings.ARBITER_EMAIL_DOMAIN
-        except AttributeError:
-            raise ImproperlyConfigured("setting ARBITER_EMAIL_DOMAIN is required")
-    else:
-        ARBITER_EMAIL_DOMAIN = None
-
-else:
-    ARBITER_USER_LOOKUP = None
-
-    ARBITER_EMAIL_DOMAIN = None
-
-    EMAIL_HOST = None
-
-    EMAIL_HOST_USER = None
-
-    EMAIL_HOST_PASSWORD = None
+try:
+    EMAIL_HOST_PASSWORD = settings.EMAIL_HOST_PASSWORD
+except AttributeError:
+    raise ImproperlyConfigured("setting EMAIL_HOST_PASSWORD is required")
 
 
 ########## PROMETHEUS SETTINGS ##########
