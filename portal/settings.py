@@ -1,8 +1,16 @@
 import os
-from portal.base import *
 import tomllib
+import logging
+
+from django.core.exceptions import ImproperlyConfigured
+
+from portal.base import *
+
+
+logger = logging.getLogger(__name__)
 
 conf_file = os.getenv('ARBITER_CONF_FILE', os.path.join(BASE_DIR, 'config.toml'))
+
 
 with open(conf_file, "rb") as f:
     config = tomllib.load(f)
@@ -29,15 +37,16 @@ with open(conf_file, "rb") as f:
     ARBITER_PERMISSIVE_MODE = general.get('permissive_mode', False)
 
 
-    email = config['email']
+    email = config.get('email', {})
 
     ARBITER_NOTIFY_USERS = email.get("notify_users", True)
 
     if ARBITER_NOTIFY_USERS:
-        
-        EMAIL_HOST = email['host']
 
-        EMAIL_PORT = email['port']
+        if not (EMAIL_HOST := email.get('host')):
+            raise ImproperlyConfigured("email.host is required if email.notify_users = true")
+
+        EMAIL_PORT = email.get('port', '25')
 
         EMAIL_HOST_USER = email.get('user')
 
@@ -46,15 +55,17 @@ with open(conf_file, "rb") as f:
         ARBITER_USER_LOOKUP = email.get('lookup_function')
 
         if not ARBITER_USER_LOOKUP:
-
+    
             ARBITER_USER_LOOKUP = 'arbiter.utils.default_user_lookup'
 
-            ARBITER_EMAIL_DOMAIN = email['domain']
+            if not (ARBITER_EMAIL_DOMAIN := email.get('domain')):
+                raise ImproperlyConfigured('email.domain is required if using the default user lookup')
 
 
-    prometheus = config['prometheus']
+    prometheus = config.get('prometheus', {})
 
-    PROMETHEUS_URL = prometheus['url']
+    if not (PROMETHEUS_URL := prometheus.get('url')):
+        raise ImproperlyConfigured('prometheus.url is required')
 
     PROMETHEUS_VERIFY_SSL = prometheus.get('verify_ssl', True)
 
@@ -63,7 +74,7 @@ with open(conf_file, "rb") as f:
     PROMETHEUS_PASS = prometheus.get('password', None)
 
 
-    warden = config['warden']
+    warden = config.get('warden', {})
 
     WARDEN_JOB = warden.get('job', 'cgroup-warden')
 

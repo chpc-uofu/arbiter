@@ -22,41 +22,25 @@ python3.11 -m ensurepip --default-pip
 
 ### Installing the source code
 
-First, we would like to specify the installation directory. A reasonable choice is `/opt/arbiter3`, but any directory with the proper permissions may be specified.
 ```shell
-mkdir /opt/arbiter3
+cd /path/to/install
+git clone https://github.com/chpc-uofu/arbiter
+cd arbiter
 ```
 
-The Arbiter3 source code should be installed into a virtual environment.
+We can then install the project and its dependencies using `pip`. It is probably best installed into a virtual environment, like 
+
 ```shell
-python3.11 -m venv /opt/arbiter3/venv
-/opt/arbiter3/venv/bin/pip install 'arbiter @ git+http://github.com/chpc-uofu/arbiter'
+python3.11 -m venv venv
+source venv/bin/activate
+pip install .
 ```
 
-This will install Arbiter as a module, as well as all of its dependencies in `arbiter-venv/lib/source-packages/arbiter`.
+This will install the arbiter modules and its dependencies in `venv/lib/source-packages/`.
 
-### Creating a Django Project
-Arbiter is a Django app, and must be installed into a Django project to run. To create one,
-```shell
-/opt/arbiter3/venv/bin/django-admin startproject arbiter_django /opt/arbiter3
-```
-This will create some additional files such that
-```
-/opt/arbiter3/
-  manage.py
-  venv/
-    ...
-  arbiter_django/
-      __init__.py
-      settings.py
-      urls.py
-      asgi.py
-      wsgi.py
-```
 
-#### Django Configuration
-Django relies on the configuration in `settings.py`, which will need to be updated.   
-An example settings file is in [`etc/settings.py`](../etc/settings.py).  
+#### Configuration
+Configuration is stored in the `config.toml` file. 
 See [settings.md](settings.md) for details.
 
 ### Running the service
@@ -65,20 +49,20 @@ The arbiter service has two components, the web server and the core evaluation l
 #### Web Service
 The arbiter web service can be run in a testing capacity with the following command:
 ```shell
-venv/bin/python manage.py runserver 
+./manage.py runserver 
 ```
 Which will listen on `localhost:8000`. For production, Arbiter should be run with Gunicorn. For example,
 ```shell
-venv/bin/gunicorn arbiter.wsgi --bind 0.0.0.0:8000 
+gunicorn portal.wsgi --bind 0.0.0.0:8000 
 ```
 Preferably, this will be set up behind a proxy such as NGINX. 
 
-It should also be set up to run as a systemd service. See an example service file in [`etc/arbiter-wev.service`](../etc/arbiter-web.service)
+It should also be set up to run as a systemd service. See an example service file in [`etc/arbiter-web.service`](../etc/arbiter-web.service)
 
 #### Evaluation Service
 The arbiter evaluation loop can be run with
 ```
-venv/bin/python manage.py evaluate
+./manage.py evaluate
 ```
 To run it in a loop, you can pass the `--seconds`, `--minutes`, or `--hours` flags.
 
