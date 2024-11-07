@@ -6,7 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse_lazy
 
-from arbiter.models import UsagePolicy, Limit, QueryData, QueryParameters
+from arbiter.models import UsagePolicy, Limits, QueryData, QueryParameters, CPU_QUOTA, MEMORY_MAX
 from arbiter.utils import usec_to_cores, bytes_to_gib, cores_to_usec, gib_to_bytes, cores_to_nsec, nsec_to_cores
 
 from .nav import navbar
@@ -95,14 +95,12 @@ class UsagePolicyForm(forms.ModelForm):
     def save(self, commit=True):
         policy = super().save(commit=False)
         policy.is_base_policy=True
-        limits = []
+        limits: Limits = {}
         if mem_limit := self.cleaned_data["mem_limit"]:
-            limits.append(Limit.memory_max(mem_limit))
-
+            limits[MEMORY_MAX] = mem_limit
         if cpu_limit := self.cleaned_data["cpu_limit"]:
-            limits.append(Limit.cpu_quota(cpu_limit))
-
-        policy.penalty_constraints = Limit.to_json(*limits)
+            limits[CPU_QUOTA] = cpu_limit
+        policy.penalty_constraints = limits
         params = QueryParameters(
             cpu_threshold=self.cleaned_data["cpu_threshold"],
             mem_threshold=self.cleaned_data["mem_threshold"],

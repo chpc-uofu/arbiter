@@ -1,6 +1,5 @@
 from datetime import timedelta
 from dataclasses import dataclass, asdict
-from arbiter.utils import cores_to_nsec, gib_to_bytes
 
 from django.db import models
 from django.utils import timezone
@@ -8,42 +7,11 @@ from django.utils import timezone
 from arbiter.utils import get_uid
 
 
-@dataclass
-class Limit:
-    name: str
-    value: int
+Limits = dict[str, any]
+UNSET_LIMIT = -1
+CPU_QUOTA = "CPUQuotaPerSecUSec"
+MEMORY_MAX = "MemoryMax"
 
-    UNSET_LIMIT = -1
-
-    def json(self):
-        return asdict(self)
-
-    @staticmethod
-    def memory_max(max_bytes: int) -> "Limit":
-        return Limit(name="MemoryMax", value=max_bytes)
-    
-    @staticmethod
-    def cpu_quota(usec_per_sec: int) -> "Limit":
-        return Limit(name="CPUQuotaPerSecUSec", value=usec_per_sec)
-    
-    @staticmethod
-    def to_json(*limits: "Limit") -> dict:
-        return {l.name: l.value for l in limits}
-    
-    @staticmethod
-    def from_json(json : dict) -> list["Limit"]:
-        limits = []
-        for name, value in json.items():
-            limits.append(Limit(name=name, value=value))
-
-        return limits
-    
-    @staticmethod
-    def compare(limit1, limit2):
-        if limit1.value < limit2.value:
-            return limit1
-        else:
-            return limit2
 
 @dataclass
 class QueryParameters:
@@ -54,6 +22,7 @@ class QueryParameters:
 
     def json(self):
         return asdict(self)
+
 
 @dataclass
 class QueryData:
@@ -126,7 +95,7 @@ class Policy(models.Model):
     domain = models.CharField(max_length=1024)
     lookback = models.DurationField(default=timedelta(minutes=15))
     description = models.TextField(max_length=1024, blank=True)
-    penalty_constraints = models.JSONField(null=False)
+    penalty_constraints: Limits = models.JSONField(null=False)
     penalty_duration = models.DurationField(null=True, default=timedelta(minutes=15))
 
     repeated_offense_scalar = models.FloatField(null=True, default=1.0)
@@ -187,7 +156,17 @@ class Target(models.Model):
     unit = models.CharField(max_length=255)
     host = models.CharField(max_length=255)
     username = models.CharField(max_length=255)
-    last_applied = models.JSONField(default=dict)
+    limits: Limits = models.JSONField(default=dict)
+
+    def update_limit(self, propname, propvalue):
+        if propvalue == UNSET_LIMIT:
+            self.limits.pop(propname, None)
+        else:
+            self.limits[propname] = propvalue
+
+    def update_limits(self, limits: Limits):
+        for propname, propvalue in limits.items(): 
+            self.update_limit(propname, propvalue)
 
     @property
     def uid(self):

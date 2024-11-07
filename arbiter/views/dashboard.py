@@ -11,7 +11,7 @@ from django.contrib.auth.decorators import permission_required
 
 from arbiter.conf import PROMETHEUS_CONNECTION
 from arbiter.utils import strip_port, cores_to_usec, gib_to_bytes
-from arbiter.models import Violation, Event, Limit, Target
+from arbiter.models import Violation, Event, Limits, Target, CPU_QUOTA, MEMORY_MAX, UNSET_LIMIT
 from arbiter.eval import set_property
 
 from .nav import navbar
@@ -29,11 +29,13 @@ def view_dashboard(request):
 
         last_eval = Event.objects.order_by("timestamp").last()
 
+        limits: Limits = {CPU_QUOTA: UNSET_LIMIT, MEMORY_MAX: UNSET_LIMIT}
+
         context = dict(
             title="Arbiter Dashboard",
             violations=Violation.objects.all().order_by("-timestamp")[:10],
             agents=agents,
-            limits=[Limit.cpu_quota(-1), Limit.memory_max(-1)],
+            limits=limits,
             last_evaluated=last_eval.timestamp if last_eval else "Never",
             navbar=navbar(request)
         )
@@ -43,9 +45,9 @@ def view_dashboard(request):
 @permission_required('arbiter.execute_commands')
 def apply(request):
     
-    async def apply_single_limit(target: Target, limit: Limit):
+    async def apply_single_property(target: Target, name, value):
         async with aiohttp.ClientSession() as session:
-            return await set_property(target, session, limit)
+            return await set_property(target, session, name, value)
 
     if request.method == "POST":
         if not (username := request.POST.get("username")):
@@ -69,19 +71,14 @@ def apply(request):
         
         if prop == "CPUQuotaPerSecUSec":
             v = cores_to_usec(v) if v != -1 else v
-            limit = Limit.cpu_quota(v)
         elif prop == "MemoryMax":
             v = gib_to_bytes(v) if v != -1 else v
-            limit = Limit.memory_max(v)
         else:
             return HttpResponse(f"Invalid property '{prop}'")
 
-        status, message = asyncio.run(apply_single_limit(target, limit))
+        status, message = asyncio.run(apply_single_property(target, prop, v))
         if status == http.HTTPStatus.OK:
-            current = [l for l in target.last_applied if l.name != limit.name]
-            if limit.value != -1:
-                current.append(limit)
-            target.set_limits(current)
+            target.update_limit(prop, v)
             target.save()
                 
         return HttpResponse(f'{message}')

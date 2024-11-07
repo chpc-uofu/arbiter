@@ -1,53 +1,42 @@
 import pytest
-from arbiter.models import Limit
-
-from testing.fixtures.properties import cpu_property, mem_property
+from arbiter.models import CPU_QUOTA, MEMORY_MAX, UNSET_LIMIT
 
 
 @pytest.fixture
-def unset_limit_cpu(cpu_property):
-    return Limit.cpu_quota(-1)
+def unset_limit_cpu():
+    return {CPU_QUOTA: UNSET_LIMIT}
 
 
 @pytest.fixture
-def soft_limit_cpu(cpu_property):
-    return Limit.cpu_quota(4000000)  # 4 cores
+def soft_limit_cpu():
+    return {CPU_QUOTA: 4000000}  # 4 cores
 
 
 @pytest.fixture
-def medium_limit_cpu(cpu_property):
-    return Limit.cpu_quota(2000000)  # 2 cores
+def medium_limit_cpu():
+    return {CPU_QUOTA: 2000000} # 2 cores
 
 
 @pytest.fixture
-def harsh_limit_cpu(cpu_property):
-    return Limit.cpu_quota(1000000)  # 1 core
+def harsh_limit_cpu():
+    return {CPU_QUOTA: 1000000}  # 1 core
 
 
 @pytest.fixture
-def unset_limit_mem(mem_property):
-    return Limit.memory_max(-1)  # 4 GiB
+def unset_limit_mem():
+    return {MEMORY_MAX: UNSET_LIMIT}
 
 
 @pytest.fixture
-def soft_limit_mem(mem_property):
-    return Limit.memory_max(4294967296)  # 4 GiB
+def soft_limit_mem():
+    return {MEMORY_MAX: 4294967296}  # 4 GiB
 
 
 @pytest.fixture
-def medium_limit_mem(mem_property):
-    return Limit.memory_max(2147483648)  # 2 GiB
+def medium_limit_mem():
+    return {MEMORY_MAX: 2147483648} # 2 GiB
 
 
 @pytest.fixture
-def harsh_limit_mem(mem_property):
-    return Limit.memory_max(1073741824)  # 1 GiB
-
-
-@pytest.fixture
-def many_limit_cpu(db, harsh_limit_cpu, medium_limit_cpu, soft_limit_cpu):
-    return [harsh_limit_cpu, medium_limit_cpu, soft_limit_cpu]
-
-@pytest.fixture
-def many_limit_mem(db, harsh_limit_mem, medium_limit_mem, soft_limit_mem):
-    return [harsh_limit_mem, medium_limit_mem, soft_limit_mem]
+def harsh_limit_mem():
+    return {MEMORY_MAX: 1073741824} # 1 GiB

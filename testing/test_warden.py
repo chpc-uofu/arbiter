@@ -11,7 +11,6 @@ from time import sleep
 from testing.fixtures.policies import *
 from testing.fixtures.limits import *
 from testing.fixtures.penalties import *
-from testing.fixtures.properties import *
 from testing.fixtures.targets import *
 
 

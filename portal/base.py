@@ -131,6 +131,11 @@ LOGGING = {
             "class": "logging.StreamHandler",
             "formatter": "simple",
         },
+        "debug_console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        }
     },
     "formatters": {
         "verbose": {
@@ -153,7 +158,7 @@ LOGGING = {
             "propagate": False,
         },
         "arbiter": {
-            "handlers": ["console"],
+            "handlers": ["console", "debug_console"],
             "level": os.getenv("ARBITER_LOG_LEVEL", "DEBUG"),
             "propagate": False,
         },
