@@ -62,9 +62,7 @@ class QueryData:
             filters += f', user!~"{params.user_whitelist}"'
 
         if params.proc_whitelist:
-            proc_total = f'sum by (username, instance, unit) (rate(systemd_unit_proc_cpu_usage{{{filters}}}[{lookback}]) / {params.cpu_threshold})'
-            proc_white = f'sum by (username, instance, unit) (rate(systemd_unit_proc_cpu_usage{{{filters}, proc=~"{params.proc_whitelist}"}}[{lookback}]) / {params.cpu_threshold})'
-            cpu_query = f'({proc_total} -  {proc_white}) > 1.0'
+            cpu_query = f'sum by (username, instance, unit) (rate(systemd_unit_proc_cpu_usage_ns{{{filters}, proc!~"{params.proc_whitelist}"}}[{lookback}]) / {params.cpu_threshold})'
         else:
             cpu_query = f'sum by (username, instance, unit) (rate(systemd_unit_cpu_usage_ns{{{filters}}}[{lookback}]) / {params.cpu_threshold}) > 1.0'
 
