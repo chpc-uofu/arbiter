@@ -53,9 +53,7 @@ class QueryData:
             proc_filter = filters + f', proc=~"{params.proc_whitelist}"'
             cpu_proc = f"systemd_unit_proc_cpu_usage_ns{{{proc_filter}}}[{lookback}]"
             cpu_offset = f"(sum by ({sum_by_labels}) (rate({cpu_proc})))"
-            mem_proc = f"systemd_unit_proc_memory_bytes{{{proc_filter}}}[{lookback}]"
-            mem_offset = f"(sum by ({sum_by_labels}) (avg_over_time({mem_proc})))"
-
+        
         if params.cpu_threshold is not None:
             cpu_unit = f'systemd_unit_cpu_usage_ns{{ {filters} }}[{lookback}]'
             cpu_total = f'(sum by ({sum_by_labels}) (rate({cpu_unit})))'
@@ -67,10 +65,7 @@ class QueryData:
         if params.mem_threshold is not None:
             mem_unit = f'systemd_unit_memory_bytes{{{filters}}}[{lookback}]'
             mem_total = f'(sum by ({sum_by_labels}) (avg_over_time({mem_unit})))'
-            if params.proc_whitelist:
-                mem = f'(({mem_total} - {mem_offset}) / {params.mem_threshold}) > 1.0'
-            else:
-                mem = f'({mem_total} / {params.mem_threshold}) > 1.0'
+            mem = f'({mem_total} / {params.mem_threshold}) > 1.0'
 
         if params.mem_threshold and params.cpu_threshold:
             query = f'{cpu} or {mem}'
