@@ -69,7 +69,7 @@ class QueryData:
         mem_query = f'sum by (username, instance, unit) (avg_over_time(systemd_unit_memory{{{filters}}}[{lookback}]) / {params.mem_threshold}) > 1.0'
 
         if params.mem_threshold and params.cpu_threshold:
-            query = f'{cpu_query} or {mem_query}'
+            query = f'({cpu_query}) or ({mem_query})'
         elif params.cpu_threshold:
             query = cpu_query
         elif params.mem_threshold:
