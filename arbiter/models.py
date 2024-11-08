@@ -39,45 +39,47 @@ class QueryData:
     
     @staticmethod
     def build_query(lookback: timedelta, domain: str, params: QueryParameters) -> "QueryData":
-        
-        sum_by_labels = 'unit, instance, username'
+
+        """
+        Unaccounted for cpu usage should not be counted against a user. This can happen 
+        when a process starts and ends in-between a polling period, or for some other reason.
+        Arbiter2 opted to ignore this usage, as it may have been whitelisted usage anyways.
+
+        We calculate this delta in usage between the unit cpu usage and the sum of all of the
+        processes. We can then assign this value as a 'unknown' process for display purposes.
+
+        If we have a process whitelist, we thus calculate violations __only__ with the 
+        whitelisted usage.
+
+        We do not want to whitelist memory usage, as that cannot be 'taken' back.  
+        """
 
         filters = f'instance=~"{domain}"'
 
         lookback = f'{int(lookback.total_seconds())}s'
-        
+
         if params.user_whitelist:
             filters += f', user!~"{params.user_whitelist}"'
-        
-        if params.proc_whitelist:
-            proc_filter = filters + f', proc=~"{params.proc_whitelist}"'
-            cpu_proc = f"systemd_unit_proc_cpu_usage_ns{{{proc_filter}}}[{lookback}]"
-            cpu_offset = f"(sum by ({sum_by_labels}) (rate({cpu_proc})))"
-        
-        if params.cpu_threshold is not None:
-            cpu_unit = f'systemd_unit_cpu_usage_ns{{ {filters} }}[{lookback}]'
-            cpu_total = f'(sum by ({sum_by_labels}) (rate({cpu_unit})))'
-            if params.proc_whitelist:
-                cpu = f'(({cpu_total} - {cpu_offset}) / {params.cpu_threshold}) > 1.0'
-            else:
-                cpu = f'({cpu_total} / {params.cpu_threshold}) > 1.0'
 
-        if params.mem_threshold is not None:
-            mem_unit = f'systemd_unit_memory_bytes{{{filters}}}[{lookback}]'
-            mem_total = f'(sum by ({sum_by_labels}) (avg_over_time({mem_unit})))'
-            mem = f'({mem_total} / {params.mem_threshold}) > 1.0'
+        if params.proc_whitelist:
+            proc_total = f'sum by (username, instance, unit) (rate(systemd_unit_proc_cpu_usage{{{filters}}}[{lookback}]) / {params.cpu_threshold})'
+            proc_white = f'sum by (username, instance, unit) (rate(systemd_unit_proc_cpu_usage{{{filters}, proc=~"{params.proc_whitelist}"}}[{lookback}]) / {params.cpu_threshold})'
+            cpu_query = f'({proc_total} -  {proc_white}) > 1.0'
+        else:
+            cpu_query = f'sum by (username, instance, unit) (rate(systemd_unit_cpu_usage_ns{{{filters}}}[{lookback}]) / {params.cpu_threshold}) > 1.0'
+
+        mem_query = f'sum by (username, instance, unit) (avg_over_time(systemd_unit_memory{{{filters}}}[{lookback}]) / {params.mem_threshold}) > 1.0'
 
         if params.mem_threshold and params.cpu_threshold:
-            query = f'{cpu} or {mem}'
+            query = f'{cpu_query} or {mem_query}'
         elif params.cpu_threshold:
-            query = cpu
+            query = cpu_query
         elif params.mem_threshold:
-            query = mem
+            query = mem_query
         else:
             query = None
-
+        
         return QueryData(query=query, params=params)
-
 
 
 class Policy(models.Model):

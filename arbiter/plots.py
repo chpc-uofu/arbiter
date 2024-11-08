@@ -2,6 +2,7 @@ from plotly.graph_objects import Figure
 from datetime import datetime, timedelta, timezone
 from prometheus_api_client import MetricRangeDataFrame
 import plotly.express as px
+import pandas as pd
 from arbiter.models import Violation
 from django.utils.timezone import get_current_timezone, localtime
 
@@ -65,6 +66,7 @@ def align_with_prom_limit(start: datetime, end: datetime, step: str):
 
 def usage_figures(
     query: str,
+
     label: str,
     start: datetime,
     end: datetime,
@@ -73,9 +75,8 @@ def usage_figures(
     step: str = "15s",
 ) -> tuple[Chart, Pie]:
     start, end = align_to_step(start, end, step)
-    result = PROMETHEUS_CONNECTION.custom_query_range(
-        query, start_time=start, end_time=end, step=step
-    )
+
+    result = PROMETHEUS_CONNECTION.custom_query_range(query, start_time=start, end_time=end, step=step)
 
     if not result:
         return Figure(), Figure()
@@ -92,7 +93,6 @@ def usage_figures(
 
     # create a dataframe from prometheus query
     df = MetricRangeDataFrame(result)
-
     # convert timestamps (utc) to local
     df.index = df.index.tz_localize("UTC").tz_convert(local_tz)
 
@@ -189,11 +189,12 @@ def cpu_usage_figures(
     penalized_time: datetime | None = None,
     step="15s",
 ) -> tuple[Chart, Pie]:
-    metric = "systemd_unit_proc_cpu_usage_ns"
-    filters = f'{{ username=~"{ username_re }", instance=~"{host_re}{PORT_RE}"}}'
+    
+    unit_total = f'sum by (username, instance) (rate(systemd_unit_cpu_usage_ns{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}}[{step}]) / {NSPERSEC})'
+    proc_total = f'sum by (username, instance) (rate(systemd_unit_proc_cpu_usage_ns{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}}[{step}]) / {NSPERSEC})'
+    proc_delta = f'label_replace({unit_total} - {proc_total}, "proc", "unknown", "proc", "")'
+    query = f'{proc_delta} or sum by (username, instance, proc) (rate(systemd_unit_proc_cpu_usage_ns{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}}[{step}]) / {NSPERSEC})'
 
-    labels = "(username, instance, proc)"
-    query = f"sort_desc(avg by {labels} (rate({metric}{filters}[{step}])) / {NSPERSEC})"
     fig, pie = usage_figures(
         query,
         "proc",
@@ -220,12 +221,12 @@ def mem_usage_figures(
     penalized_time: datetime | None = None,
     step="15s",
 ) -> tuple[Chart, Pie]:
-    filters = f'{{ username=~"{ username_re }", instance=~"{ host_re }{PORT_RE}"}}'
-    metric = "systemd_unit_proc_memory_current_bytes"
-    labels = "(username, instance, proc)"
-    query = (
-        f"sort_desc(avg by {labels} (avg_over_time({metric}{filters}[{step}])) / {GIB})"
-    )
+    
+    unit_total = f'sum by (username, instance) (systemd_unit_memory_current_bytes{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}} / {GIB})'
+    proc_total = f'sum by (username, instance) (systemd_unit_proc_memory_current_bytes{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}} / {GIB})'
+    proc_delta = f'label_replace({unit_total} - {proc_total}, "proc", "unknown", "proc", "")'
+    query = f'{proc_delta} or sum by (username, instance, proc) (systemd_unit_proc_memory_current_bytes{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}} / {GIB})'
+
     fig, pie = usage_figures(
         query,
         "proc",

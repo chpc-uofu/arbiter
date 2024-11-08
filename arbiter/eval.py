@@ -91,6 +91,7 @@ def query_violations(policies: list[Policy]) -> list[Violation]:
     violations = []
     for policy in policies:
         response = PROMETHEUS_CONNECTION.custom_query(policy.query)
+        logger.info(policy.query)
         for result in response:
             unit = result["metric"]["unit"]
             host = strip_port(result["metric"]["instance"])
