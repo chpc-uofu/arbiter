@@ -8,7 +8,6 @@ host = 'mailhog'
 port = '1025'
 lookup_function = 'arbiter.utils.default_user_lookup'
 
-
 [prometheus]
 url = 'http://prometheus:9090'
 verify_ssl = false

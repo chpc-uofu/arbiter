@@ -230,8 +230,8 @@
 
                         <h3>Property</h3>
                         <select name="prop">
-                            {% for limit in limits %}
-                            <option value="{{ limit }}">{{limit}}</option>
+                            {% for name, property in limits.items %}
+                            <option value="{{ property }}">{{name}}</option>
                             {% endfor %}
                         </select>
                         <h3>Value</h3>

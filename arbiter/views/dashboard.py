@@ -29,13 +29,15 @@ def view_dashboard(request):
 
         last_eval = Event.objects.order_by("timestamp").last()
 
-        limits: Limits = {CPU_QUOTA: UNSET_LIMIT, MEMORY_MAX: UNSET_LIMIT}
+        #limits: Limits = {CPU_QUOTA: UNSET_LIMIT, MEMORY_MAX: UNSET_LIMIT}
+
+        prop_list = {"CPU Quota (cores)": CPU_QUOTA, "Memory Quota (GiB)": MEMORY_MAX}
 
         context = dict(
             title="Arbiter Dashboard",
             violations=Violation.objects.all().order_by("-timestamp")[:10],
             agents=agents,
-            limits=limits,
+            limits=prop_list,
             last_evaluated=last_eval.timestamp if last_eval else "Never",
             navbar=navbar(request)
         )
