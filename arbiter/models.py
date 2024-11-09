@@ -66,7 +66,7 @@ class QueryData:
         else:
             cpu_query = f'sum by (username, instance, unit) (rate(systemd_unit_cpu_usage_ns{{{filters}}}[{lookback}]) / {params.cpu_threshold}) > 1.0'
 
-        mem_query = f'sum by (username, instance, unit) (avg_over_time(systemd_unit_memory{{{filters}}}[{lookback}]) / {params.mem_threshold}) > 1.0'
+        mem_query = f'sum by (username, instance, unit) (avg_over_time(systemd_unit_memory_current_bytes{{{filters}}}[{lookback}]) / {params.mem_threshold}) > 1.0'
 
         if params.mem_threshold and params.cpu_threshold:
             query = f'({cpu_query}) or ({mem_query})'
