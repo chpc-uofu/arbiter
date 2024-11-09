@@ -19,26 +19,29 @@ from .nav import navbar
 LOGGER = logging.getLogger(__name__)
 
 
+def message_http(message:str, status:str = "success"):
+    return HttpResponse(f'<li class="{status}">{message}</li>')
+
 def view_dashboard(request):
-        agents = []
-        try:
-            result = PROMETHEUS_CONNECTION.custom_query('up{job=~"cgroup-warden.*"} > 0')
-            agents = [strip_port(metric["metric"]["instance"]) for metric in result]
-        except Exception as e:
-            LOGGER.error(f"Could not query promethues for cgroup-agent instances: {e}")
+    agents = []
+    try:
+        result = PROMETHEUS_CONNECTION.custom_query('up{job=~"cgroup-warden.*"} > 0')
+        agents = [strip_port(metric["metric"]["instance"]) for metric in result]
+    except Exception as e:
+        LOGGER.error(f"Could not query promethues for cgroup-agent instances: {e}")
 
-        last_eval = Event.objects.order_by("timestamp").last()
+    last_eval = Event.objects.order_by("timestamp").last()
 
-        context = dict(
-            title="Arbiter Dashboard",
-            violations=Violation.objects.all().order_by("-timestamp")[:10],
-            agents=agents,
-            limits=[Limit.cpu_quota(-1), Limit.memory_max(-1)],
-            last_evaluated=last_eval.timestamp if last_eval else "Never",
-            navbar=navbar(request)
-        )
+    context = dict(
+        title="Arbiter Dashboard",
+        violations=Violation.objects.all().order_by("-timestamp")[:10],
+        agents=agents,
+        limits=[Limit.cpu_quota(-1), Limit.memory_max(-1)],
+        last_evaluated=last_eval.timestamp if last_eval else "Never",
+        navbar=navbar(request)
+    )
 
-        return render(request, "arbiter/dashboard.html", context)
+    return render(request, "arbiter/dashboard.html", context)
 
 @permission_required('arbiter.execute_commands')
 def apply(request):
@@ -49,23 +52,23 @@ def apply(request):
 
     if request.method == "POST":
         if not (username := request.POST.get("username")):
-            return HttpResponse("Username is required.")
+            return message_http("Username is required.",'error')
         if not (host := request.POST.get("host")):
-            return HttpResponse("Host is required.")
+            return message_http("Host is required.",'error')
         
         target = Target.objects.filter(username=username, host=host).first()
         if not target:
-            return HttpResponse(f"No Target with name {username} on {host} found.")
+            return message_http(f"No Target with name {username} on {host} found.",'error')
         
         if not (prop := request.POST.get("prop")):
-            return HttpResponse("Property is required.")
+            return message_http("Property is required.",'error')
         if not (value := request.POST.get("value")):
-            return HttpResponse("Value is required")
+            return message_http("Value is required",'error')
         
         try:
             v = float(value)
         except ValueError:
-            return HttpResponse(f"Invalid value {value}")  
+            return message_http(f'Invalid value {value}','error')  
         
         if prop == "CPUQuotaPerSecUSec":
             v = cores_to_usec(v) if v != -1 else v
@@ -74,29 +77,31 @@ def apply(request):
             v = gib_to_bytes(v) if v != -1 else v
             limit = Limit.memory_max(v)
         else:
-            return HttpResponse(f"Invalid property '{prop}'")
+            return message_http(f'Invalid property "{prop}"', 'error')
 
         status, message = asyncio.run(apply_single_limit(target, limit))
+        status_str = "error"
         if status == http.HTTPStatus.OK:
+            status_str = "success"
             current = [l for l in target.last_applied if l.name != limit.name]
             if limit.value != -1:
                 current.append(limit)
             target.set_limits(current)
             target.save()
-                
-        return HttpResponse(f'{message}')
+            
+        return message_http(f'{message}', status_str)
 
 
 @permission_required('arbiter.execute_commands')
 def clean(request):
     if request.method == "POST":
         if not (before := request.POST.get("before", "").strip()):
-            return HttpResponse("Before is required for cleaning.")
+            return message_http("Before is required for cleaning.", 'error')
         try:
             call_command('clean', before=before)
         except CommandError as e:
-            return HttpResponse(f'Could not run clean: {e}')
-        return HttpResponse("Ran clean successfully.")
+            return message_http(f'Could not run clean: {e}', 'error')
+        return message_http("Ran clean successfully.")
 
 
 @permission_required('arbiter.execute_commands')
@@ -105,5 +110,5 @@ def evaluate(request):
         try:
             call_command('evaluate')
         except CommandError as e:
-            return HttpResponse(f'Could not run clean: {e}')
-    return HttpResponse("Ran evaluate successfully.")
+            return message_http(f'Could not run clean: {e}', 'error')
+    return message_http("Ran evaluate successfully.")

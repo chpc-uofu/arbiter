@@ -29,7 +29,7 @@ class BasePolicyForm(forms.ModelForm):
 
     class Meta:
         model = BasePolicy
-        fields = ["name", "domain", "description"]
+        fields = ["name", "domain", "description", "active"]
         
     def __init__(self, *args, disabled=False, **kwargs):
         super().__init__(*args, **kwargs)

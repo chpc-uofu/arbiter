@@ -63,8 +63,9 @@
 
 .apply-options select,
 .apply-options input {
-    width: 100%;
+    width: 95%;
 }
+
 
 .commands-box {
     border: 1px solid gray;
