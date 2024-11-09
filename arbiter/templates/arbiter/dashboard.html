@@ -34,8 +34,8 @@
                         {% csrf_token %}
                         <h3>Run Arbiter Evaluation Loop:</h3>
                         <input type="submit" value="Evaluate"
-                            hx-post="{% url 'arbiter:evaluate' %}" hx-swap="innerHTML"
-                            hx-target="#message-container">
+                            hx-post="{% url 'arbiter:evaluate' %}" hx-swap="afterbegin"
+                            hx-target=".messagelist">
                     </form>
                     <hr class="box-divider">
                     <form>
@@ -45,9 +45,9 @@
                             <h4>Before:</h4><input type="datetime-local" name="before">
                         </div>
                         <input type="submit" value="Clean"
-                            hx-post="{% url 'arbiter:clean' %}" hx-swap="innerHTML"
+                            hx-post="{% url 'arbiter:clean' %}" hx-swap="afterbegin"
                             hx-include="[name='before']"
-                            hx-target="#message-container">
+                            hx-target=".messagelist">
                     </form>
                 </div>
             </div>
@@ -79,7 +79,7 @@
                         <input type="text" name="value" placeholder="0">
                         <input type="button" value="Apply Limit" 
                             hx-post="{% url 'arbiter:apply' %}"
-                            hx-swap="innerHTML" hx-target="#message-container"
+                            hx-swap="afterbegin" hx-target=".messagelist"
                             hx-include="[name='host'],[name='username'],[name='prop'],[name='value']">
                 </form>
             </div>
