@@ -9,13 +9,15 @@
         {% block title %}
             Arbiter
         {% endblock %}
-    </title>
+    </title>    
+    <!-- <link rel="stylesheet" href="{% static 'css/bootstrap.css' %}"> -->
     <link rel="icon" type="image/x-icon" href="{% static 'images/arbiter-favicon.ico' %}">
     <link rel="stylesheet" href="{% static 'css/django-base.css' %}">
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     {% block extrastyle %}
+
     {% endblock %}
-    <!-- <link rel="stylesheet" href="{% static 'css/bootstrap.css' %}"> -->
+    
 </head>
 <body>
     {% include 'arbiter/navbar.html' %} 
@@ -31,7 +33,8 @@
     {% endblock messages %}
     <div class="header">
         {% block header %}
-            <h1 class="h1">{% block page-title %}{% endblock %}</h1>
+            <h1 class="page-title">{% block page-title %}{% endblock %}</h1>
+            <hr>
         {% endblock %}
     </div>
     <div class="content">
