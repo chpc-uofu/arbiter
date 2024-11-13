@@ -211,7 +211,7 @@ def evaluate(policies=None):
             if target not in applicable_limits:
                 applicable_limits[target] = []
 
-            applicable_limits[target].append(v.policy.penalty_constraints)
+            applicable_limits[target].append(v.limits)
 
     create_event_for_eval(violations)
 

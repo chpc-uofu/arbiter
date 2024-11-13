@@ -183,6 +183,10 @@ class Violation(models.Model):
     @property
     def duration(self) -> timedelta:
         return self.expiration - self.timestamp
+    
+    @property
+    def limits(self) -> Limits:
+        return self.policy.penalty_constraints['tiers'][self.offense_count-1]
 
     @property
     def expired(self) -> bool:
