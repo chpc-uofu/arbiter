@@ -100,7 +100,7 @@ class UsagePolicyForm(forms.ModelForm):
             limits[MEMORY_MAX] = mem_limit
         if cpu_limit := self.cleaned_data["cpu_limit"]:
             limits[CPU_QUOTA] = cpu_limit
-        policy.penalty_constraints = limits
+        policy.penalty_constraints = {'tiers':[limits]}
         params = QueryParameters(
             cpu_threshold=self.cleaned_data["cpu_threshold"],
             mem_threshold=self.cleaned_data["mem_threshold"],

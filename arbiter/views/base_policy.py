@@ -68,7 +68,7 @@ class BasePolicyForm(forms.ModelForm):
             limits[CPU_QUOTA] = cpu_limit
         if mem_limit := self.cleaned_data['mem']:
             limits[MEMORY_MAX] = mem_limit
-        policy.penalty_constraints = limits
+        policy.penalty_constraints = {'tiers':[limits]}
         policy.query_data = QueryData.raw_query(f'systemd_unit_cpu_usage_ns{{instance=~"{policy.domain}"}}').json()
         policy.save()
 
