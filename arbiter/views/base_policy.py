@@ -20,6 +20,7 @@ class BasePolicyListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         context["navbar"] = navbar(self.request)
         context["can_create"] = self.request.user.has_perm("arbiter.add_basepolicy")
+        context["title"] = "Base Policies"
         return context
     
 
@@ -29,7 +30,8 @@ class BasePolicyForm(forms.ModelForm):
 
     class Meta:
         model = BasePolicy
-        fields = ["name", "domain", "description"]
+        fields = ["name", "domain", "description", "active"]
+        
         
     def __init__(self, *args, disabled=False, **kwargs):
         super().__init__(*args, **kwargs)
@@ -91,7 +93,7 @@ def new_base_policy(request):
     else:
         form = BasePolicyForm()
 
-    context = {"form": form, "navbar": navbar(request), "can_change": can_change}
+    context = {"form": form, "navbar": navbar(request), "can_change": can_change, "title": "New Base Policy"}
     return render(request, "arbiter/change_view.html", context)
 
 
@@ -125,5 +127,5 @@ def change_base_policy(request, policy_id):
         else:
             form = BasePolicyForm(instance=policy, disabled=True)
 
-    context = {"form": form, "navbar": navbar(request), "can_change": can_change}
+    context = {"form": form, "navbar": navbar(request), "can_change": can_change, "title": "Change Base Policy"}
     return render(request, "arbiter/change_view.html", context)
