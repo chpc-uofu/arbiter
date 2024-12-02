@@ -186,7 +186,10 @@ class Violation(models.Model):
     
     @property
     def limits(self) -> Limits:
-        return self.policy.penalty_constraints['tiers'][self.offense_count-1]
+        tiers = self.policy.penalty_constraints['tiers']
+        penalty_tier = min(self.offense_count-1, len(tiers)-1)
+        
+        return tiers[penalty_tier]
 
     @property
     def expired(self) -> bool:
