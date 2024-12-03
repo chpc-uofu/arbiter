@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse_lazy
 
 from arbiter.models import UsagePolicy, Limits, QueryData, QueryParameters, CPU_QUOTA, MEMORY_MAX
-from arbiter.utils import usec_to_cores, bytes_to_gib, cores_to_usec, gib_to_bytes, cores_to_nsec, nsec_to_cores
+from arbiter.utils import usec_to_cores, bytes_to_gib, cores_to_usec, gib_to_bytes
 
 from .nav import navbar
 
@@ -49,7 +49,7 @@ class UsagePolicyForm(forms.ModelForm):
 
         if query_data := self.instance.query_data:
             if cpu_threshold := query_data["params"]["cpu_threshold"]:
-                self.fields['cpu_threshold'].initial = nsec_to_cores(cpu_threshold)
+                self.fields['cpu_threshold'].initial = cpu_threshold # cores
             if mem_threshold := query_data["params"]["mem_threshold"]:
                 self.fields['mem_threshold'].initial = bytes_to_gib(mem_threshold)
             self.fields['proc_whitelist'].initial = query_data["params"]["proc_whitelist"]
@@ -72,7 +72,7 @@ class UsagePolicyForm(forms.ModelForm):
     
     def clean_cpu_threshold(self):
         if cpu := self.cleaned_data["cpu_threshold"]:
-            return cores_to_nsec(cpu)
+            return cpu
         return None
     
     def clean_mem_threshold(self):
