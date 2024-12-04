@@ -91,8 +91,6 @@ def create_violation(target: Target, policy: Policy) -> Violation:
 def query_violations(policies: list[Policy]) -> list[Violation]:
     violations = []
     for policy in policies:
-        if not policy.active:
-            continue
         
         response = PROMETHEUS_CONNECTION.custom_query(policy.query)
         logger.info(policy.query)
@@ -203,6 +201,7 @@ def create_event_for_eval(violations):
 @log_debug
 def evaluate(policies=None):
     policies = policies or Policy.objects.all()
+    policies = [p for p in policies if p.active]
 
     violations = query_violations(policies)
     Violation.objects.bulk_create(violations, ignore_conflicts=True)
