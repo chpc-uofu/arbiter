@@ -11,6 +11,13 @@ from arbiter.utils import usec_to_cores, bytes_to_gib, cores_to_usec, gib_to_byt
 
 from .nav import navbar
 
+class TieredPenaltyWidget(forms.Widget):
+    template_name = "arbiter/penalty_widget.html"
+    
+    def get_context(self, name: str, value, attrs = None):
+        return super().get_context(name, value, attrs)
+
+
 class UsagePolicyListView(LoginRequiredMixin, ListView):
     model = UsagePolicy
     login_url = reverse_lazy("login")
@@ -29,6 +36,7 @@ class UsagePolicyForm(forms.ModelForm):
     user_whitelist = forms.CharField(label="Query User Whitelist", required=False)
     cpu_threshold = forms.FloatField(label="Query CPU Threshold", required=False)
     mem_threshold = forms.FloatField(label="Query Memory Threshold", required=False)
+    test          = forms.MultiValueField(label="test", fields=[forms.FloatField(label="mem")])
 
     class Meta:
         model = UsagePolicy
