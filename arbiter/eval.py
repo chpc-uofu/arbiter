@@ -2,6 +2,7 @@ import http
 import asyncio
 import aiohttp
 import logging
+import re
 
 from django.db.models import Q
 from django.utils import timezone
@@ -90,10 +91,16 @@ def create_violation(target: Target, policy: Policy) -> Violation:
 def query_violations(policies: list[Policy]) -> list[Violation]:
     violations = []
     for policy in policies:
+        
         response = PROMETHEUS_CONNECTION.custom_query(policy.query)
         logger.info(policy.query)
         for result in response:
-            unit = result["metric"]["unit"]
+            cgroup = result["metric"]["cgroup"]
+            matches = re.findall(r"^/user.slice/(user-\d+.slice)$", cgroup)
+            if len(matches) < 1:
+                logger.info(f"invalid cgroup: {cgroup}")
+                continue
+            unit = matches[0]
             host = strip_port(result["metric"]["instance"])
             username = result["metric"]["username"]
 
@@ -194,6 +201,7 @@ def create_event_for_eval(violations):
 @log_debug
 def evaluate(policies=None):
     policies = policies or Policy.objects.all()
+    policies = [p for p in policies if p.active]
 
     violations = query_violations(policies)
     Violation.objects.bulk_create(violations, ignore_conflicts=True)

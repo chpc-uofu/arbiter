@@ -8,16 +8,14 @@ from django.utils.timezone import get_current_timezone, localtime
 
 from typing import TypeAlias
 
-from arbiter.utils import nsec_to_cores, bytes_to_gib
+from arbiter.utils import bytes_to_gib, BYTES_PER_GIB
 
 from arbiter.conf import PROMETHEUS_CONNECTION
 
 Chart: TypeAlias = Figure
 Pie: TypeAlias = Figure
 
-GIB = 1024**3
 PROMETHUS_POINT_LIMIT = 400
-NSPERSEC = 1_000_000_000
 PORT_RE = r"(:[0-9]{1,5})?"
 
 MEM_USAGE = "mem"
@@ -161,8 +159,7 @@ def violation_usage_figures(violation: Violation, usage_type: str, step: str = "
     step = align_with_prom_limit(violation.timestamp, violation.expiration, step)
 
     if usage_type == CPU_USAGE:
-        if threshold := violation.policy.query_data.get("cpu_threshold", None):
-            threshold = nsec_to_cores(threshold)
+        threshold = violation.policy.query_data.get("cpu_threshold", None)
         return cpu_usage_figures(username, host, start, end, threshold, penalized, step)
     if usage_type == MEM_USAGE:
         if threshold := violation.policy.query_data.get("mem_threshold", None):
@@ -190,10 +187,11 @@ def cpu_usage_figures(
     step="15s",
 ) -> tuple[Chart, Pie]:
     
-    unit_total = f'sum by (username, instance) (rate(systemd_unit_cpu_usage_ns{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}}[{step}]) / {NSPERSEC})'
-    proc_total = f'sum by (username, instance) (rate(systemd_unit_proc_cpu_usage_ns{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}}[{step}]) / {NSPERSEC})'
+    unit_total = f'sum by (username, instance) (rate(cgroup_warden_cpu_usage_seconds{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}}[{step}]))'
+    proc_total = f'sum by (username, instance) (rate(cgroup_warden_proc_cpu_usage_seconds{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}}[{step}]))'
     proc_delta = f'label_replace({unit_total} - {proc_total}, "proc", "unknown", "proc", "")'
-    query = f'{proc_delta} or sum by (username, instance, proc) (rate(systemd_unit_proc_cpu_usage_ns{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}}[{step}]) / {NSPERSEC})'
+    query = f'{proc_delta} or sum by (username, instance, proc) (rate(cgroup_warden_proc_cpu_usage_seconds{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}}[{step}]))'
+    print()
 
     fig, pie = usage_figures(
         query,
@@ -222,10 +220,10 @@ def mem_usage_figures(
     step="15s",
 ) -> tuple[Chart, Pie]:
     
-    unit_total = f'sum by (username, instance) (systemd_unit_memory_current_bytes{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}} / {GIB})'
-    proc_total = f'sum by (username, instance) (systemd_unit_proc_memory_current_bytes{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}} / {GIB})'
+    unit_total = f'sum by (username, instance) (cgroup_warden_memory_usage_bytes{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}} / {BYTES_PER_GIB})'
+    proc_total = f'sum by (username, instance) (cgroup_warden_proc_memory_usage_bytes{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}} / {BYTES_PER_GIB})'
     proc_delta = f'label_replace({unit_total} - {proc_total}, "proc", "unknown", "proc", "")'
-    query = f'{proc_delta} or sum by (username, instance, proc) (systemd_unit_proc_memory_current_bytes{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}} / {GIB})'
+    query = f'{proc_delta} or sum by (username, instance, proc) (cgroup_warden_proc_memory_usage_bytes{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}} / {BYTES_PER_GIB})'
 
     fig, pie = usage_figures(
         query,

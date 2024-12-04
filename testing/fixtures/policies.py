@@ -1,15 +1,14 @@
 import pytest
 from arbiter.models import Policy, QueryData, QueryParameters
-from arbiter.utils import cores_to_nsec, gib_to_bytes
+from arbiter.utils import BYTES_PER_GIB
 from fixtures.penalties import *
 from datetime import timedelta
 from .limits import *
 
 
-CPU_LOW_THRESHOLD = cores_to_nsec(0.9)
-MEM_LOW_THRESHOLD = cores_to_nsec(0.75)
-CPU_MID_THRESHOLD = cores_to_nsec(1.9)
-MEM_MID_THRESHOLD = gib_to_bytes(1.75)
+CPU_LOW_THRESHOLD = 0.9
+MEM_LOW_THRESHOLD = 0.75 * BYTES_PER_GIB
+CPU_MID_THRESHOLD = 1.9
 
 DOMAIN = ".*"
 

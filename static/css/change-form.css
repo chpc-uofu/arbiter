@@ -1,0 +1,20 @@
+form{
+    display:  flex;
+    flex-direction: column;
+}
+
+form div {
+    display: flex;
+    flex-direction: row;
+    border-bottom: 1px solid var(--darker-bg);
+    padding: 10px;
+}
+form div div, .form-submit-box{
+    border-bottom: none;
+}
+.helptext{
+    color: var(--lighter-text-color);
+    font-size: smaller;
+    justify-self: flex-end;
+}
+

@@ -1,68 +1,45 @@
-{% block extrastyle %}
-{{ block.super }}
-<style> 
+<!DOCTYPE html>
 
-#navbar {
-  position: sticky;
-  top: 0;
-}
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        {% block title %}
+        Arbiter | {{ title }}
+        {% endblock %}
+    </title>    
+    <!-- <link rel="stylesheet" href="{% static 'css/bootstrap.css' %}"> -->
+    <link rel="icon" type="image/x-icon" href="{% static 'images/arbiter-favicon.ico' %}">
+    <link rel="stylesheet" href="{% static 'css/django-base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    {% block extrastyle %}
 
-#navbar ul { 
-	margin: 0; 
-	padding: 5px; 
-	list-style-type: none; 
-	text-align: center; 
-} 
- 
-#navbar ul li {  
-	display: inline; 
-}
-
-#navbar .active {
-    color: cadetblue;
-}
-
-</style>
-{% endblock %}
-
-{% block content_title %}
-    {% if navbar %}
-        <div id="navbar">
-            <ul>
-            {% for item in navbar %}
-                <li>
-                    {{ item.render | safe }}
-                </li>
-            {% endfor %}
-            </ul>
-        </nav>
-    {% endif %}
-
-    {% if user.is_authenticated %}
-        <form action="{% url 'logout' %}" method="post">
-            {% csrf_token %}
-            <button type="submit">Log Out</button>
-        </form>
-    {% else %}
-        <a href="{% url 'login' %}">Log In</a>
-    {% endif %}
-
-
-{% endblock %}
-
-{% block messages %}
-{% if messages %}
-<ul class="messages">
-    {% for message in messages %}
-    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>
-        {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}Important: {% endif %}
-        {{ message }}
-    </li>
-    {% endfor %}
-</ul>
-{% endif %}
-{% endblock messages %}
-
-{% block content %}
-
-{% endblock %}
+    {% endblock %}
+    
+</head>
+<body>
+    {% include 'arbiter/navbar.html' %} 
+    {% block messages %} 
+    <ul class="messagelist" id="messagelist">
+        {% for message in messages %}
+        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>
+            {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}Important: {% endif %}
+            {{ message }}
+        </li>
+        {% endfor %}
+    </ul>
+    {% endblock messages %}
+    <div class="header">
+        {% block header %}
+            <h1 class="page-title">{% block page-title %}{% endblock %}</h1>
+            <hr>
+        {% endblock %}
+    </div>
+    <div class="content">
+    {% block content %}
+    {% endblock %}
+    </div>
+</body>
+</html>

@@ -13,12 +13,12 @@ class BarItem:
 
 def navbar(request):
 
-    routes = {"Home": reverse("arbiter:view-dashboard")}
+    routes = {}
+
     if request.user.is_authenticated:
+        routes["Dashboard"] = reverse("arbiter:view-dashboard")
         routes["Base Policy"] = reverse("arbiter:list-base-policy")
-    if request.user.is_authenticated:
         routes["Usage Policy"] = reverse("arbiter:list-usage-policy")
-    if request.user.is_authenticated:
         routes["Violations"] = reverse("arbiter:list-violation")
 
     items = []

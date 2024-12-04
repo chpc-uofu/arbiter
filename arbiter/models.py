@@ -15,8 +15,8 @@ MEMORY_MAX = "MemoryMax"
 
 @dataclass
 class QueryParameters:
-    cpu_threshold: int  # nanoseconds
-    mem_threshold: int  # bytes
+    cpu_threshold: float # seconds
+    mem_threshold: int   # bytes
     proc_whitelist: str | None = None # prom matcher regex
     user_whitelist: str | None = None # prom matcher regex
 
@@ -62,11 +62,11 @@ class QueryData:
             filters += f', user!~"{params.user_whitelist}"'
 
         if params.proc_whitelist:
-            cpu_query = f'sum by (username, instance, unit) (rate(systemd_unit_proc_cpu_usage_ns{{{filters}, proc!~"{params.proc_whitelist}"}}[{lookback}]) / {params.cpu_threshold}) > 1.0'
+            cpu_query = f'sum by (username, instance, cgroup) (rate(cgroup_warden_proc_cpu_usage_seconds{{{filters}, proc!~"{params.proc_whitelist}"}}[{lookback}]) > {params.cpu_threshold})'
         else:
-            cpu_query = f'sum by (username, instance, unit) (rate(systemd_unit_cpu_usage_ns{{{filters}}}[{lookback}]) / {params.cpu_threshold}) > 1.0'
+            cpu_query = f'sum by (username, instance, cgroup) (rate(cgroup_warden_cpu_usage_seconds{{{filters}}}[{lookback}]) > {params.cpu_threshold})'
 
-        mem_query = f'sum by (username, instance, unit) (avg_over_time(systemd_unit_memory_current_bytes{{{filters}}}[{lookback}]) / {params.mem_threshold}) > 1.0'
+        mem_query = f'sum by (username, instance, cgroup) (avg_over_time(cgroup_warden_memory_usage_bytes{{{filters}}}[{lookback}]) / {params.mem_threshold}) > 1.0'
 
         if params.mem_threshold and params.cpu_threshold:
             query = f'({cpu_query}) or ({mem_query})'
@@ -98,6 +98,7 @@ class Policy(models.Model):
     grace_period = models.DurationField(null=True, default=timedelta(minutes=5))
 
     query_data = models.JSONField()
+    active  = models.BooleanField(default=True, help_text="Whether or not this policy gets evaluated")
 
     @property
     def query(self):
@@ -119,7 +120,7 @@ class BasePolicy(Policy):
 
     def save(self, **kwargs):
         self.is_base_policy = True
-        query = f'systemd_unit_cpu_usage_ns{{instance=~"{self.domain}"}}'
+        query = f'cgroup_warden_cpu_usage_seconds{{instance=~"{self.domain}"}}'
         self.query_data = QueryData.raw_query(query).json()
         return super().save(**kwargs)
 

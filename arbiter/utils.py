@@ -3,9 +3,8 @@ import logging
 from pwd import getpwnam
 
 
-USEC_PER_SEC = 1_000_000
+USEC_PER_SEC = 1000**2
 BYTES_PER_GIB = 1024**3
-NSEC_PER_SEC = 1000**3
 SEC_PER_MIN = 60
 SEC_PER_HOUR = 60**2
 SEC_PER_DAY = 60**2 * 24
@@ -114,21 +113,8 @@ def cores_to_usec(cores: float) -> int:
         return 1
     return int(usec)
 
-
-def cores_to_nsec(cores: float) -> int:
-    nsec = cores * NSEC_PER_SEC
-    if nsec < 1:
-        return 1
-    return int(nsec)
-
-
 def usec_to_cores(usec: int) -> float:
     return usec / USEC_PER_SEC
-
-
-def nsec_to_cores(nsec: int) -> float:
-    return nsec / NSEC_PER_SEC
-
 
 def gib_to_bytes(gib: float) -> int:
     _bytes = gib * BYTES_PER_GIB

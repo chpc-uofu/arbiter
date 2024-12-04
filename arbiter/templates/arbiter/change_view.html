@@ -1,13 +1,22 @@
 {% extends "arbiter/base.html" %}
 
+{% load static %}
+
+{% block extrastyle %}
+{{block.super }}
+<link rel="stylesheet" href="{% static 'css/change-form.css' %}">
+{% endblock %}
+
 {% block content %}
 
 <form action="{{ request.path }}" method="post">
     {% csrf_token %}
     {{ form  }}
     {% if can_change %}
+    <div class="form-submit-box">
         <input type="submit" name="save" value="save"/>
         <input type="submit" name="delete" value="delete"/>
+    </div>
     {% endif %}
 </form>
 
