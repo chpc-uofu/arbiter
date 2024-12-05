@@ -105,7 +105,14 @@ class Policy(models.Model):
         query_str = self.query_data.get("query", None)
 
         return query_str
+    
+    @property
+    def cpu_threshold(self):
+        return self.query_data.get("params", {}).get("cpu_threshold")
 
+    @property
+    def mem_threshold(self):
+        return self.query_data.get("params", {}).get("mem_threshold")
 
 
 class BasePolicy(Policy):

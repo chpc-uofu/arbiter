@@ -64,14 +64,13 @@ def align_with_prom_limit(start: datetime, end: datetime, step: str):
 
 def usage_figures(
     query: str,
-
     label: str,
     start: datetime,
     end: datetime,
     threshold: float | None = None,
-    penalized: datetime | None = None,
-    step: str = "15s",
+    step: str = "30s",
 ) -> tuple[Chart, Pie]:
+
     start, end = align_to_step(start, end, step)
 
     result = PROMETHEUS_CONNECTION.custom_query_range(query, start_time=start, end_time=end, step=step)
@@ -81,16 +80,13 @@ def usage_figures(
 
     local_tz = get_current_timezone()
 
-    # convert penalized time (utc) to local
-    if penalized:
-        penalized = localtime(penalized)
-
     # convert start and end (utc) to local
     start = localtime(start)
     end = localtime(end)
 
     # create a dataframe from prometheus query
     df = MetricRangeDataFrame(result)
+
     # convert timestamps (utc) to local
     df.index = df.index.tz_localize("UTC").tz_convert(local_tz)
 
@@ -131,20 +127,19 @@ def usage_figures(
         df.sort_values(by=["value"]),
         y="value",
         color=label,
-        # line_shape="spline",
+        line_shape="hv",
         color_discrete_map=color_mapping,
     )
+
+    # remove lines, only have area
+    for i in range(len(chart['data'])):
+        chart['data'][i]['line']['width'] = 0
+
+
     if threshold:
         chart.add_hline(
             threshold,
             line={"dash": "dot", "color": "grey"},
-        )
-
-    if penalized:
-        chart.add_vrect(
-            x0=penalized,
-            x1=penalized + timedelta(microseconds=1),
-            line={"dash": "dot", "color": "red"},
         )
 
     return chart, pie
@@ -154,17 +149,17 @@ def violation_usage_figures(violation: Violation, usage_type: str, step: str = "
     username = violation.target.username
     host = violation.target.host
     start = violation.timestamp - violation.policy.lookback
-    end = violation.expiration
-    penalized = violation.timestamp
-    step = align_with_prom_limit(violation.timestamp, violation.expiration, step)
+    end = violation.timestamp
+    step = align_with_prom_limit(start, end, step)
 
     if usage_type == CPU_USAGE:
-        threshold = violation.policy.query_data.get("cpu_threshold", None)
-        return cpu_usage_figures(username, host, start, end, threshold, penalized, step)
+        threshold = violation.policy.cpu_threshold or None
+        return cpu_usage_figures(username, host, start, end, threshold, step)
+
     if usage_type == MEM_USAGE:
-        if threshold := violation.policy.query_data.get("mem_threshold", None):
+        if threshold := violation.policy.mem_threshold or None:
             threshold = bytes_to_gib(threshold)
-        return mem_usage_figures(username, host, start, end, threshold, penalized, step)
+        return mem_usage_figures(username, host, start, end, threshold, step)
 
     return Figure(), Figure()
 
@@ -183,15 +178,13 @@ def cpu_usage_figures(
     start_time: datetime,
     end_time: datetime,
     policy_threshold: float | None = None,
-    penalized_time: datetime | None = None,
-    step="15s",
+    step="30s",
 ) -> tuple[Chart, Pie]:
     
     unit_total = f'sum by (username, instance) (rate(cgroup_warden_cpu_usage_seconds{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}}[{step}]))'
     proc_total = f'sum by (username, instance) (rate(cgroup_warden_proc_cpu_usage_seconds{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}}[{step}]))'
-    proc_delta = f'label_replace({unit_total} - {proc_total}, "proc", "unknown", "proc", "")'
+    proc_delta = f'label_replace({unit_total} - {proc_total}, "proc", "unknown", "proc", "") > 0'
     query = f'{proc_delta} or sum by (username, instance, proc) (rate(cgroup_warden_proc_cpu_usage_seconds{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}}[{step}]))'
-    print()
 
     fig, pie = usage_figures(
         query,
@@ -199,7 +192,6 @@ def cpu_usage_figures(
         start_time,
         end_time,
         policy_threshold,
-        penalized_time,
         step,
     )
     fig.update_layout(
@@ -216,13 +208,12 @@ def mem_usage_figures(
     start_time: datetime,
     end_time: datetime,
     policy_threshold: float | None = None,
-    penalized_time: datetime | None = None,
-    step="15s",
+    step="30s",
 ) -> tuple[Chart, Pie]:
     
     unit_total = f'sum by (username, instance) (cgroup_warden_memory_usage_bytes{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}} / {BYTES_PER_GIB})'
     proc_total = f'sum by (username, instance) (cgroup_warden_proc_memory_usage_bytes{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}} / {BYTES_PER_GIB})'
-    proc_delta = f'label_replace({unit_total} - {proc_total}, "proc", "unknown", "proc", "")'
+    proc_delta = f'label_replace({unit_total} - {proc_total}, "proc", "unknown", "proc", "") > 0'
     query = f'{proc_delta} or sum by (username, instance, proc) (cgroup_warden_proc_memory_usage_bytes{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}} / {BYTES_PER_GIB})'
 
     fig, pie = usage_figures(
@@ -231,7 +222,6 @@ def mem_usage_figures(
         start_time,
         end_time,
         policy_threshold,
-        penalized_time,
         step,
     )
     fig.update_layout(
