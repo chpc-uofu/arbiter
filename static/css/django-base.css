@@ -1,0 +1,171 @@
+/* django defaults */
+
+p, ol, ul, dl {
+    margin: .2em 0 .8em 0;
+}
+
+p {
+    padding: 0;
+    line-height: 140%;
+}
+
+h1,h2,h3,h4,h5 {
+    font-weight: bold;
+}
+
+h1 {
+    margin: 0 0 20px;
+    font-weight: 300;
+    font-size: 1.25rem;
+}
+
+h2 {
+    font-size: 1rem;
+    margin: 1em 0 .5em 0;
+}
+
+h2.subhead {
+    font-weight: normal;
+    margin-top: 0;
+}
+
+h3 {
+    font-size: 0.875rem;
+    margin: .8em 0 .3em 0;
+    color: var(--body-medium-color);
+    font-weight: bold;
+}
+
+h4 {
+    font-size: 0.75rem;
+    margin: 1em 0 .8em 0;
+    padding-bottom: 3px;
+    color: var(--body-medium-color);
+}
+
+h5 {
+    font-size: 0.625rem;
+    margin: 1.5em 0 .5em 0;
+    color: var(--body-quiet-color);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+ul > li {
+    list-style-type: square;
+    padding: 1px 0;
+}
+
+li ul {
+    margin-bottom: 0;
+}
+
+li, dt, dd {
+    font-size: 0.8125rem;
+    line-height: 1.25rem;
+}
+
+dt {
+    font-weight: bold;
+    margin-top: 4px;
+}
+
+dd {
+    margin-left: 0;
+}
+
+form {
+    margin: 0;
+    padding: 0;
+}
+
+fieldset {
+    margin: 0;
+    min-width: 0;
+    padding: 0;
+    border: none;
+    border-top: 1px solid var(--hairline-color);
+}
+
+details summary {
+    cursor: pointer;
+}
+
+blockquote {
+    font-size: 0.6875rem;
+    color: #777;
+    margin-left: 2px;
+    padding-left: 10px;
+    border-left: 5px solid #ddd;
+}
+
+code, pre {
+    font-family: var(--font-family-monospace);
+    color: var(--body-quiet-color);
+    font-size: 0.75rem;
+    overflow-x: auto;
+}
+
+pre.literal-block {
+    margin: 10px;
+    background: var(--darkened-bg);
+    padding: 6px 8px;
+}
+
+code strong {
+    color: #930;
+}
+
+hr {
+    clear: both;
+    color: var(--hairline-color);
+    background-color: var(--hairline-color);
+    height: 1px;
+    border: none;
+    margin: 0;
+    padding: 0;
+    line-height: 1px;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-size: 0.875rem;
+    font-family: var(--font-family-primary);
+    color: var(--body-fg);
+    background: var(--body-bg);
+}
+
+/* LINKS */
+
+a:link, a:visited {
+    color: var(--link-fg);
+    text-decoration: none;
+    transition: color 0.15s, background 0.15s;
+}
+
+a:focus, a:hover {
+    color: var(--link-hover-color);
+}
+
+a:focus {
+    text-decoration: underline;
+}
+
+a img {
+    border: none;
+}
+
+a.section:link, a.section:visited {
+    color: var(--header-link-color);
+    text-decoration: none;
+}
+
+a.section:focus, a.section:hover {
+    text-decoration: underline;
+}
+

@@ -1,22 +1,32 @@
 {% extends "arbiter/base.html" %}
 
+{% block page-title %}
+    Usage Policies
+{% endblock %}
 {% block content %}
-
-<h1>Usage Policies</h1>
-
 {% if can_create %}
-    <a href="{% url 'new-usage-policy'%}">New Usage Policy</a> 
+    <a href="{% url 'arbiter:new-usage-policy'%}" class = "create-link">Create New Usage Policy</a> 
 {% endif %}
-
-<ul>
-{% for policy in object_list %}
-    <li>
-        <a href="{% url 'change-usage-policy' policy.id%}">{{policy.name}}</a>
-    </li></br>
-{% empty %}
-    <li>No Usage Policies.</li>
-{% endfor %}
-</ul>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Domain</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for policy in object_list %}
+        <tr>
+            <td><a href="{% url 'arbiter:change-usage-policy' policy.id%}">{{policy.name}}</a></td>
+            <td>{{policy.domain}}</td>
+        </tr>
+        
+        {% empty %}
+            <h4>
+                No usage Policies.
+            </h4>
+        {% endfor %}
+    </tbody>
+</table>
 
 {% endblock content %}
-
