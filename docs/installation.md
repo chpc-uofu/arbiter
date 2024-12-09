@@ -5,7 +5,7 @@ Arbiter 3 was created for the Rocky 8 and 9 interactive systems at the Center fo
 2. Installing a Prometheus Instance
 3. Installing the cgroup-warden on each interactive node
 
-## Arbiter Service
+## Arbiter Django Application
 The core arbiter service is a Django application. This needs to be installed on a machine
 with secure network access to Prometheus and the desired login nodes.
 
@@ -38,8 +38,7 @@ pip install .
 
 This will install the arbiter modules and its dependencies in `venv/lib/source-packages/`.
 
-
-#### Configuration
+### Configuration
 Configuration is stored in the `config.toml` file. 
 See [settings.md](settings.md) for details.
 
@@ -70,14 +69,14 @@ This should also be set up to run as a service, see [`/etc/arbiter-eval.service`
 
 
 ## cgroup-warden
-See the [cgroup-warden](https://github.com/chpc-uofu/cgroup-warden/blob/main/INSTALL.md)
+See the [cgroup-warden](https://github.com/chpc-uofu/cgroup-warden)
 installation guide.
 
 ## Prometheus
 See the [Prometheus](https://prometheus.io/docs/prometheus/latest/installation/) installation guide. 
 For general configuration, see [here](https://prometheus.io/docs/prometheus/latest/configuration/). 
 
-Each cgroup-warden instance needs to be scraped. 
+Each cgroup-warden instance needs to be scraped. For example, 
 ```yaml
 scrape_configs:
   - job_name: 'cgroup-warden'
