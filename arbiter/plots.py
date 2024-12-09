@@ -1,25 +1,31 @@
-from plotly.graph_objects import Figure
+import logging
+from typing import NamedTuple
 from datetime import datetime, timedelta, timezone
-from prometheus_api_client import MetricRangeDataFrame
+
+from plotly.graph_objects import Figure
+from prometheus_api_client import MetricRangeDataFrame, PrometheusApiClientException
 import plotly.express as px
-import pandas as pd
-from arbiter.models import Violation
+
 from django.utils.timezone import get_current_timezone, localtime
 
-from typing import TypeAlias
-
-from arbiter.utils import bytes_to_gib, BYTES_PER_GIB
-
+from arbiter.models import Violation
+from arbiter.utils import bytes_to_gib, BYTES_PER_GIB, log_debug
 from arbiter.conf import PROMETHEUS_CONNECTION
 
-Chart: TypeAlias = Figure
-Pie: TypeAlias = Figure
+
+logger = logging.getLogger(__name__)
+
 
 PROMETHUS_POINT_LIMIT = 400
 PORT_RE = r"(:[0-9]{1,5})?"
 
 MEM_USAGE = "mem"
 CPU_USAGE = "cpu"
+
+
+class Figures(NamedTuple):
+    chart : Figure
+    pie   : Figure
 
 
 def align_to_step(start: datetime, end: datetime, step: str = "15s") -> datetime:
@@ -42,7 +48,7 @@ def align_to_step(start: datetime, end: datetime, step: str = "15s") -> datetime
     return start - start_delta, end - end_delta
 
 
-def align_with_prom_limit(start: datetime, end: datetime, step: str):
+def align_with_prom_limit(start: datetime, end: datetime, step: str) -> str:
     """
     Given a timerange as defined by the start and end, create a step
     interval for a prometheus query that ensures no more than 400
@@ -69,14 +75,19 @@ def usage_figures(
     end: datetime,
     threshold: float | None = None,
     step: str = "30s",
-) -> tuple[Chart, Pie]:
+) -> Figures | None:
 
     start, end = align_to_step(start, end, step)
 
-    result = PROMETHEUS_CONNECTION.custom_query_range(query, start_time=start, end_time=end, step=step)
+    try:
+        result = PROMETHEUS_CONNECTION.custom_query_range(query, start_time=start, end_time=end, step=step)
+    except PrometheusApiClientException as e:
+        logger.error(f'unable to create usage figures: {e}')
+        return None
 
     if not result:
-        return Figure(), Figure()
+        logger.warning(f"unable to create usage figures: empty query result")
+        return None
 
     local_tz = get_current_timezone()
 
@@ -136,16 +147,17 @@ def usage_figures(
         chart['data'][i]['line']['width'] = 0
 
 
+    # if there is a threshold to graph
     if threshold:
         chart.add_hline(
             threshold,
             line={"dash": "dot", "color": "grey"},
         )
 
-    return chart, pie
+    return Figures(chart=chart, pie=pie)
 
-
-def violation_usage_figures(violation: Violation, usage_type: str, step: str = "30s"):
+@log_debug
+def violation_usage_figures(violation: Violation, usage_type: str, step: str = "30s") -> Figures | None:
     username = violation.target.username
     host = violation.target.host
     start = violation.timestamp - violation.policy.lookback
@@ -161,14 +173,14 @@ def violation_usage_figures(violation: Violation, usage_type: str, step: str = "
             threshold = bytes_to_gib(threshold)
         return mem_usage_figures(username, host, start, end, threshold, step)
 
-    return Figure(), Figure()
+    return None
 
 
-def violation_cpu_usage_figures(violation: Violation, step: str = "30s"):
+def violation_cpu_usage_figures(violation: Violation, step: str = "30s") -> Figures | None: 
     return violation_usage_figures(violation, CPU_USAGE, step)
 
 
-def violation_mem_usage_figures(violation: Violation, step: str = "30s"):
+def violation_mem_usage_figures(violation: Violation, step: str = "30s") -> Figures | None:
     return violation_usage_figures(violation, MEM_USAGE, step)
 
 
@@ -179,14 +191,14 @@ def cpu_usage_figures(
     end_time: datetime,
     policy_threshold: float | None = None,
     step="30s",
-) -> tuple[Chart, Pie]:
+) -> Figures | None:
     
     unit_total = f'sum by (username, instance) (rate(cgroup_warden_cpu_usage_seconds{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}}[{step}]))'
     proc_total = f'sum by (username, instance) (rate(cgroup_warden_proc_cpu_usage_seconds{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}}[{step}]))'
     proc_delta = f'label_replace({unit_total} - {proc_total}, "proc", "unknown", "proc", "") > 0'
     query = f'{proc_delta} or sum by (username, instance, proc) (rate(cgroup_warden_proc_cpu_usage_seconds{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}}[{step}]))'
 
-    fig, pie = usage_figures(
+    figures = usage_figures(
         query,
         "proc",
         start_time,
@@ -194,12 +206,16 @@ def cpu_usage_figures(
         policy_threshold,
         step,
     )
-    fig.update_layout(
+
+    if not figures:
+        return None
+
+    figures.chart.update_layout(
         title=f"CPU Usage Report For {username_re} on {host_re}",
         xaxis_title="Time",
         yaxis_title="Usage in Cores",
     )
-    return fig, pie
+    return figures
 
 
 def mem_usage_figures(
@@ -209,14 +225,14 @@ def mem_usage_figures(
     end_time: datetime,
     policy_threshold: float | None = None,
     step="30s",
-) -> tuple[Chart, Pie]:
+) -> Figures | None:
     
     unit_total = f'sum by (username, instance) (cgroup_warden_memory_usage_bytes{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}} / {BYTES_PER_GIB})'
     proc_total = f'sum by (username, instance) (cgroup_warden_proc_memory_usage_bytes{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}} / {BYTES_PER_GIB})'
     proc_delta = f'label_replace({unit_total} - {proc_total}, "proc", "unknown", "proc", "") > 0'
     query = f'{proc_delta} or sum by (username, instance, proc) (cgroup_warden_proc_memory_usage_bytes{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}} / {BYTES_PER_GIB})'
 
-    fig, pie = usage_figures(
+    figures = usage_figures(
         query,
         "proc",
         start_time,
@@ -224,9 +240,13 @@ def mem_usage_figures(
         policy_threshold,
         step,
     )
-    fig.update_layout(
+
+    if not figures:
+        return None
+
+    figures.chart.update_layout(
         title=f"Memory Usage Report For {username_re} on {host_re}",
         xaxis_title="Time",
         yaxis_title="Usage in GiB",
     )
-    return fig, pie
+    return figures

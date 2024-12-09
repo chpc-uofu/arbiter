@@ -100,6 +100,10 @@ class Policy(models.Model):
     query_data = models.JSONField()
     active  = models.BooleanField(default=True, help_text="Whether or not this policy gets evaluated")
 
+
+    def __str__(self):
+        return f'{self.name}'
+
     @property
     def query(self):
         query_str = self.query_data.get("query", None)

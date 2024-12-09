@@ -93,12 +93,11 @@ def query_violations(policies: list[Policy]) -> list[Violation]:
     for policy in policies:
         
         response = PROMETHEUS_CONNECTION.custom_query(policy.query)
-        logger.info(policy.query)
         for result in response:
             cgroup = result["metric"]["cgroup"]
             matches = re.findall(r"^/user.slice/(user-\d+.slice)$", cgroup)
             if len(matches) < 1:
-                logger.info(f"invalid cgroup: {cgroup}")
+                logger.warning(f"invalid cgroup: {cgroup}")
                 continue
             unit = matches[0]
             host = strip_port(result["metric"]["instance"])
