@@ -6,8 +6,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse_lazy
 
-from arbiter.models import UsagePolicy, Limit, QueryData, QueryParameters
-from arbiter.utils import usec_to_cores, bytes_to_gib, cores_to_usec, gib_to_bytes, cores_to_nsec, nsec_to_cores
+from arbiter.models import UsagePolicy, Limits, QueryData, QueryParameters, CPU_QUOTA, MEMORY_MAX
+from arbiter.utils import usec_to_cores, bytes_to_gib, cores_to_usec, gib_to_bytes
 
 from .nav import navbar
 
@@ -19,6 +19,7 @@ class UsagePolicyListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         context["navbar"] = navbar(self.request)
         context["can_create"] = self.request.user.has_perm("arbiter.add_usagepolicy")
+        context["title"] = "Usage Policies"
         return context
 
 
@@ -33,7 +34,7 @@ class UsagePolicyForm(forms.ModelForm):
     class Meta:
         model = UsagePolicy
         fields = ["name", "domain", "description", "penalty_duration", "repeated_offense_scalar", 
-                  "grace_period", "repeated_offense_lookback", "lookback"]
+                  "grace_period", "repeated_offense_lookback", "lookback", "active"]
         widgets = {'grace_period': forms.TimeInput(), "repeated_offense_lookback": forms.TimeInput()}
 
     
@@ -48,7 +49,7 @@ class UsagePolicyForm(forms.ModelForm):
 
         if query_data := self.instance.query_data:
             if cpu_threshold := query_data["params"]["cpu_threshold"]:
-                self.fields['cpu_threshold'].initial = nsec_to_cores(cpu_threshold)
+                self.fields['cpu_threshold'].initial = cpu_threshold # cores
             if mem_threshold := query_data["params"]["mem_threshold"]:
                 self.fields['mem_threshold'].initial = bytes_to_gib(mem_threshold)
             self.fields['proc_whitelist'].initial = query_data["params"]["proc_whitelist"]
@@ -71,7 +72,7 @@ class UsagePolicyForm(forms.ModelForm):
     
     def clean_cpu_threshold(self):
         if cpu := self.cleaned_data["cpu_threshold"]:
-            return cores_to_nsec(cpu)
+            return cpu
         return None
     
     def clean_mem_threshold(self):
@@ -95,14 +96,12 @@ class UsagePolicyForm(forms.ModelForm):
     def save(self, commit=True):
         policy = super().save(commit=False)
         policy.is_base_policy=True
-        limits = []
+        limits: Limits = {}
         if mem_limit := self.cleaned_data["mem_limit"]:
-            limits.append(Limit.memory_max(mem_limit))
-
+            limits[MEMORY_MAX] = mem_limit
         if cpu_limit := self.cleaned_data["cpu_limit"]:
-            limits.append(Limit.cpu_quota(cpu_limit))
-
-        policy.penalty_constraints = Limit.to_json(*limits)
+            limits[CPU_QUOTA] = cpu_limit
+        policy.penalty_constraints = limits
         params = QueryParameters(
             cpu_threshold=self.cleaned_data["cpu_threshold"],
             mem_threshold=self.cleaned_data["mem_threshold"],
@@ -124,18 +123,18 @@ def new_usage_policy(request):
 
     if not can_change:
         messages.error(request, "You do not have permissions to create a Usage Policy")
-        return redirect("view-dashboard")
+        return redirect("arbiter:view-dashboard")
 
     if request.method == "POST":
         form = UsagePolicyForm(request.POST)
         if form.is_valid():
             form.save()
             messages.success(request, "Successfully created usage policy.")
-            return redirect(f"list-usage-policy")
+            return redirect("arbiter:list-usage-policy")
     else:
         form = UsagePolicyForm()
 
-    context = {"form": form, "navbar": navbar(request), "can_change": can_change}
+    context = {"form": form, "navbar": navbar(request), "can_change": can_change, "title": "Create Usage Policy"}
     return render(request, "arbiter/change_view.html", context)
 
 
@@ -147,7 +146,7 @@ def change_usage_policy(request, policy_id):
 
     if not policy:
         messages.error(request, "Usage Policy not found.")
-        return redirect("list-usage-policy")
+        return redirect("arbiter:list-usage-policy")
 
     if request.method == "POST":
         if not can_change:
@@ -158,16 +157,16 @@ def change_usage_policy(request, policy_id):
         if "save" in request.POST and form.is_valid():
             form.save()
             messages.success(request, "Successfully changed usage policy.")
-            return redirect(f"list-usage-policy")
+            return redirect("arbiter:list-usage-policy")
         if "delete" in request.POST:
             policy.delete()
             messages.success(request, "Successfully removed usage policy.")
-            return redirect(f"list-usage-policy")
+            return redirect("arbiter:list-usage-policy")
     else:
         if can_change:
             form = UsagePolicyForm(instance=policy)
         else:
             form = UsagePolicyForm(instance=policy, disabled=True)
 
-    context = {"form": form, "navbar": navbar(request), "can_change": can_change}
+    context = {"form": form, "navbar": navbar(request), "can_change": can_change, "title": "Change Usage Policy"}
     return render(request, "arbiter/change_view.html", context)

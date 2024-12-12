@@ -1,18 +1,29 @@
 {% extends "arbiter/base.html" %}
 
+{% block page-title %}
+    Violations
+{% endblock %}
+
 {% block content %}
+<table>
+    <thead>
+        <th>
+            Violation
+        </th>
+        <th>
+            Expiration
+        </th>
+    </thead>
+    <tbody>
+        {% for violation in object_list %}
+            <tr>
+                <td><a href="{% url 'arbiter:change-violation' violation.id%}">{{violation}}</a></td>
+                <td>{{violation.expiration}}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
 
-<h1>Violations</h1>
-
-<ul>
-{% for violation in object_list %}
-    <li>
-        <a href="{% url 'change-violation' violation.id%}">{{violation}}</a>
-    </li></br>
-{% empty %}
-    <li>No Violations.</li>
-{% endfor %}
-</ul>
 
 {% endblock content %}
 

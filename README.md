@@ -7,3 +7,15 @@
 
 Arbiter 3 is a system of software created to monitor and manage resource usage on 
 HPC cluster login nodes. A successor of [Arbiter2](https://github.com/chpc-uofu/arbiter2), it aims to be easier to configure and deploy. 
+
+### Documentation
+
+- [Architecture](docs/architecture.md)
+
+- [Installation](docs/installation.md)
+
+- [Configuration](docs/configuration.md)
+
+- [Settings](docs/settings.md)
+
+- [Testing](docs/testing.md)

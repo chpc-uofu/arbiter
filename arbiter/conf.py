@@ -23,19 +23,14 @@ except AttributeError:
 
 
 try:
-    ARBITER_USER_LOOKUP = settings.ARBITER_USER_LOOKUP
-except AttributeError:
-    raise ImproperlyConfigured("setting ARBITER_USER_LOOKUP is required")
-
-try:
     ARBITER_NOTIFY_USERS = settings.ARBITER_NOTIFY_USERS
 except AttributeError:
     raise ImproperlyConfigured("setting ARBITER_NOTIFY_USERS is required")
 
 try:
-    ARBITER_EMAIL_DOMAIN = settings.ARBITER_EMAIL_DOMAIN
+    ARBITER_USER_LOOKUP = settings.ARBITER_USER_LOOKUP
 except AttributeError:
-    raise ImproperlyConfigured("setting ARBITER_EMAIL_DOMAIN is required")
+    raise ImproperlyConfigured("setting ARBITER_USER_LOOKUP is required")
 
 try:
     EMAIL_HOST = settings.EMAIL_HOST

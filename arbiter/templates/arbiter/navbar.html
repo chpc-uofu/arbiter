@@ -1,0 +1,24 @@
+{% load static %}
+
+{% block content_title %}
+    <nav class="navbar">
+        <a id="navbar-icon" href="{% url 'arbiter:view-index' %}">
+            <img class="logo" src="{% static 'images/arbiter-A.png' %}" alt="">
+        </a>
+        {% for item in navbar %}
+            {{ item.render | safe }}
+        {% endfor %}
+        <span class="user-login">
+        {% if user.is_authenticated %}
+            <form action="{% url 'arbiter:logout' %}" method="post">
+                {% csrf_token %}
+                <button type="submit">Log Out</button>
+            </form>
+        {% else %}
+            <a href="{% url 'arbiter:login' %}">Log In</a>
+        {% endif %}
+        </span>
+    </nav>
+
+    
+{% endblock %}

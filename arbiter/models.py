@@ -1,6 +1,5 @@
 from datetime import timedelta
 from dataclasses import dataclass, asdict
-from arbiter.utils import cores_to_nsec, gib_to_bytes
 
 from django.db import models
 from django.utils import timezone
@@ -8,52 +7,22 @@ from django.utils import timezone
 from arbiter.utils import get_uid
 
 
-@dataclass
-class Limit:
-    name: str
-    value: int
+Limits = dict[str, any]
+UNSET_LIMIT = -1
+CPU_QUOTA = "CPUQuotaPerSecUSec"
+MEMORY_MAX = "MemoryMax"
 
-    UNSET_LIMIT = -1
-
-    def json(self):
-        return asdict(self)
-
-    @staticmethod
-    def memory_max(max_bytes: int) -> "Limit":
-        return Limit(name="MemoryMax", value=max_bytes)
-    
-    @staticmethod
-    def cpu_quota(usec_per_sec: int) -> "Limit":
-        return Limit(name="CPUQuotaPerSecUSec", value=usec_per_sec)
-    
-    @staticmethod
-    def to_json(*limits: "Limit") -> dict:
-        return {l.name: l.value for l in limits}
-    
-    @staticmethod
-    def from_json(json : dict) -> list["Limit"]:
-        limits = []
-        for name, value in json.items():
-            limits.append(Limit(name=name, value=value))
-
-        return limits
-    
-    @staticmethod
-    def compare(limit1, limit2):
-        if limit1.value < limit2.value:
-            return limit1
-        else:
-            return limit2
 
 @dataclass
 class QueryParameters:
-    cpu_threshold: int  # nanoseconds
-    mem_threshold: int  # bytes
+    cpu_threshold: float # seconds
+    mem_threshold: int   # bytes
     proc_whitelist: str | None = None # prom matcher regex
     user_whitelist: str | None = None # prom matcher regex
 
     def json(self):
         return asdict(self)
+
 
 @dataclass
 class QueryData:
@@ -70,50 +39,45 @@ class QueryData:
     
     @staticmethod
     def build_query(lookback: timedelta, domain: str, params: QueryParameters) -> "QueryData":
-        
-        sum_by_labels = 'unit, instance, username'
+
+        """
+        Unaccounted for cpu usage should not be counted against a user. This can happen 
+        when a process starts and ends in-between a polling period, or for some other reason.
+        Arbiter2 opted to ignore this usage, as it may have been whitelisted usage anyways.
+
+        We calculate this delta in usage between the unit cpu usage and the sum of all of the
+        processes. We can then assign this value as a 'unknown' process for display purposes.
+
+        If we have a process whitelist, we thus calculate violations __only__ with the 
+        whitelisted usage.
+
+        We do not want to whitelist memory usage, as that cannot be 'taken' back.  
+        """
 
         filters = f'instance=~"{domain}"'
 
         lookback = f'{int(lookback.total_seconds())}s'
-        
+
         if params.user_whitelist:
             filters += f', user!~"{params.user_whitelist}"'
-        
+
         if params.proc_whitelist:
-            proc_filter = filters + f', proc=~"{params.proc_whitelist}"'
-            cpu_proc = f"systemd_unit_proc_cpu_usage_ns{{{proc_filter}}}[{lookback}]"
-            cpu_offset = f"(sum by ({sum_by_labels}) (rate({cpu_proc})))"
-            mem_proc = f"systemd_unit_proc_memory_bytes{{{proc_filter}}}[{lookback}]"
-            mem_offset = f"(sum by ({sum_by_labels}) (avg_over_time({mem_proc})))"
+            cpu_query = f'sum by (username, instance, cgroup) (rate(cgroup_warden_proc_cpu_usage_seconds{{{filters}, proc!~"{params.proc_whitelist}"}}[{lookback}]) > {params.cpu_threshold})'
+        else:
+            cpu_query = f'sum by (username, instance, cgroup) (rate(cgroup_warden_cpu_usage_seconds{{{filters}}}[{lookback}]) > {params.cpu_threshold})'
 
-        if params.cpu_threshold is not None:
-            cpu_unit = f'systemd_unit_cpu_usage_ns{{ {filters} }}[{lookback}]'
-            cpu_total = f'(sum by ({sum_by_labels}) (rate({cpu_unit})))'
-            if params.proc_whitelist:
-                cpu = f'(({cpu_total} - {cpu_offset}) / {params.cpu_threshold}) > 1.0'
-            else:
-                cpu = f'({cpu_total} / {params.cpu_threshold}) > 1.0'
-
-        if params.mem_threshold is not None:
-            mem_unit = f'systemd_unit_memory_bytes{{{filters}}}[{lookback}]'
-            mem_total = f'(sum by ({sum_by_labels}) (avg_over_time({mem_unit})))'
-            if params.proc_whitelist:
-                mem = f'(({mem_total} - {mem_offset}) / {params.mem_threshold}) > 1.0'
-            else:
-                mem = f'({mem_total} / {params.mem_threshold}) > 1.0'
+        mem_query = f'sum by (username, instance, cgroup) (avg_over_time(cgroup_warden_memory_usage_bytes{{{filters}}}[{lookback}]) / {params.mem_threshold}) > 1.0'
 
         if params.mem_threshold and params.cpu_threshold:
-            query = f'{cpu} or {mem}'
+            query = f'({cpu_query}) or ({mem_query})'
         elif params.cpu_threshold:
-            query = cpu
+            query = cpu_query
         elif params.mem_threshold:
-            query = mem
+            query = mem_query
         else:
             query = None
-
+        
         return QueryData(query=query, params=params)
-
 
 
 class Policy(models.Model):
@@ -126,7 +90,7 @@ class Policy(models.Model):
     domain = models.CharField(max_length=1024)
     lookback = models.DurationField(default=timedelta(minutes=15))
     description = models.TextField(max_length=1024, blank=True)
-    penalty_constraints = models.JSONField(null=False)
+    penalty_constraints: Limits = models.JSONField(null=False)
     penalty_duration = models.DurationField(null=True, default=timedelta(minutes=15))
 
     repeated_offense_scalar = models.FloatField(null=True, default=1.0)
@@ -134,13 +98,25 @@ class Policy(models.Model):
     grace_period = models.DurationField(null=True, default=timedelta(minutes=5))
 
     query_data = models.JSONField()
+    active  = models.BooleanField(default=True, help_text="Whether or not this policy gets evaluated")
+
+
+    def __str__(self):
+        return f'{self.name}'
 
     @property
     def query(self):
         query_str = self.query_data.get("query", None)
 
         return query_str
+    
+    @property
+    def cpu_threshold(self):
+        return self.query_data.get("params", {}).get("cpu_threshold")
 
+    @property
+    def mem_threshold(self):
+        return self.query_data.get("params", {}).get("mem_threshold")
 
 
 class BasePolicy(Policy):
@@ -155,7 +131,7 @@ class BasePolicy(Policy):
 
     def save(self, **kwargs):
         self.is_base_policy = True
-        query = f'systemd_unit_cpu_usage_ns{{instance=~"{self.domain}"}}'
+        query = f'cgroup_warden_cpu_usage_seconds{{instance=~"{self.domain}"}}'
         self.query_data = QueryData.raw_query(query).json()
         return super().save(**kwargs)
 
@@ -187,7 +163,17 @@ class Target(models.Model):
     unit = models.CharField(max_length=255)
     host = models.CharField(max_length=255)
     username = models.CharField(max_length=255)
-    last_applied = models.JSONField(default=dict)
+    limits: Limits = models.JSONField(default=dict)
+
+    def update_limit(self, propname, propvalue):
+        if propvalue == UNSET_LIMIT:
+            self.limits.pop(propname, None)
+        else:
+            self.limits[propname] = propvalue
+
+    def update_limits(self, limits: Limits):
+        for propname, propvalue in limits.items(): 
+            self.update_limit(propname, propvalue)
 
     @property
     def uid(self):

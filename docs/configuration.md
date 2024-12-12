@@ -1,10 +1,10 @@
 # Configuration
-Arbiter's policy and penalty configurations are stored as objects in its database. To configure policies, use the forms on on Arbiter's web-server, located at `/arbiter`. This provides a basic CRUD interface for configuration as well as a way to view graphs for usage data.
+Arbiter's policy and penalty configurations are stored as objects in its database. To configure policies, use the forms on on Arbiter's web-server.. This provides a basic CRUD interface for configuration as well as a way to view graphs for usage data.
 
 ## Configuration on Web
 Before begining this step, ensure web-server is started. If it is not, run `python3 manage.py runserver 0.0.0.0:8000` with your desired IP+port. Now that that is done, make sure you created an admin user for Arbiter's admin portal. If you have not, run `python3 manage.py createsuperuser` and give it the username/passcode when prompted.
 
-Now that everything is set up, navigate to `/arbiter` on the webserver (`localhost:8000/arbiter` if run locally). Here you can create your Base and Usage Policies. 
+Now that everything is set up, navigate to the site on (`localhost:8000/` if run locally). Here you can create your Base and Usage Policies. 
 Here you can configure Arbiter's models. 
 
 ## Data Models

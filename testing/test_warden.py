@@ -11,7 +11,6 @@ from time import sleep
 from testing.fixtures.policies import *
 from testing.fixtures.limits import *
 from testing.fixtures.penalties import *
-from testing.fixtures.properties import *
 from testing.fixtures.targets import *
 
 
@@ -32,16 +31,12 @@ PROPERTIES = [
     "CPUQuotaPerSecUSec",
 ]
 
-SYSTEMD_METRICS = [
-    "systemd_unit_memory_accounting",
-    "systemd_unit_cpu_accounting",
-    "systemd_unit_memory_max_bytes",
-    "systemd_unit_memory_current_bytes",
-    "systemd_unit_cpu_quota_us_per_s",
-    "systemd_unit_cpu_usage_ns",
-    "systemd_unit_proc_cpu_usage_ns",
-    "systemd_unit_proc_memory_current_bytes",
-    "systemd_unit_proc_count",
+WARDEN_METRICS = [
+    "cgroup_warden_memory_usage_bytes",
+    "cgroup_warden_cpu_usage_seconds",
+    "cgroup_warden_proc_count",
+    "cgroup_warden_proc_cpu_usage_seconds",
+    "cgroup_warden_proc_memory_usage_bytes",
 ]
 
 ########## GLOBAL DECLARATIONS ##########
@@ -79,7 +74,7 @@ def set_and_fail_unit_property(property):
 def parse_metrics(data):
     metrics = {}
     for line in data.splitlines():
-        if line.startswith("#"):
+        if not line.startswith('cgroup_warden'):
             continue
         metric_matches = RE_PROM_METRIC.match(line)
         metric = metric_matches.group("metric")
@@ -108,7 +103,7 @@ def test_get_metrics(target1, short_low_harsh_policy):
     response = requests.get(TEST_METRICS_ENDPOINT, verify=False)
     assert response.status_code == http.HTTPStatus.OK, response.text
     metrics = parse_metrics(response.text)
-    for metric_name in SYSTEMD_METRICS:
+    for metric_name in WARDEN_METRICS:
         assert metric_name in metrics
 
 

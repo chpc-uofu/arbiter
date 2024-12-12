@@ -1,6 +1,6 @@
 from django.urls import path, include
 from django.contrib import admin
-from arbiter.views import base_policy, graphs, usage_policy, violation, dashboard
+from arbiter.views import base_policy, graphs, usage_policy, violation, dashboard, index
 
 app_name = "arbiter"
 
@@ -19,7 +19,8 @@ urlpatterns = [
     path("violation/", violation.ViolationListView.as_view(), name="list-violation"),
     path("violation/<int:violation_id>", violation.change_violation, name="change-violation"),
 
-    path("", dashboard.view_dashboard, name="view-dashboard"),
+    path("", index.view_index, name="view-index"),
+    path("dashboard", dashboard.view_dashboard, name="view-dashboard"),
     path("clean", dashboard.clean, name="clean"),
     path("apply", dashboard.apply, name="apply"),
     path("evaluate", dashboard.evaluate, name="evaluate"),

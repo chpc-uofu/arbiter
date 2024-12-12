@@ -18,6 +18,7 @@ class ViolationListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["navbar"] = navbar(self.request)
+        context["title"] = "Violations"
         return context
 
 
@@ -29,7 +30,7 @@ def change_violation(request, violation_id):
 
     if not violation:
         messages.error(request, "Violation not found.")
-        return redirect("list-violation")
+        return redirect("arbiter:list-violation")
     
     if request.method == "POST":
         if not can_change:
@@ -43,11 +44,11 @@ def change_violation(request, violation_id):
                 violation.expiration = timezone.now()
                 violation.save()
                 messages.success(request, "Successfully expired violation.")
-                return redirect("list-violation")
+                return redirect("arbiter:list-violation")
         if "delete" in request.POST:
             violation.delete()
             messages.success(request, "Successfully removed violation.")
-            return redirect("list-violation")
+            return redirect("arbiter:list-violation")
     
-    context = {"violation": violation, "navbar": navbar(request), "can_change": can_change}
+    context = {"violation": violation, "navbar": navbar(request), "can_change": can_change, "title": "Change Violation"}
     return render(request, "arbiter/violation_detail.html", context)
