@@ -69,7 +69,7 @@ class QueryData:
         else:
             cpu_query = sum_by(increase(Q('cgroup_warden_cpu_usage_seconds').like(instance=domain).over(lookback)) / lookback > params.cpu_threshold, "username", "instance", "cgroup")
 
-        mem_query = sum_over_time(Q('cgroup_warden_memory_usage_bytes').like(instance=domain).over(lookback)) / (1024**3 * (lookback / PROMETHEUS_SCRAPE_INTERVAL))
+        mem_query = sum_over_time(Q('cgroup_warden_memory_usage_bytes').like(instance=domain).over(lookback)) / (1024**3 * (lookback / PROMETHEUS_SCRAPE_INTERVAL)) > params.mem_threshold
 
         if params.mem_threshold and params.cpu_threshold:
             query = cpu_query.lor(mem_query)
