@@ -23,7 +23,7 @@ def send_violation_email(violation: Violation | None) -> str:
     username, realname, email = user_lookup(violation.target.username)
 
     recipients = ARBITER_ADMIN_EMAILS
-    if ARBITER_NOTIFY_USERS:
+    if ARBITER_NOTIFY_USERS and email:
         recipients.append(email)
 
     if not recipients:
