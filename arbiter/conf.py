@@ -71,6 +71,10 @@ try:
 except AttributeError:
     raise ImproperlyConfigured("setting PROMETHEUS_PASS is required")
 
+try:
+    PROMETHEUS_SCRAPE_INTERVAL = settings.PROMETHEUS_SCRAPE_INTERVAL
+except AttributeError:
+    raise ImproperlyConfigured("setting PROMETHEUS_SCRAPE_INTERVAL is required")
 
 ########## WARDEN SETTINGS ##########
 

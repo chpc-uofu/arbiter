@@ -71,7 +71,11 @@ with open(conf_file, "rb") as f:
     
     if not PROMETHEUS_URL:
         raise ImproperlyConfigured('prometheus.url is required')
-
+    
+    PROMETHEUS_SCRAPE_INTERVAL = prometheus.get('scrape_interval')
+    if not PROMETHEUS_SCRAPE_INTERVAL:
+        print(prometheus)
+        raise ImproperlyConfigured('prometheus.scrape_interval is required')
 
     warden = config.get('warden', {})
 

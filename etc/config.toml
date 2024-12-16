@@ -19,6 +19,7 @@ url = 'https://your.prometheus.host:9090'
 verify_ssl = true
 user = 'username'
 password = 'your-super-secret-password'
+scrape_interval = 30
 
 [warden]
 job = 'cgroup-warden'

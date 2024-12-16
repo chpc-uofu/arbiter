@@ -5,6 +5,9 @@ from django.db import models
 from django.utils import timezone
 
 from arbiter.utils import get_uid
+from arbiter.query import Q, increase, sum_by, avg_over_time, absent_over_time, sum_over_time
+from arbiter.conf import PROMETHEUS_SCRAPE_INTERVAL
+
 
 
 Limits = dict[str, any]
@@ -56,20 +59,20 @@ class QueryData:
 
         filters = f'instance=~"{domain}"'
 
-        lookback = f'{int(lookback.total_seconds())}s'
+        lookback = int(lookback.total_seconds())
 
         if params.user_whitelist:
             filters += f', user!~"{params.user_whitelist}"'
 
         if params.proc_whitelist:
-            cpu_query = f'sum by (username, instance, cgroup) (rate(cgroup_warden_proc_cpu_usage_seconds{{{filters}, proc!~"{params.proc_whitelist}"}}[{lookback}]) > {params.cpu_threshold})'
+            cpu_query = sum_by(increase(Q('cgroup_warden_proc_cpu_usage_seconds').like(instance=domain).not_like(proc=params.proc_whitelist).over(lookback)) / lookback > params.cpu_threshold, "username", "instance", "cgroup")
         else:
-            cpu_query = f'sum by (username, instance, cgroup) (rate(cgroup_warden_cpu_usage_seconds{{{filters}}}[{lookback}]) > {params.cpu_threshold})'
+            cpu_query = sum_by(increase(Q('cgroup_warden_cpu_usage_seconds').like(instance=domain).over(lookback)) / lookback > params.cpu_threshold, "username", "instance", "cgroup")
 
-        mem_query = f'sum by (username, instance, cgroup) (avg_over_time(cgroup_warden_memory_usage_bytes{{{filters}}}[{lookback}]) / {params.mem_threshold}) > 1.0'
+        mem_query = sum_over_time(Q('cgroup_warden_memory_usage_bytes').like(instance=domain).over(lookback)) / (1024**3 * (lookback / PROMETHEUS_SCRAPE_INTERVAL))
 
         if params.mem_threshold and params.cpu_threshold:
-            query = f'({cpu_query}) or ({mem_query})'
+            query = cpu_query.lor(mem_query)
         elif params.cpu_threshold:
             query = cpu_query
         elif params.mem_threshold:
@@ -77,7 +80,7 @@ class QueryData:
         else:
             query = None
         
-        return QueryData(query=query, params=params)
+        return QueryData(query=str(query), params=params)
 
 
 class Policy(models.Model):
