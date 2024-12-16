@@ -14,6 +14,7 @@
     --success-bg-color: #b7e9b7;
     --error-bg-color: #e27171;
     --warning-bg-color: #cfb274;
+    --table-head : #5e5e5e;
 }
 
 * {
@@ -65,12 +66,9 @@ tr:nth-child(even) {
     background-color: var(--secondary-bg); 
 }
 
-/* tr:hover {
-    background-color: var(); 
-} */
 
 th {
-    background-color: var(--darker-accent); 
+    background-color: var(--table-head); 
     color: var(--light-text-color);
 }
 

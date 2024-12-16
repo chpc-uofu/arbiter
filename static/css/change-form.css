@@ -4,13 +4,27 @@ form{
 }
 
 form div {
-    display: flex;
-    flex-direction: row;
+    display: grid;
+    grid-template-columns: 1fr 4fr;
+    /* display: flex;
+    flex-direction: row; */
     border-bottom: 1px solid var(--darker-bg);
     padding: 10px;
 }
+
+form div input{
+    grid-column: 2;
+    width: fit-content;
+}
+
+form div label{
+    grid-column: 1;
+}
+
 form div div, .form-submit-box{
     border-bottom: none;
+    display: flex;
+    flex-direction: row;
 }
 .helptext{
     color: var(--lighter-text-color);

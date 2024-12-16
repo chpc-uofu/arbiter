@@ -1,0 +1,43 @@
+<style>
+    .penalty-tiers{
+        width: 50%;
+    }
+    .penalty-box{
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .table-action{
+        padding: 0px;
+        margin: 0px;
+        width: 100%;
+        height: 100%;
+    }
+</style>
+
+<span class="penalty-box">
+    <table class = "penalty-tiers">
+        <thead>
+            <tr>
+                <th>Tier</th> <th>CPU Quota (Cores)</th><th>Memory Max (Gib)</th> <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for tier in tiers %}
+            <tr>
+                <td>{{forloop.counter}}</td>
+                <td contenteditable="true">{{tier.memory_gib}}</td>
+                <td contenteditable="true">{{tier.cpu_cores}}</td>
+                <td ><button class="table-action"type="submit">Remove</button></td>
+            </tr>
+        {% endfor %}
+        <tr>
+            <td>New</td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+            <td><button  class="table-action"type="submit">Add</button></td>
+        </tr>
+        </tbody>
+    </table>
+</span>

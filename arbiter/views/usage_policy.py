@@ -1,21 +1,71 @@
+from django.forms.renderers import BaseRenderer
 from django.shortcuts import render, redirect
 from django import forms
+from django.utils.safestring import mark_safe
 from django.views.generic.list import ListView
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse_lazy
+import json
+from dataclasses import dataclass
 
 from arbiter.models import UsagePolicy, Limits, QueryData, QueryParameters, CPU_QUOTA, MEMORY_MAX
 from arbiter.utils import usec_to_cores, bytes_to_gib, cores_to_usec, gib_to_bytes
 
 from .nav import navbar
 
+@dataclass
+class ConstraintTier:
+    memory_gib: float = None
+    cpu_cores : float = None
+
 class TieredPenaltyWidget(forms.Widget):
     template_name = "arbiter/penalty_widget.html"
-    
+    class Media:
+        css = {
+            "all": []
+        }
+        js = []
+
     def get_context(self, name: str, value, attrs = None):
-        return super().get_context(name, value, attrs)
+        context = super().get_context(name, value, attrs)
+        if not value or value == 'null':
+            constraints = {'tiers':[]}
+        else:
+            constraints = json.loads(value)
+
+        view_constraints = []
+        for tier_limits in constraints.get('tiers', []):
+            tier = ConstraintTier()
+
+            if mem_max := tier_limits.get(MEMORY_MAX):
+                tier.memory_gib = bytes_to_gib(mem_max)
+            
+            if cpu_quota := tier_limits.get(CPU_QUOTA):
+                tier.cpu_cores = usec_to_cores(cpu_quota)
+
+            view_constraints.append(tier)
+
+
+        context['tiers'] = view_constraints
+        return context
+
+    # def render(self, name: str, value, attrs, renderer):
+    #     if not value:
+    #         value = []
+    #     elif isinstance(value, name):
+    #         tiers = [tier for tier in value.get('tiers', [])]
+        
+    #     context = {
+    #         'widget': self,
+    #         'name' : name,
+    #         'attrs' : self.build_attrs(attrs, {'name': name}),
+    #         'tiers' : tiers
+    #     }
+
+    #     return mark_safe(renderer.render(self.template_name, context))
+    
 
 
 class UsagePolicyListView(LoginRequiredMixin, ListView):
@@ -37,27 +87,26 @@ class UsagePolicyForm(forms.ModelForm):
     user_whitelist = forms.CharField(label="Query User Whitelist", required=False)
     cpu_threshold = forms.FloatField(label="Query CPU Threshold", required=False)
     mem_threshold = forms.FloatField(label="Query Memory Threshold", required=False)
-    test          = forms.MultiValueField(label="test", fields=[forms.FloatField(label="mem")])
 
     class Meta:
         model = UsagePolicy
         fields = ["name", "domain", "description", "penalty_duration", "repeated_offense_scalar", 
-                  "grace_period", "repeated_offense_lookback", "lookback", "active"]
-        widgets = {'grace_period': forms.TimeInput(), "repeated_offense_lookback": forms.TimeInput()}
+                  "grace_period", "repeated_offense_lookback", "lookback", "active", "penalty_constraints"]
+        widgets = {'grace_period': forms.TimeInput(), "repeated_offense_lookback": forms.TimeInput(), "penalty_constraints": TieredPenaltyWidget}
 
     
     def __init__(self, *args, disabled=False, **kwargs):
         super().__init__(*args, **kwargs)
-        if constraints := self.instance.penalty_constraints:
-            for name, value in constraints.items():
-                if name == "CPUQuotaPerSecUSec":
-                    self.fields['cpu_limit'].initial = usec_to_cores(value)
-                if name == "MemoryMax":
-                    self.fields['mem_limit'].initial = bytes_to_gib(value)
+        # if constraints := self.instance.penalty_constraints:
+        #     for name, value in constraints.items():
+        #         if name == "CPUQuotaPerSecUSec":
+        #             self.fields['cpu_limit'].initial = usec_to_cores(value)
+        #         if name == "MemoryMax":
+        #             self.fields['mem_limit'].initial = bytes_to_gib(value)
 
         if query_data := self.instance.query_data:
             if cpu_threshold := query_data["params"]["cpu_threshold"]:
-                self.fields['cpu_threshold'].initial = cpu_threshold # cores
+                self.fields['cpu_threshold'].initial = cpu_threshold 
             if mem_threshold := query_data["params"]["mem_threshold"]:
                 self.fields['mem_threshold'].initial = bytes_to_gib(mem_threshold)
             self.fields['proc_whitelist'].initial = query_data["params"]["proc_whitelist"]
