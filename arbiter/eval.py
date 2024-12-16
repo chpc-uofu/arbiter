@@ -16,6 +16,7 @@ from arbiter.conf import (
     ARBITER_PERMISSIVE_MODE,
     ARBITER_NOTIFY_USERS,
     ARBITER_MIN_UID,
+    ARBITER_ADMIN_EMAILS,
     WARDEN_VERIFY_SSL,
     WARDEN_USE_TLS,
     WARDEN_PORT,
@@ -222,11 +223,10 @@ def evaluate(policies=None):
 
     create_event_for_eval(violations)
 
-    if ARBITER_NOTIFY_USERS:
-        for violation in violations:
-            if not violation.is_base_status:
-                message = send_violation_email(violation) 
-                logger.info(message)
+    for violation in violations:
+        if not violation.is_base_status:
+            message = send_violation_email(violation) 
+            logger.info(message)
 
 
     if ARBITER_PERMISSIVE_MODE:

@@ -49,6 +49,7 @@ with open(conf_file, "rb") as f:
 
     ARBITER_USER_LOOKUP = email.get('lookup_function')
 
+    ARBITER_ADMIN_EMAILS = email.get('admin_emails', [])
 
     if ARBITER_NOTIFY_USERS and not EMAIL_HOST:
         

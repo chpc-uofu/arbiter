@@ -44,7 +44,10 @@ The Arbiter Django app is configured with in the `config.toml` file.
 
 `domain` (string, required if default `lookup_function` is used)
 - Used as part of the default user lookup function. 
-- Email is `username@domain`. 
+- Email is `username@domain`.
+
+`admin_emails` (list of string, default=[])
+- List of admin emails to forward violation emails to.
 
 ## `[prometheus]`
 `url` (string, required)

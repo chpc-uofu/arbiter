@@ -3,7 +3,7 @@ from email.mime.image import MIMEImage
 
 from arbiter.models import Violation
 from arbiter import plots
-from arbiter.conf import ARBITER_USER_LOOKUP
+from arbiter.conf import ARBITER_USER_LOOKUP, ARBITER_ADMIN_EMAILS, ARBITER_NOTIFY_USERS
 
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
@@ -15,12 +15,20 @@ if TYPE_CHECKING:
     from plotly.graph_objects import Figure
 
 
-logger = logging.getLogger(__name__)
-
 user_lookup = import_string(ARBITER_USER_LOOKUP)
 
 
 def send_violation_email(violation: Violation | None) -> str:
+    
+    username, realname, email = user_lookup(violation.target.username)
+
+    recipients = ARBITER_ADMIN_EMAILS
+    if ARBITER_NOTIFY_USERS:
+        recipients.append(email)
+
+    if not recipients:
+        return f'No recipients specified, skipping email delivery.'
+
     figures : dict[str: Figure] = dict()
 
     if cpu_figures := plots.violation_cpu_usage_figures(violation):
@@ -31,13 +39,9 @@ def send_violation_email(violation: Violation | None) -> str:
         figures['mem_chart'] = mem_figures.chart
         figures['mem_pie'] = mem_figures.pie
 
-    username, realname, email = user_lookup(violation.target.username)
-    logger.info(
-        f"Attempting to send violation mail to {username} at {email} ({realname})"
-    )
     subject = f"Violation of usage policy {violation.policy} on {violation.target.host} by {username} ({realname})"
     text_content = f"Violation of usage policy {violation.policy} on {violation.target.host} by {username} ({realname})"
-    message = EmailMultiAlternatives(subject, text_content, "arbiter", [email])
+    message = EmailMultiAlternatives(subject, text_content, "arbiter", recipients)
 
     if not figures:
         return f'Could not send email to {username} at {email} ({realname}): no figures generated'
