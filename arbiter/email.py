@@ -3,7 +3,7 @@ from email.mime.image import MIMEImage
 
 from arbiter.models import Violation
 from arbiter import plots
-from arbiter.conf import ARBITER_USER_LOOKUP, ARBITER_ADMIN_EMAILS, ARBITER_NOTIFY_USERS
+from arbiter.conf import ARBITER_USER_LOOKUP, ARBITER_ADMIN_EMAILS, ARBITER_NOTIFY_USERS, ARBITER_FROM_EMAIL
 
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
@@ -41,7 +41,7 @@ def send_violation_email(violation: Violation | None) -> str:
 
     subject = f"Violation of usage policy {violation.policy} on {violation.target.host} by {username} ({realname})"
     text_content = f"Violation of usage policy {violation.policy} on {violation.target.host} by {username} ({realname})"
-    message = EmailMultiAlternatives(subject, text_content, "arbiter", recipients)
+    message = EmailMultiAlternatives(subject, text_content, ARBITER_FROM_EMAIL, recipients)
 
     if not figures:
         return f'Could not send email to {username} at {email} ({realname}): no figures generated'

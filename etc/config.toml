@@ -14,6 +14,7 @@ host = 'your.mail.server.edu'
 port = '25'
 lookup_function = 'your.python.function'
 admin_emails = ['your.email@site.edu', 'other.email@site.edu']
+from_email = 'arbiter@site.edu'
 
 [prometheus]
 url = 'https://your.prometheus.host:9090'
