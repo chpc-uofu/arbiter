@@ -26,7 +26,7 @@ class TieredPenaltyWidget(forms.Widget):
         css = {
             "all": []
         }
-        js = []
+        js = ['js/tiers-widget.js',]
 
     def get_context(self, name: str, value, attrs = None):
         context = super().get_context(name, value, attrs)
@@ -36,6 +36,8 @@ class TieredPenaltyWidget(forms.Widget):
             constraints = json.loads(value)
 
         view_constraints = []
+        if constraints == []:
+            return context
         for tier_limits in constraints.get('tiers', []):
             tier = ConstraintTier()
 
@@ -51,20 +53,6 @@ class TieredPenaltyWidget(forms.Widget):
         context['tiers'] = view_constraints
         return context
 
-    # def render(self, name: str, value, attrs, renderer):
-    #     if not value:
-    #         value = []
-    #     elif isinstance(value, name):
-    #         tiers = [tier for tier in value.get('tiers', [])]
-        
-    #     context = {
-    #         'widget': self,
-    #         'name' : name,
-    #         'attrs' : self.build_attrs(attrs, {'name': name}),
-    #         'tiers' : tiers
-    #     }
-
-    #     return mark_safe(renderer.render(self.template_name, context))
     
 
 
@@ -127,6 +115,19 @@ class UsagePolicyForm(forms.ModelForm):
             return gib_to_bytes(mem)
         return None
     
+    def clean_penalty_constraints(self):
+        if constraints := self.cleaned_data["penalty_constraints"]:
+            converted_tiers = []
+            for tier in constraints['tiers']:
+                converted_tiers.append({
+                    CPU_QUOTA: cores_to_usec(tier['cpu_quota']),
+                    MEMORY_MAX: gib_to_bytes(tier['memory_max'])
+                })
+            
+            converted_constraints = {'tiers': converted_tiers}
+            return converted_constraints
+        return {'tiers':[]}
+    
     def clean_cpu_threshold(self):
         if cpu := self.cleaned_data["cpu_threshold"]:
             return cpu
@@ -145,10 +146,10 @@ class UsagePolicyForm(forms.ModelForm):
     
     def clean(self):
         cleaned_data = super().clean()
-        if not (cleaned_data["cpu_threshold"] or cleaned_data["mem_threshold"]):
-            raise forms.ValidationError("At least one threshold (CPU or memory) is required.")
-        if not (cleaned_data["cpu_limit"] or cleaned_data["mem_limit"]):
-            raise forms.ValidationError("At least one limit (CPU or memory) is required.")
+        # if not (cleaned_data["cpu_threshold"] or cleaned_data["mem_threshold"]):
+        #     raise forms.ValidationError("At least one threshold (CPU or memory) is required.")
+        # if not (cleaned_data["cpu_limit"] or cleaned_data["mem_limit"]):
+        #     raise forms.ValidationError("At least one limit (CPU or memory) is required.")
     
     def save(self, commit=True):
         policy = super().save(commit=False)
@@ -158,7 +159,8 @@ class UsagePolicyForm(forms.ModelForm):
             limits[MEMORY_MAX] = mem_limit
         if cpu_limit := self.cleaned_data["cpu_limit"]:
             limits[CPU_QUOTA] = cpu_limit
-        policy.penalty_constraints = {'tiers':[limits]}
+        # policy.penalty_constraints = {'tiers':[limits]}
+
         params = QueryParameters(
             cpu_threshold=self.cleaned_data["cpu_threshold"],
             mem_threshold=self.cleaned_data["mem_threshold"],
