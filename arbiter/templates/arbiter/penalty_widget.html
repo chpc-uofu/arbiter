@@ -2,42 +2,38 @@
     .penalty-tiers{
         width: 50%;
     }
-    .penalty-box{
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-    }
     
     .table-action{
-        padding: 0px;
+        padding: 5px;
         margin: 0px;
         width: 100%;
         height: 100%;
     }
 </style>
 
-<span class="penalty-box">
+<div class="penalty-box">
     <table class = "penalty-tiers">
         <thead>
             <tr>
                 <th>Tier</th> <th>CPU Quota (Cores)</th><th>Memory Max (Gib)</th> <th>Action</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="tiers-content">
         {% for tier in tiers %}
             <tr>
-                <td>{{forloop.counter}}</td>
-                <td contenteditable="true">{{tier.memory_gib}}</td>
-                <td contenteditable="true">{{tier.cpu_cores}}</td>
-                <td ><button class="table-action"type="submit">Remove</button></td>
+                <td class="row-number">{{forloop.counter}}</td>
+                <td contenteditable="true" class="cpu-constraint-cell">{{tier.cpu_cores}}</td>
+                <td contenteditable="true"  class="memory-constraint-cell">{{tier.memory_gib}}</td>
+                <td ><button class="table-action remove-tier-buttton" >Remove</button></td>
             </tr>
         {% endfor %}
+        </tbody>
         <tr>
             <td>New</td>
-            <td><input type="text"></td>
-            <td><input type="text"></td>
-            <td><button  class="table-action"type="submit">Add</button></td>
+            <td><input type="text" id="cpu-quota-input"></td>
+            <td><input type="text" id="memory-max-input"></td>
+            <td><button  class="table-action" id="add-tier-button">Add</button></td>
         </tr>
-        </tbody>
     </table>
-</span>
+    <input type="hidden" name="penalty_constraints" id="penalty-constraints-input" value='{"tiers":[]}'>
+</div>

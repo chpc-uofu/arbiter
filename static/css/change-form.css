@@ -4,21 +4,23 @@ form{
 }
 
 form div {
-    display: grid;
-    grid-template-columns: 1fr 4fr;
-    /* display: flex;
-    flex-direction: row; */
+    display: flex;
+    flex-direction: row;
+    /* display: grid;
+    grid-template-columns: 1fr 4fr; */
     border-bottom: 1px solid var(--darker-bg);
     padding: 10px;
 }
 
 form div input{
-    grid-column: 2;
+    /* grid-column: 2; */
     width: fit-content;
 }
 
 form div label{
-    grid-column: 1;
+    display: block;
+    /* grid-column: 1; */
+    width: 20%;
 }
 
 form div div, .form-submit-box{
