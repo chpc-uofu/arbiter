@@ -1,16 +1,3 @@
-function remove_tier(event) {
-    event.preventDefault();
-
-    event.target.parentElement.remove();
-
-    var row_labels = document.querySelectorAll("row-number");
-    var row_num = 1;
-    for (var row_label of row_labels){
-        row_label.value = row_num;
-        row_num++;
-    }
-}
-
 window.addEventListener("load", function () {
     const tiers_container = document.getElementById("tiers-content");
     const add_tier_button = document.getElementById("add-tier-button");
@@ -18,7 +5,7 @@ window.addEventListener("load", function () {
     const form = document.getElementById("change-form");
 
 
-    function update_tiers_input() {
+    function update_tiers_input(event) {
         const rows = tiers_container.querySelectorAll("tr");
         var serialized_tiers = [];
         
@@ -32,7 +19,24 @@ window.addEventListener("load", function () {
         constraints_input.value = JSON.stringify(serialized_constraints);
     }
 
-    
+    function remove_tier(event) {
+        console.log("clicked");
+        if (!event.target.classList.contains("remove-tier-button")){
+            return
+        }
+        alert("hi");
+        event.preventDefault();
+
+        event.target.parentElement.remove();
+
+        var row_labels = document.querySelectorAll("row-number");
+        var row_num = 1;
+        for (var row_label of row_labels){
+            row_label.value = row_num;
+            row_num++;
+        }
+        
+    }
 
     function add_tier(event) {
         event.preventDefault();
@@ -45,15 +49,13 @@ window.addEventListener("load", function () {
             `<td class="row-number">`+row_num+`</td>
             <td contenteditable="true" class="cpu-constraint-cell">` + cpu_quota + `</td>
             <td contenteditable="true"  class="memory-constraint-cell">` + memory_max + `</td>
-            <td ><button class="table-action remove-buttton" onclick="remove_tier" type="submit">Remove</button></td>`;
+            <td ><button class="table-action remove-tier-buttton" type="submit">Remove</button></td>`;
     }
 
 
-    form.addEventListener('submit', (event) => {
-        update_tiers_input();
-    });
-
+    form.addEventListener('submit', update_tiers_input);
     add_tier_button.addEventListener('click', add_tier);
+    tiers_container.addEventListener('click', remove_tier);
 
     update_tiers_input();
 })
