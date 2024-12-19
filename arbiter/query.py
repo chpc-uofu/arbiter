@@ -44,8 +44,18 @@ class Q:
         self._functions.append(_Function(fn, rhs))
         return self
     
-    def lor(self, rhs):
-        fn = lambda s, rhs: f'{s} or {rhs}'
+    def lor(self, rhs, on=None, ignoring=None):
+        fn = on_or_ignoring('or', on, ignoring)
+        self._functions.append(_Function(fn, rhs))
+        return self
+    
+    def land(self, rhs, on=None, ignoring=None):
+        fn = on_or_ignoring('and', on, ignoring)
+        self._functions.append(_Function(fn, rhs))
+        return self
+    
+    def unless(self, rhs, on=None, ignoring=None):
+        fn = on_or_ignoring('unless', on, ignoring)
         self._functions.append(_Function(fn, rhs))
         return self
 
@@ -74,8 +84,26 @@ class Q:
         return self
     
     def over(self, over):
-        self._over = f'{over}s'
+        self._over = f'{over}'
         return self
+    
+    @classmethod
+    def vector(cls, v):
+        return cls(f'vector({v})')
+
+
+def on_or_ignoring(binop, on, ignoring):
+    if on != None:
+        fn = lambda s, rhs: f'{s} {binop} on({",".join(on)}) {rhs}'
+
+    elif ignoring != None:
+        fn = lambda s, rhs: f'{s} {binop} ignoring({",".join(ignoring)}) {rhs}'
+
+    else:
+        fn = lambda s, rhs: f'{s} {binop} {rhs}'
+
+    return fn
+
 
 class _Function:
     def __init__(self, name, *args):

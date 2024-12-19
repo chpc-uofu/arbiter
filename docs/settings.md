@@ -62,9 +62,6 @@ The Arbiter Django app is configured with in the `config.toml` file.
 `password` (string, optional)
 - If given, will be used as part of the basic auth with your prometheus instance.
 
-`scrape_interval` (integer, required)  
-- The interval at which Prometheus scrapes the cgroup-wardens in seconds, must match the value in prometheus scrape configuration.
-
 ## `[warden]`
 `job` (string, default='cgroup-warden')
 - The name of the prometheus scrape job that collects cgroup-warden data.
