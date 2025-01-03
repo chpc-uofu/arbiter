@@ -23,14 +23,19 @@ window.addEventListener("load", function () {
         const rows = tiers_container.querySelectorAll("tr");
         var serialized_tiers = [];
         
+        if (rows.length == 0){
+            event.preventDefault();
+            update_message("At least one tier must be set", "error")
+        }
+
         for (const row of rows){
             const cpu_quota = parseFloat(row.querySelector("td.cpu-constraint-cell").textContent.trim());
             const memory_max = parseFloat(row.querySelector("td.memory-constraint-cell").textContent.trim());
 
             if (isNaN(memory_max) && isNaN(cpu_quota)){
-                event.preventDefault()
-                update_message("At least one limit must be set per tier, and limits must be blank or valid numbers", "error")
-                return
+                event.preventDefault();
+                update_message("At least one limit must be set per tier, and limits must be blank or valid numbers", "error");
+                return;
             }
 
             serialized_tiers.push({"cpu_quota": blank_if_nan(cpu_quota), "memory_max": blank_if_nan(memory_max)});
