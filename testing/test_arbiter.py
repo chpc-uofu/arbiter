@@ -104,7 +104,7 @@ def test_single_target_single_policy(short_low_harsh_policy, target1):
     assert db_target1 != None  # here
 
     # make sure correct limits were applied
-    should_be = short_low_harsh_policy.penalty_constraints
+    should_be = short_low_harsh_policy.penalty_constraints['tiers'][0]
     assert db_target1.limits == should_be
 
     # now wait out violation and make sure limits were removed
@@ -133,7 +133,7 @@ def test_single_target_overlapping_policy(
     assert db_target1 != None
 
     # make sure correct limits were set
-    should_be = short_low_harsh_policy.penalty_constraints
+    should_be = short_low_harsh_policy.penalty_constraints['tiers'][0]
     assert db_target1.limits == should_be
 
     # now wait out violation
@@ -166,7 +166,7 @@ def test_multiple_target_single_policy(
     assert db_target2 != None
 
     # make sure correct limits were set
-    should_be = short_low_harsh_policy.penalty_constraints
+    should_be = short_low_harsh_policy.penalty_constraints['tiers'][0]
     assert db_target1.limits == should_be
     assert db_target2.limits == should_be
 
@@ -203,7 +203,7 @@ def test_multiple_target_multiple_overlapping_policy(
     assert db_target2 != None
 
     # make sure correct limits were set
-    should_be = short_low_harsh_policy.penalty_constraints
+    should_be = short_low_harsh_policy.penalty_constraints['tiers'][0]
     assert db_target1.limits == should_be
     assert db_target2.limits == should_be
 
@@ -236,7 +236,7 @@ def test_single_target_distinct_policy(
     assert db_target1 != None
 
     # make sure correct limits were set
-    should_be = short_low_harsh_policy.penalty_constraints
+    should_be = short_low_harsh_policy.penalty_constraints['tiers'][0]
     assert db_target1.limits == should_be
 
     # now wait out harsh violation and re-evaluate
