@@ -69,8 +69,6 @@ class UsagePolicyListView(LoginRequiredMixin, ListView):
 
 
 class UsagePolicyForm(forms.ModelForm):
-    cpu_limit = forms.FloatField(label="Penalty CPU Limit", required=False)
-    mem_limit = forms.FloatField(label="Penalty Memory Limit", required=False)
     proc_whitelist = forms.CharField(label="Query Process Whitelist", required=False)
     user_whitelist = forms.CharField(label="Query User Whitelist", required=False)
     cpu_threshold = forms.FloatField(label="Query CPU Threshold", required=False)
@@ -85,12 +83,6 @@ class UsagePolicyForm(forms.ModelForm):
     
     def __init__(self, *args, disabled=False, **kwargs):
         super().__init__(*args, **kwargs)
-        # if constraints := self.instance.penalty_constraints:
-        #     for name, value in constraints.items():
-        #         if name == "CPUQuotaPerSecUSec":
-        #             self.fields['cpu_limit'].initial = usec_to_cores(value)
-        #         if name == "MemoryMax":
-        #             self.fields['mem_limit'].initial = bytes_to_gib(value)
 
         if query_data := self.instance.query_data:
             if cpu_threshold := query_data["params"]["cpu_threshold"]:
@@ -119,10 +111,15 @@ class UsagePolicyForm(forms.ModelForm):
         if constraints := self.cleaned_data["penalty_constraints"]:
             converted_tiers = []
             for tier in constraints['tiers']:
-                converted_tiers.append({
-                    CPU_QUOTA: cores_to_usec(tier['cpu_quota']),
-                    MEMORY_MAX: gib_to_bytes(tier['memory_max'])
-                })
+                
+                tier_penalty_status = {}
+                if cpu_quota := tier.get('cpu_quota'):
+                    tier_penalty_status[CPU_QUOTA] = cores_to_usec(cpu_quota)
+                if memory_max := tier.get('memory_max'):
+                    tier_penalty_status[MEMORY_MAX] = gib_to_bytes(memory_max)
+                
+                if tier_penalty_status:
+                    converted_tiers.append(tier_penalty_status)
             
             converted_constraints = {'tiers': converted_tiers}
             return converted_constraints
@@ -146,20 +143,10 @@ class UsagePolicyForm(forms.ModelForm):
     
     def clean(self):
         cleaned_data = super().clean()
-        # if not (cleaned_data["cpu_threshold"] or cleaned_data["mem_threshold"]):
-        #     raise forms.ValidationError("At least one threshold (CPU or memory) is required.")
-        # if not (cleaned_data["cpu_limit"] or cleaned_data["mem_limit"]):
-        #     raise forms.ValidationError("At least one limit (CPU or memory) is required.")
     
     def save(self, commit=True):
         policy = super().save(commit=False)
         policy.is_base_policy=True
-        limits: Limits = {}
-        if mem_limit := self.cleaned_data["mem_limit"]:
-            limits[MEMORY_MAX] = mem_limit
-        if cpu_limit := self.cleaned_data["cpu_limit"]:
-            limits[CPU_QUOTA] = cpu_limit
-        # policy.penalty_constraints = {'tiers':[limits]}
 
         params = QueryParameters(
             cpu_threshold=self.cleaned_data["cpu_threshold"],
