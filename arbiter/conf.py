@@ -47,6 +47,16 @@ try:
 except AttributeError:
     raise ImproperlyConfigured("setting EMAIL_HOST_PASSWORD is required")
 
+try:
+    ARBITER_ADMIN_EMAILS = settings.ARBITER_ADMIN_EMAILS
+except AttributeError:
+    raise ImproperlyConfigured("setting ARBITER_ADMIN_EMAILS is required")
+
+try: 
+    ARBITER_FROM_EMAIL = settings.ARBITER_FROM_EMAIL
+except AttributeError:
+    raise ImproperlyConfigured("setting ARBITER_FROM_EMAIL is required")
+
 
 ########## PROMETHEUS SETTINGS ##########
 
@@ -70,7 +80,6 @@ try:
     PROMETHEUS_PASS = settings.PROMETHEUS_PASS
 except AttributeError:
     raise ImproperlyConfigured("setting PROMETHEUS_PASS is required")
-
 
 ########## WARDEN SETTINGS ##########
 

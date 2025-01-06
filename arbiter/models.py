@@ -5,6 +5,7 @@ from django.db import models
 from django.utils import timezone
 
 from arbiter.utils import get_uid
+from arbiter.query import Q, increase, sum_by, sum_over_time
 
 
 Limits = dict[str, any]
@@ -56,20 +57,31 @@ class QueryData:
 
         filters = f'instance=~"{domain}"'
 
-        lookback = f'{int(lookback.total_seconds())}s'
+        lookback = int(lookback.total_seconds())
 
         if params.user_whitelist:
             filters += f', user!~"{params.user_whitelist}"'
 
         if params.proc_whitelist:
-            cpu_query = f'sum by (username, instance, cgroup) (rate(cgroup_warden_proc_cpu_usage_seconds{{{filters}, proc!~"{params.proc_whitelist}"}}[{lookback}]) > {params.cpu_threshold})'
+            cpu_query = sum_by(increase(Q('cgroup_warden_proc_cpu_usage_seconds').like(instance=domain).not_like(proc=params.proc_whitelist).over(f'{lookback}s')) / lookback > params.cpu_threshold, "username", "instance", "cgroup")
         else:
-            cpu_query = f'sum by (username, instance, cgroup) (rate(cgroup_warden_cpu_usage_seconds{{{filters}}}[{lookback}]) > {params.cpu_threshold})'
+            cpu_query = increase(Q('cgroup_warden_cpu_usage_seconds').like(instance=domain).over(f'{lookback}s')) / lookback > params.cpu_threshold
 
-        mem_query = f'sum by (username, instance, cgroup) (avg_over_time(cgroup_warden_memory_usage_bytes{{{filters}}}[{lookback}]) / {params.mem_threshold}) > 1.0'
+
+        granularity = 30
+        
+        datapoints = lookback // granularity
+
+        if datapoints:
+            mem_range = f'{lookback}s:{granularity}s'
+        else:
+            datapoints = lookback
+            mem_range = f'{lookback}s:1s'
+
+        mem_query = sum_over_time(Q('cgroup_warden_memory_usage_bytes').like(instance=domain).over(mem_range)) / 1024**3 / datapoints > params.mem_threshold
 
         if params.mem_threshold and params.cpu_threshold:
-            query = f'({cpu_query}) or ({mem_query})'
+            query = cpu_query.lor(mem_query)
         elif params.cpu_threshold:
             query = cpu_query
         elif params.mem_threshold:
@@ -77,7 +89,7 @@ class QueryData:
         else:
             query = None
         
-        return QueryData(query=query, params=params)
+        return QueryData(query=str(query), params=params)
 
 
 class Policy(models.Model):
@@ -100,12 +112,23 @@ class Policy(models.Model):
     query_data = models.JSONField()
     active  = models.BooleanField(default=True, help_text="Whether or not this policy gets evaluated")
 
+
+    def __str__(self):
+        return f'{self.name}'
+
     @property
     def query(self):
         query_str = self.query_data.get("query", None)
 
         return query_str
+    
+    @property
+    def cpu_threshold(self):
+        return self.query_data.get("params", {}).get("cpu_threshold")
 
+    @property
+    def mem_threshold(self):
+        return self.query_data.get("params", {}).get("mem_threshold")
 
 
 class BasePolicy(Policy):

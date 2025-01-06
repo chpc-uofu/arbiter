@@ -49,15 +49,15 @@ with open(conf_file, "rb") as f:
 
     ARBITER_USER_LOOKUP = email.get('lookup_function')
 
+    ARBITER_ADMIN_EMAILS = email.get('admin_emails', [])
 
     if ARBITER_NOTIFY_USERS and not EMAIL_HOST:
-        
         raise ImproperlyConfigured("email.host is required if email.notify_users = true")
     
     if ARBITER_NOTIFY_USERS and not ARBITER_USER_LOOKUP:
-        
         raise ImproperlyConfigured("email.lookup_function is required if email.notify_users = true")
-            
+
+    ARBITER_FROM_EMAIL = email.get('from_email', None) 
 
     prometheus = config.get('prometheus', {})
 
@@ -71,8 +71,7 @@ with open(conf_file, "rb") as f:
     
     if not PROMETHEUS_URL:
         raise ImproperlyConfigured('prometheus.url is required')
-
-
+    
     warden = config.get('warden', {})
 
     WARDEN_JOB = warden.get('job', 'cgroup-warden')

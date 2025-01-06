@@ -11,6 +11,7 @@ lookup_function = 'arbiter.utils.default_user_lookup'
 [prometheus]
 url = 'http://prometheus:9090'
 verify_ssl = false
+scrape_interval = 1
 
 [warden]
 bearer = 'insecure-95axve4fn4j2u8ih0j1ltg272g1n297l8'
