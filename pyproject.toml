@@ -4,7 +4,7 @@ version = "0.0.0"
 description = ""
 authors = ["Kai Forrest <kai.forrest@utah.edu>", "Jackson McKay <jay.mckay@utah.edu>", "Paul Fischer <p.fischer@utah.edu>"]
 readme = "README.md"
-packages = [{ include = "arbiter" }]
+packages = [{ include = "arbiter" }, { include = "portal" }]
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -27,9 +27,8 @@ isort = "^5.12.0"
 paramiko = "^3.4.0"
 pytest-asyncio = "^0.23.2"
 
-
 [tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE="etc.settings"
+DJANGO_SETTINGS_MODULE="portal.settings"
 python_files = "testing/**.py"
 filterwarnings = ["ignore::pytest.PytestCacheWarning", "ignore::urllib3.exceptions.InsecureRequestWarning"]
 log_cli = true

@@ -23,19 +23,14 @@ except AttributeError:
 
 
 try:
-    ARBITER_USER_LOOKUP = settings.ARBITER_USER_LOOKUP
-except AttributeError:
-    raise ImproperlyConfigured("setting ARBITER_USER_LOOKUP is required")
-
-try:
     ARBITER_NOTIFY_USERS = settings.ARBITER_NOTIFY_USERS
 except AttributeError:
     raise ImproperlyConfigured("setting ARBITER_NOTIFY_USERS is required")
 
 try:
-    ARBITER_EMAIL_DOMAIN = settings.ARBITER_EMAIL_DOMAIN
+    ARBITER_USER_LOOKUP = settings.ARBITER_USER_LOOKUP
 except AttributeError:
-    raise ImproperlyConfigured("setting ARBITER_EMAIL_DOMAIN is required")
+    raise ImproperlyConfigured("setting ARBITER_USER_LOOKUP is required")
 
 try:
     EMAIL_HOST = settings.EMAIL_HOST
@@ -51,6 +46,16 @@ try:
     EMAIL_HOST_PASSWORD = settings.EMAIL_HOST_PASSWORD
 except AttributeError:
     raise ImproperlyConfigured("setting EMAIL_HOST_PASSWORD is required")
+
+try:
+    ARBITER_ADMIN_EMAILS = settings.ARBITER_ADMIN_EMAILS
+except AttributeError:
+    raise ImproperlyConfigured("setting ARBITER_ADMIN_EMAILS is required")
+
+try: 
+    ARBITER_FROM_EMAIL = settings.ARBITER_FROM_EMAIL
+except AttributeError:
+    raise ImproperlyConfigured("setting ARBITER_FROM_EMAIL is required")
 
 
 ########## PROMETHEUS SETTINGS ##########
@@ -75,7 +80,6 @@ try:
     PROMETHEUS_PASS = settings.PROMETHEUS_PASS
 except AttributeError:
     raise ImproperlyConfigured("setting PROMETHEUS_PASS is required")
-
 
 ########## WARDEN SETTINGS ##########
 

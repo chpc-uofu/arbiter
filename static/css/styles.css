@@ -1,0 +1,176 @@
+:root{
+    --bright-accent: #cc0000;
+    --light-accent: #be0000;
+    --primary-bg : #E2E6E6;
+    --secondary-bg : #bbbaba;
+    --darker-bg : #a9a8a8;
+    --title-color: black;
+    --light-text-color: #fefefe;
+    --darker-light-text : #8b8f8d;
+    --lighter-text-color: #7c7a7a;
+    --border-color : black;
+    --lighter-border-color : #413f3f;
+    --darker-accent : #890000;
+    --success-bg-color: #b7e9b7;
+    --error-bg-color: #e27171;
+    --warning-bg-color: #cfb274;
+    --table-head : #5e5e5e;
+}
+
+* {
+    font-family: var(--bs-font-monospace); 
+    font-family: monospace;
+    font-size: large;
+}
+
+hr{
+    background-color: var(--lighter-border-color);
+    height: 1px;
+    margin: 10px;
+    margin-top: 0px;
+}
+
+.page-title{
+    font-size: larger;
+    font-weight: 600;
+    margin: 15px;
+    margin-bottom: 8px;
+    color: var(--lighter-border-color)
+}
+
+body {
+    background-color: var(--primary-bg);
+    margin: 0px;
+    padding: 0px;
+}
+
+.content{
+    padding: 15px;
+}
+
+table{
+    padding: 5px;
+    border-collapse: collapse;
+    overflow: hidden;
+    border-radius: 2px 2px 0px 0px;
+    width: 100%;
+}
+
+th, td {
+    padding: 5px;
+    text-align: left;
+    border: 1px solid var(--lighter-border-color);
+}
+
+tr:nth-child(even) {
+    background-color: var(--secondary-bg); 
+}
+
+
+th {
+    background-color: var(--table-head); 
+    color: var(--light-text-color);
+}
+
+.navbar {
+    display: flex;
+    background-color: var(--darker-accent);
+    color: var(--light-text-color);
+    padding: 0px;
+    padding-left: 5px;
+    height: 3em;
+    align-items: center;
+    margin : 0px;
+    /* border-bottom: 2px solid var(--border-color); */
+}
+
+
+.navbar button{
+    background: inherit;
+}
+
+.navbar button:hover{
+    border: none;
+}
+
+
+
+.navbar a {
+    color: inherit;
+    background-color: inherit;
+    margin: 12px 20px;
+    text-decoration: none;
+    font-weight: bold;
+    text-align: center;
+    max-height: 100%;
+}
+
+.navbar a.active{
+    text-decoration: underline;
+}
+
+.navbar a:hover, .user-login button:hover{
+    /* background-color: var(--secondary-bg); */
+    color: var(--darker-light-text);
+    transition: 0.1s;
+    text-decoration: underline;
+}
+
+#navbar-icon{
+    padding: 0px 0px;
+    margin: 0px;
+    height: 100%;
+}
+
+.navbar .logo{
+    height: 100%;
+    width: auto;
+}
+
+.user-login{
+    justify-content: center;
+    margin-left: auto;
+}
+
+.user-login button, .user-login a{
+    color: var(--light-text-color);
+    border: 0px;
+    font-weight: bold;
+}
+
+
+input, button, select, textarea {
+    box-shadow: none;
+    border: 2px solid var(--lighter-border-color);
+    border-radius: 4px;
+    padding: 10px 15px; /* Padding for input and button */
+    outline: none; /* Remove outline on focus */
+    transition: box-shadow 0.3s ease; /* Smooth transition */
+}
+
+input:focus, button:hover, select:hover, textarea:hover {
+    box-shadow: 0 0 0 3px #007bff80;
+}
+
+/* message box */
+ul.messagelist{
+    padding: 0px;
+    margin: 0px;
+}
+
+ul.messagelist li{
+    list-style-type: none;
+    padding: 5px;
+}
+
+ul.messagelist li.success{
+    background-color: var(--success-bg-color);
+}
+ul.messagelist li.error{
+    background-color: var(--error-bg-color);
+}
+ul.messagelist li.warning{
+    background-color: var(--warning-bg-color);
+}
+
+

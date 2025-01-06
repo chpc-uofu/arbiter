@@ -10,7 +10,7 @@ import django.utils.timezone
 
 import arbiter.models
 import arbiter.eval
-from arbiter.utils import nsec_to_cores, bytes_to_gib
+from arbiter.utils import bytes_to_gib
 from arbiter.models import Target, Violation
 
 from testing.conf import *
@@ -20,7 +20,6 @@ from testing.conf import *
 from testing.fixtures.policies import *
 from testing.fixtures.limits import *
 from testing.fixtures.penalties import *
-from testing.fixtures.properties import *
 from testing.fixtures.targets import *
 
 
@@ -54,7 +53,7 @@ def create_violating_command(policy: arbiter.models.Policy) -> str:
     command = "stress-ng"
     cpu = policy.query_data.get("params", {}).get("cpu_threshold", None)
     if cpu:
-        command += f" --cpu {math.ceil(nsec_to_cores(cpu))}"
+        command += f" --cpu {math.ceil(cpu)}"
     mem = policy.query_data.get("params", {}).get("mem_threshold", None)
     if mem:
         command += f" --vm 1 --vm-bytes {math.ceil(bytes_to_gib(mem))}g --vm-populate --vm-keep --vm-madvise willneed"
@@ -105,8 +104,8 @@ def test_single_target_single_policy(short_low_harsh_policy, target1):
     assert db_target1 != None  # here
 
     # make sure correct limits were applied
-    should_be = short_low_harsh_policy.penalty_constraints
-    assert db_target1.last_applied == should_be
+    should_be = short_low_harsh_policy.penalty_constraints['tiers'][0]
+    assert db_target1.limits == should_be
 
     # now wait out violation and make sure limits were removed
     time.sleep(duration(short_low_harsh_policy))
@@ -115,7 +114,7 @@ def test_single_target_single_policy(short_low_harsh_policy, target1):
     assert db_target1 != None
 
     # make sure target has no limits applied
-    assert len(db_target1.last_applied) == 0
+    assert len(db_target1.limits) == 0
 
 
 @pytest.mark.django_db(transaction=True)
@@ -134,8 +133,8 @@ def test_single_target_overlapping_policy(
     assert db_target1 != None
 
     # make sure correct limits were set
-    should_be = short_low_harsh_policy.penalty_constraints
-    assert db_target1.last_applied == should_be
+    should_be = short_low_harsh_policy.penalty_constraints['tiers'][0]
+    assert db_target1.limits == should_be
 
     # now wait out violation
     waiting = max(duration(short_low_harsh_policy), duration(short_low_medium_policy))
@@ -145,7 +144,7 @@ def test_single_target_overlapping_policy(
     arbiter.eval.evaluate([short_low_harsh_policy, short_low_medium_policy])
     db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
     assert db_target1 != None
-    assert len(db_target1.last_applied) == 0
+    assert len(db_target1.limits) == 0
 
 
 @pytest.mark.django_db(transaction=True, reset_sequences=True)
@@ -167,9 +166,9 @@ def test_multiple_target_single_policy(
     assert db_target2 != None
 
     # make sure correct limits were set
-    should_be = short_low_harsh_policy.penalty_constraints
-    assert db_target1.last_applied == should_be
-    assert db_target2.last_applied == should_be
+    should_be = short_low_harsh_policy.penalty_constraints['tiers'][0]
+    assert db_target1.limits == should_be
+    assert db_target2.limits == should_be
 
     # now wait out violation and re-evaluate
     time.sleep(duration(short_low_harsh_policy))
@@ -180,8 +179,8 @@ def test_multiple_target_single_policy(
     db_target2 = Target.objects.filter(unit=target2.unit, host=target2.host).first()
     assert db_target1 != None
     assert db_target2 != None
-    assert len(db_target1.last_applied) == 0
-    assert len(db_target2.last_applied) == 0
+    assert len(db_target1.limits) == 0
+    assert len(db_target2.limits) == 0
 
 
 @pytest.mark.django_db(transaction=True, reset_sequences=True)
@@ -204,9 +203,9 @@ def test_multiple_target_multiple_overlapping_policy(
     assert db_target2 != None
 
     # make sure correct limits were set
-    should_be = short_low_harsh_policy.penalty_constraints
-    assert db_target1.last_applied == should_be
-    assert db_target2.last_applied == should_be
+    should_be = short_low_harsh_policy.penalty_constraints['tiers'][0]
+    assert db_target1.limits == should_be
+    assert db_target2.limits == should_be
 
     # now wait out violation and re-evaluate
     time.sleep(max(duration(short_low_harsh_policy), duration(short_low_medium_policy)))
@@ -217,8 +216,8 @@ def test_multiple_target_multiple_overlapping_policy(
     db_target2 = Target.objects.filter(unit=target2.unit, host=target2.host).first()
     assert db_target1 != None
     assert db_target2 != None
-    assert len(db_target1.last_applied) == 0
-    assert len(db_target2.last_applied) == 0
+    assert len(db_target1.limits) == 0
+    assert len(db_target2.limits) == 0
 
 
 @pytest.mark.django_db(transaction=True, reset_sequences=True)
@@ -237,8 +236,8 @@ def test_single_target_distinct_policy(
     assert db_target1 != None
 
     # make sure correct limits were set
-    should_be = short_low_harsh_policy.penalty_constraints
-    assert db_target1.last_applied == should_be
+    should_be = short_low_harsh_policy.penalty_constraints['tiers'][0]
+    assert db_target1.limits == should_be
 
     # now wait out harsh violation and re-evaluate
     time.sleep(duration(short_low_harsh_policy))
@@ -247,8 +246,8 @@ def test_single_target_distinct_policy(
     # penalty for violation of soft policy has a longer duration, so it is still active
     db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
     assert db_target1 != None
-    should_be = short_mid_soft_policy.penalty_constraints
-    assert db_target1.last_applied == should_be
+    should_be = short_mid_soft_policy.penalty_constraints['tiers'][0]
+    assert db_target1.limits == should_be
 
 
 #############################################################

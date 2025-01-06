@@ -6,7 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 
-from arbiter.models import BasePolicy, Limit, QueryData
+from arbiter.models import BasePolicy, Limits, QueryData, CPU_QUOTA, MEMORY_MAX
 from arbiter.utils import usec_to_cores, bytes_to_gib, cores_to_usec, gib_to_bytes
 
 from .nav import navbar
@@ -20,6 +20,7 @@ class BasePolicyListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         context["navbar"] = navbar(self.request)
         context["can_create"] = self.request.user.has_perm("arbiter.add_basepolicy")
+        context["title"] = "Base Policies"
         return context
     
 
@@ -29,7 +30,8 @@ class BasePolicyForm(forms.ModelForm):
 
     class Meta:
         model = BasePolicy
-        fields = ["name", "domain", "description"]
+        fields = ["name", "domain", "description", "active"]
+        
         
     def __init__(self, *args, disabled=False, **kwargs):
         super().__init__(*args, **kwargs)
@@ -63,12 +65,12 @@ class BasePolicyForm(forms.ModelForm):
     def save(self, commit=True):
         policy = super().save(commit=False)
         policy.is_base_policy=True
-        limits = []
+        limits: Limits = {}
         if cpu_limit := self.cleaned_data['cpu']:
-            limits.append(Limit.cpu_quota(cpu_limit))
+            limits[CPU_QUOTA] = cpu_limit
         if mem_limit := self.cleaned_data['mem']:
-            limits.append(Limit.memory_max(mem_limit))
-        policy.penalty_constraints = Limit.to_json(*limits)
+            limits[MEMORY_MAX] = mem_limit
+        policy.penalty_constraints = {'tiers':[limits]}
         policy.query_data = QueryData.raw_query(f'systemd_unit_cpu_usage_ns{{instance=~"{policy.domain}"}}').json()
         policy.save()
 
@@ -80,18 +82,18 @@ def new_base_policy(request):
 
     if not can_change:
         messages.error(request, "You do not have permissions to create a Base Policy")
-        return redirect("view-dashboard")
+        return redirect("arbiter:view-dashboard")
 
     if request.method == "POST":
         form = BasePolicyForm(request.POST)
         if form.is_valid():
             form.save()
             messages.success(request, "Successfully created base policy.")
-            return redirect(f"list-base-policy")
+            return redirect("arbiter:list-base-policy")
     else:
         form = BasePolicyForm()
 
-    context = {"form": form, "navbar": navbar(request), "can_change": can_change}
+    context = {"form": form, "navbar": navbar(request), "can_change": can_change, "title": "New Base Policy"}
     return render(request, "arbiter/change_view.html", context)
 
 
@@ -103,7 +105,7 @@ def change_base_policy(request, policy_id):
 
     if not policy:
         messages.error(request, "Base Policy not found.")
-        return redirect("list-base-policy")
+        return redirect("arbiter:list-base-policy")
 
     if request.method == "POST":
         if not can_change:
@@ -114,16 +116,16 @@ def change_base_policy(request, policy_id):
         if "save" in request.POST and form.is_valid():
             form.save()
             messages.success(request, "Successfully changed base policy.")
-            return redirect(f"list-base-policy")
+            return redirect("arbiter:list-base-policy")
         if "delete" in request.POST:
             policy.delete()
             messages.success(request, "Successfully removed base policy.")
-            return redirect(f"list-base-policy")
+            return redirect("arbiter:list-base-policy")
     else:
         if can_change:
             form = BasePolicyForm(instance=policy)
         else:
             form = BasePolicyForm(instance=policy, disabled=True)
 
-    context = {"form": form, "navbar": navbar(request), "can_change": can_change}
+    context = {"form": form, "navbar": navbar(request), "can_change": can_change, "title": "Change Base Policy"}
     return render(request, "arbiter/change_view.html", context)

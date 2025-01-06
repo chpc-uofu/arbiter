@@ -1,23 +1,40 @@
 import re
+import logging
 from pwd import getpwnam
-from arbiter.conf import ARBITER_EMAIL_DOMAIN
 
 
-USEC_PER_SEC = 1_000_000
+USEC_PER_SEC = 1000**2
 BYTES_PER_GIB = 1024**3
-NSEC_PER_SEC = 1000**3
 SEC_PER_MIN = 60
 SEC_PER_HOUR = 60**2
 SEC_PER_DAY = 60**2 * 24
 SEC_PER_WEEK = 60**2 * 24 * 7
 
+logger = logging.getLogger(__name__)
+
+
+
+def log_debug(func):
+    def f(*args):
+        args_str = '('
+        for arg in args:
+            if isinstance(arg, float):
+                args_str += '%.2f' % arg
+            elif isinstance(arg, int):
+                args_str += '%d' % arg
+            elif isinstance(arg, str):
+                args_str += '"%s"' % arg
+            else:
+                args_str += '%s' % arg
+            args_str += ', '
+        args_str = args_str[:-2] + ')'
+        logger.debug(f'{func.__name__}{args_str}')
+        return func(*args)
+    return f
+
 
 def strip_port(host: str) -> str:
     return host.split(":")[0]
-
-USEC_PER_SEC = 1_000_000
-BYTES_PER_GIB = 1024**3
-NSEC_PER_SEC = 1000**3
 
 
 def get_uid(unit: str) -> int | None:
@@ -41,7 +58,7 @@ def default_user_lookup(username: str) -> tuple[str, str, str]:
 
 
 def default_email_lookup(username: str) -> str:
-    return f"{username}@{ARBITER_EMAIL_DOMAIN}"
+    return f"{username}@localhost"
 
 
 def default_realname_lookup(username: str) -> str:
@@ -96,21 +113,8 @@ def cores_to_usec(cores: float) -> int:
         return 1
     return int(usec)
 
-
-def cores_to_nsec(cores: float) -> int:
-    nsec = cores * NSEC_PER_SEC
-    if nsec < 1:
-        return 1
-    return int(nsec)
-
-
 def usec_to_cores(usec: int) -> float:
     return usec / USEC_PER_SEC
-
-
-def nsec_to_cores(nsec: int) -> float:
-    return nsec / NSEC_PER_SEC
-
 
 def gib_to_bytes(gib: float) -> int:
     _bytes = gib * BYTES_PER_GIB

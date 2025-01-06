@@ -13,8 +13,8 @@ scrape_configs:
     tls_config:
       insecure_skip_verify: true
       
-  - job_name: arbiter
-    scrape_interval: 30s
-    metrics_path: /arbiter/metrics
-    static_configs:
-      - targets: ['host.docker.internal:8000']
+  # - job_name: arbiter
+  #   scrape_interval: 30s
+  #   metrics_path: /arbiter/metrics
+  #   static_configs:
+  #     - targets: ['host.docker.internal:8000']
