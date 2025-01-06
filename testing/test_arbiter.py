@@ -246,7 +246,7 @@ def test_single_target_distinct_policy(
     # penalty for violation of soft policy has a longer duration, so it is still active
     db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
     assert db_target1 != None
-    should_be = short_mid_soft_policy.penalty_constraints
+    should_be = short_mid_soft_policy.penalty_constraints['tiers'][0]
     assert db_target1.limits == should_be
 
 
