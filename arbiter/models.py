@@ -78,7 +78,7 @@ class QueryData:
             datapoints = lookback
             mem_range = f'{lookback}s:1s'
 
-        mem_query = sum_over_time(Q('cgroup_warden_memory_usage_bytes').like(instance=domain).over(mem_range)) / 1024**3 / datapoints > params.mem_threshold
+        mem_query = sum_over_time(Q('cgroup_warden_memory_usage_bytes').like(instance=domain).over(mem_range)) / datapoints > params.mem_threshold
 
         if params.mem_threshold and params.cpu_threshold:
             query = cpu_query.lor(mem_query)
