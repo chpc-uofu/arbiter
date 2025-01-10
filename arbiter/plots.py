@@ -192,10 +192,10 @@ def cpu_usage_figures(
     step="30s",
 ) -> Figures | None:
     
-    unit_total = f'sum by (username, instance) (rate(cgroup_warden_cpu_usage_seconds{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}}[{step}]))'
-    proc_total = f'sum by (username, instance) (rate(cgroup_warden_proc_cpu_usage_seconds{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}}[{step}]))'
+    unit_total = f'sum by (username, instance) (rate(cgroup_warden_cpu_usage_seconds{{username=~"^{username_re}$", instance=~"{host_re}{PORT_RE}"}}[{step}]))'
+    proc_total = f'sum by (username, instance) (rate(cgroup_warden_proc_cpu_usage_seconds{{username=~"^{username_re}$", instance=~"{host_re}{PORT_RE}"}}[{step}]))'
     proc_delta = f'label_replace({unit_total} - {proc_total}, "proc", "unknown", "proc", "") > 0'
-    query = f'{proc_delta} or sum by (username, instance, proc) (rate(cgroup_warden_proc_cpu_usage_seconds{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}}[{step}]))'
+    query = f'{proc_delta} or sum by (username, instance, proc) (rate(cgroup_warden_proc_cpu_usage_seconds{{username=~"^{username_re}$", instance=~"{host_re}{PORT_RE}"}}[{step}]))'
 
     figures = usage_figures(
         query,
@@ -226,10 +226,10 @@ def mem_usage_figures(
     step="30s",
 ) -> Figures | None:
     
-    unit_total = f'sum by (username, instance) (cgroup_warden_memory_usage_bytes{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}} / {BYTES_PER_GIB})'
-    proc_total = f'sum by (username, instance) (cgroup_warden_proc_memory_usage_bytes{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}} / {BYTES_PER_GIB})'
+    unit_total = f'sum by (username, instance) (cgroup_warden_memory_usage_bytes{{username=~"^{username_re}$", instance=~"{host_re}{PORT_RE}"}} / {BYTES_PER_GIB})'
+    proc_total = f'sum by (username, instance) (cgroup_warden_proc_memory_usage_bytes{{username=~"^{username_re}$", instance=~"{host_re}{PORT_RE}"}} / {BYTES_PER_GIB})'
     proc_delta = f'label_replace({unit_total} - {proc_total}, "proc", "unknown", "proc", "") > 0'
-    query = f'{proc_delta} or sum by (username, instance, proc) (cgroup_warden_proc_memory_usage_bytes{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}} / {BYTES_PER_GIB})'
+    query = f'{proc_delta} or sum by (username, instance, proc) (cgroup_warden_proc_memory_usage_bytes{{username=~"^{username_re}$", instance=~"{host_re}{PORT_RE}"}} / {BYTES_PER_GIB})'
 
     figures = usage_figures(
         query,
