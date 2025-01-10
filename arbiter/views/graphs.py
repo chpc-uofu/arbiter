@@ -50,6 +50,13 @@ def user_proc_graph(request, usage_type):
     if host == "all":
         host = ".*"
 
+    if host == ".*" and username == ".*":
+        return render(
+            request,
+            "arbiter/graph.html",
+            context={"warning": "Please specify either a username or host"},
+        )
+
     if usage_type == plots.CPU_USAGE:
         figures = plots.cpu_usage_figures(
             username_re=username,
