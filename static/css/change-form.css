@@ -17,7 +17,7 @@ form div input, .field-value{
     width: fit-content;
 }
 
-form div , .form-row label{
+form div label, .form-row label{
     display: block;
     /* grid-column: 1; */
     width: 20%;
