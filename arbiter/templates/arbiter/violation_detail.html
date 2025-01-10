@@ -40,13 +40,13 @@
     <div class="form-row">
         <label>CPU Usage:</label> 
         <div class= "field-value">
-            <div hx-get="{% url 'arbiter:violation-proc-cpu-graph' violation.id%}" hx-trigger="load" hx-target="this" hx-swap="innerHTML" hx-indicator="dots"></div>
+            <div hx-get="{% url 'arbiter:violation-proc-cpu-graph' violation.id%}" hx-trigger="load" hx-target="this" hx-swap="innerHTML" ></div>
         </div>
     </div>
     <div class="form-row">
         <label>Memory Usage:</label> 
         <div class= "field-value">
-            <div hx-get="{% url 'arbiter:violation-proc-memory-graph' violation.id%}" hx-trigger="load" hx-target="this" hx-swap="innerHTML" hx-indicator="dots"></div>
+            <div hx-get="{% url 'arbiter:violation-proc-memory-graph' violation.id%}" hx-trigger="load" hx-target="this" hx-swap="innerHTML" ></div>
         </div>
     </div>
 
