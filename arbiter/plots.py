@@ -12,6 +12,7 @@ from arbiter.models import Violation
 from arbiter.utils import bytes_to_gib, BYTES_PER_GIB, log_debug
 from arbiter.conf import PROMETHEUS_CONNECTION
 
+from pprint import pprint
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +82,7 @@ def usage_figures(
 
     try:
         result = PROMETHEUS_CONNECTION.custom_query_range(query, start_time=start, end_time=end, step=step)
+        pprint(result)
     except PrometheusApiClientException as e:
         logger.error(f'unable to create usage figures: {e}')
         return None
