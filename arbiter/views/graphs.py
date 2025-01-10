@@ -1,13 +1,11 @@
 from django.shortcuts import render
-from arbiter.models import Policy, Violation
+from arbiter.models import  Violation
 from django.db.models import Count
-from django.shortcuts import redirect
-from django.contrib import messages
-from django.core.management import call_command
 from django.utils.safestring import mark_safe
 import arbiter.plots as plots
 from django.utils import timezone
 from django.http import HttpResponse
+from arbiter.plots import Figures
 
 def user_proc_graph(request, usage_type):
     if not request.user.has_perm("arbiter.change_dashboard"):
@@ -53,7 +51,7 @@ def user_proc_graph(request, usage_type):
         host = ".*"
 
     if usage_type == plots.CPU_USAGE:
-        fig, pie = plots.cpu_usage_figures(
+        figures = plots.cpu_usage_figures(
             username_re=username,
             host_re=host,
             start_time=start_time,
@@ -61,13 +59,24 @@ def user_proc_graph(request, usage_type):
             step=step,
         )
     elif usage_type == plots.MEM_USAGE:
-        fig, pie = plots.mem_usage_figures(
+        figures = plots.mem_usage_figures(
             username_re=username,
             host_re=host,
             start_time=start_time,
             end_time=end_time,
             step=step,
         )
+    
+    if not figures:
+        return render(
+            request,
+            "arbiter/graph.html",
+            context={
+                "error": "Unable to form graphs (check that Prometheus is up or that usage is nonempty)"
+            }
+        )
+    else:
+        fig, pie = figures
 
     return render(
         request,
@@ -117,9 +126,9 @@ def violation_usage(request, violation_id, usage_type):
         "arbiter/graph.html",
         context={
             "graph": mark_safe(
-                graph.to_html(default_width="100%", default_height="400px")
+                graph.to_html(default_width="100%", default_height="400px",  include_plotlyjs=False)
             ),
-            "pie": mark_safe(pie.to_html(default_width="100%", default_height="400px")),
+            "pie": mark_safe(pie.to_html(default_width="100%", default_height="400px",  include_plotlyjs=False)),
             **messages,
         },
     )
