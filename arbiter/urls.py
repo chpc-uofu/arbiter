@@ -28,5 +28,8 @@ urlpatterns = [
     path("graphs/proc/cpu", graphs.user_proc_cpu_graph, name="user-proc-cpu-graph"),
     path("graphs/proc/memory",graphs.user_proc_memory_graph, name="user-proc-memory-graph"),
     
+    path("graphs/proc/cpu/<int:violation_id>", graphs.violation_cpu_usage, name="violation-proc-cpu-graph"),
+    path("graphs/proc/memory/<int:violation_id>", graphs.violation_memory_usage, name="violation-proc-memory-graph"),
+
     path("metrics", graphs.violation_metrics_scrape, name="violation_metric_scrape"),
 ]

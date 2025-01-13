@@ -23,6 +23,18 @@
     font-size: large;
 }
 
+a {
+    color: var(--light-accent);
+}
+
+a:visited, a:hover {
+    color: var(--darker-accent);
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
 hr{
     background-color: var(--lighter-border-color);
     height: 1px;
