@@ -1,17 +1,37 @@
 Vagrant.configure("2") do |config|
-    config.vm.define "cgroup-warden" do |goAgent| 
-        goAgent.vm.box = "generic/ubuntu2004"
-        goAgent.vm.network "private_network", ip: "192.168.56.2"
-        goAgent.vm.network "forwarded_port", guest: 2112, host: 2112, host_ip: "127.0.0.1"
-        goAgent.vm.synced_folder ".", "/vagrant/cgroup-warden"
-        goAgent.vm.provision "shell", path: "provisioning.sh"
+
+    #config.vm.define "rocky8" do |rocky8|
+    #    rocky8.vm.box = "generic/rocky8"
+    #    rocky8.vm.network "private_network", ip: "192.168.56.2"
+    #    rocky8.vm.network "forwarded_port", guest: 2112, guest_ip: "0.0.0.0", host: 2112, host_ip: "127.0.0.1"
+    #end
+    
+    config.vm.define "rocky9" do |rocky9|
+        rocky9.vm.box = "generic/rocky9"
+        rocky9.vm.network "private_network", ip: "192.168.56.2"
+        rocky9.vm.network "forwarded_port", guest: 2112, host: 2112, host_ip: "127.0.0.1"
     end
-  
-     config.vm.provider "virtualbox" do |vb|
+
+    #config.vm.define "ubuntu" do |ubuntu|
+    #    ubuntu.vm.box = "generic/ubuntu2004"
+    #    ubuntu.vm.network "private_network", ip: "192.168.56.4"
+    #    ubuntu.vm.network "forwarded_port", guest: 2112, host: 2114, host_ip: "127.0.0.1"
+    #end
+
+    config.vm.synced_folder ".", "/vagrant/cgroup-warden"
+    
+    config.vm.provision "initial", type: "shell", path: "initial.sh" do |s|
+    end
+
+    config.vm.provision "service", type: "shell", path: "service.sh" do |s|
+    end
+
+    config.vm.provider "virtualbox" do |vb|
       vb.customize [ "modifyvm", :id, "--uartmode1", "disconnected" ]
       vb.customize ["modifyvm", :id, "--cableconnected1", "on"]
       vb.customize ["modifyvm", :id, "--uart1", "0x3F8", "4"]
       vb.customize ["modifyvm", :id, "--uartmode1", "file", File::NULL]
+      #vb.customize ["modifyvm", :id, "--firmware", "efi"]
       vb.memory = 4096 
       vb.cpus = 5
     end

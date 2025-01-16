@@ -45,7 +45,7 @@ async def set_property(target: Target, session: aiohttp.ClientSession, name: str
             json=payload,
             timeout=5,
             headers=auth_header,
-            verify_ssl=WARDEN_VERIFY_SSL,
+            ssl=WARDEN_VERIFY_SSL,
         ) as response:
             status = response.status
             message = await response.text()
