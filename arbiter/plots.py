@@ -28,7 +28,7 @@ class Figures(NamedTuple):
     pie   : Figure
 
 
-def align_to_step(start: datetime, end: datetime, step: str = "15s") -> datetime:
+def _align_to_step(start: datetime, end: datetime, step: str = "15s") -> datetime:
     """
     Given a duration as defined by the start and end, ensure the duration is
     aligned to the given step size.
@@ -48,7 +48,7 @@ def align_to_step(start: datetime, end: datetime, step: str = "15s") -> datetime
     return start - start_delta, end - end_delta
 
 
-def align_with_prom_limit(start: datetime, end: datetime, step: str) -> str:
+def _align_with_prom_limit(start: datetime, end: datetime, step: str) -> str:
     """
     Given a timerange as defined by the start and end, create a step
     interval for a prometheus query that ensures no more than 400
@@ -68,7 +68,7 @@ def align_with_prom_limit(start: datetime, end: datetime, step: str) -> str:
         return step
 
 
-def usage_figures(
+def _usage_figures(
     query: str,
     label: str,
     start: datetime,
@@ -77,7 +77,7 @@ def usage_figures(
     step: str = "30s",
 ) -> Figures | None:
 
-    start, end = align_to_step(start, end, step)
+    start, end = _align_to_step(start, end, step)
 
     try:
         result = PROMETHEUS_CONNECTION.custom_query_range(query, start_time=start, end_time=end, step=step)
@@ -86,7 +86,7 @@ def usage_figures(
         return None
 
     if not result:
-        logger.warning(f"unable to create usage figures: empty query result")
+        logger.warning(f"Unable to create usage figures: empty query result")
         return None
 
     local_tz = get_current_timezone()
@@ -162,7 +162,7 @@ def violation_usage_figures(violation: Violation, usage_type: str, step: str = "
     host = violation.target.host
     start = violation.timestamp - violation.policy.lookback
     end = violation.timestamp
-    step = align_with_prom_limit(start, end, step)
+    step = _align_with_prom_limit(start, end, step)
 
     if usage_type == CPU_USAGE:
         threshold = violation.policy.cpu_threshold or None
@@ -198,7 +198,7 @@ def cpu_usage_figures(
     proc_delta = f'label_replace({unit_total} - {proc_total}, "proc", "unknown", "proc", "") > 0'
     query = f'{proc_delta} or sum by (username, instance, proc) (rate(cgroup_warden_proc_cpu_usage_seconds{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}}[{step}]))'
 
-    figures = usage_figures(
+    figures = _usage_figures(
         query,
         "proc",
         start_time,
@@ -232,7 +232,7 @@ def mem_usage_figures(
     proc_delta = f'label_replace({unit_total} - {proc_total}, "proc", "unknown", "proc", "") > 0'
     query = f'{proc_delta} or sum by (username, instance, proc) (cgroup_warden_proc_memory_usage_bytes{{username="{username_re}", instance=~"{host_re}{PORT_RE}"}} / {BYTES_PER_GIB})'
 
-    figures = usage_figures(
+    figures = _usage_figures(
         query,
         "proc",
         start_time,
