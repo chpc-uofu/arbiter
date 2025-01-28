@@ -66,7 +66,7 @@ def apply(request):
     if request.method == "POST":
         if not (username := request.POST.get("username")):
             return message_http("Username is required.",'error')
-        if not (host := request.POST.get("host")):
+        if not (host := request.POST.get("apply-host")):
             return message_http("Host is required.",'error')
         
         target = Target.objects.filter(username=username, host=host).first()

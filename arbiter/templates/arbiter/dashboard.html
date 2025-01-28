@@ -59,7 +59,7 @@
                     <hr class="box-divider">
                     <div class="apply-options">
                         <h3>Host</h3>
-                        <select name="host">
+                        <select name="apply-host">
                             <!-- <option value="all">All</option> -->
                             {% for host in agents %}
                             <option value="{{host}}">{{host}}</option>
@@ -80,7 +80,7 @@
                         <input type="button" value="Apply Limit" 
                             hx-post="{% url 'arbiter:apply' %}"
                             hx-swap="afterbegin" hx-target=".messagelist"
-                            hx-include="[name='host'],[name='username'],[name='prop'],[name='value']">
+                            hx-include="[name='apply-host'],[name='username'],[name='prop'],[name='value']">
                 </form>
             </div>
 
