@@ -9,6 +9,7 @@ import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
@@ -31,7 +32,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.humanize",
 
-    'arbiter',
+    'arbiter3.arbiter',
 ]
 
 MIDDLEWARE = [
@@ -44,7 +45,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "portal.urls"
+ROOT_URLCONF = "arbiter3.portal.urls"
 
 TEMPLATES = [
     {
@@ -62,7 +63,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "portal.wsgi.application"
+WSGI_APPLICATION = "arbiter3.portal.wsgi.application"
 
 
 # Database
@@ -112,7 +113,7 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = (
-  os.path.join(BASE_DIR / "portal", 'static'),
+  os.path.join(BASE_DIR, 'static'),
 )
 
 # Default primary key field type

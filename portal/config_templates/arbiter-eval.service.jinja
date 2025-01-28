@@ -1,0 +1,10 @@
+[Unit]
+Description=Arbiter Evaluation Loop
+After=network.target
+
+[Service]
+Type=simple
+Environment=DJANGO_SETTINGS_MODULE="portal.settings"
+WorkingDirectory=/opt/arbiter3
+ExecStart=/opt/arbiter3/venv/bin/python manage.py evaluate --seconds 30
+ExecReload=/bin/kill -s HUP $MAINPID

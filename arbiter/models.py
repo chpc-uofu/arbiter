@@ -209,7 +209,7 @@ class Violation(models.Model):
         return self.expiration - self.timestamp
     
     @property
-    def limits(self) -> Limits:
+    def limits(self) -> Limits:    
         tiers = self.policy.penalty_constraints['tiers']
         penalty_tier = min(self.offense_count-1, len(tiers)-1)
         
