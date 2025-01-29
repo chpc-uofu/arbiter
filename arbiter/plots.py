@@ -83,10 +83,12 @@ def _usage_figures(
         result = PROMETHEUS_CONNECTION.custom_query_range(query, start_time=start, end_time=end, step=step)
     except PrometheusApiClientException as e:
         logger.error(f'unable to create usage figures: {e}')
+        logger.info(f'query: {query}')
         return None
 
     if not result:
-        logger.warning(f"Unable to create usage figures: empty query result")
+        logger.warning(f"unable to create usage figures: empty query result")
+        logger.info(f'query: {query}')
         return None
 
     local_tz = get_current_timezone()
