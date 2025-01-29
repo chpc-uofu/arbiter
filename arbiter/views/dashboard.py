@@ -69,10 +69,7 @@ def apply(request):
         if not (host := request.POST.get("apply-host")):
             return message_http("Host is required.",'error')
         
-        target = Target.objects.filter(username=username, host=host).first()
-        if not target:
-            return message_http(f"No Target with name {username} on {host} found.",'error')
-        
+        target, created = Target.objects.get_or_create(username=username, host=host)
         if not (prop := request.POST.get("prop")):
             return message_http("Property is required.",'error')
         if not (value := request.POST.get("value")):
@@ -94,7 +91,9 @@ def apply(request):
         if status == http.HTTPStatus.OK:
             target.update_limit(prop, v)
             target.save()
-            return message_http(message, 'success')
+            if created:
+                return message_http(f"Applied property for new target {username} on {host}.")
+            return message_http(f"Applied property for target {username} on {host}.")
         
         return message_http(f'Unable to apply property: {message}', 'error')
 
