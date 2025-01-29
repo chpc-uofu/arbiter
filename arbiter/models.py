@@ -211,8 +211,11 @@ class Violation(models.Model):
     @property
     def limits(self) -> Limits:
         tiers = self.policy.penalty_constraints['tiers']
+
+        if self.policy.is_base_policy:
+            return tiers[0]
+
         penalty_tier = min(self.offense_count-1, len(tiers)-1)
-        
         return tiers[penalty_tier]
 
     @property
