@@ -7,6 +7,8 @@ import re
 from django.db.models import Q
 from django.utils import timezone
 
+from prometheus_api_client import PrometheusApiClientException
+
 from arbiter.utils import strip_port, get_uid, log_debug
 from arbiter.models import Target, Violation, Policy, Limits, Event, UNSET_LIMIT
 from arbiter.email import send_violation_email
@@ -92,8 +94,13 @@ def create_violation(target: Target, policy: Policy) -> Violation:
 def query_violations(policies: list[Policy]) -> list[Violation]:
     violations = []
     for policy in policies:
-        
-        response = PROMETHEUS_CONNECTION.custom_query(policy.query)
+
+        try:
+            response = PROMETHEUS_CONNECTION.custom_query(policy.query)
+        except PrometheusApiClientException as e:
+            logger.error(f"Unable to query violations: {e}")
+            return violations
+
         for result in response:
             cgroup = result["metric"]["cgroup"]
             matches = re.findall(r"^/user.slice/(user-\d+.slice)$", cgroup)
