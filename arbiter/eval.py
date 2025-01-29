@@ -210,10 +210,9 @@ def evaluate(policies=None):
     unexpired = unexpired.prefetch_related("policy")
 
     targets = Target.objects.all()
-    affected_hosts = {policy.domain: get_affected_hosts(policy.domain) for policy in policies}
     applicable_limits = {target: [] for target in targets}
     for v in unexpired:
-        for host in affected_hosts[v.policy.domain]:
+        for host in get_affected_hosts(v.policy.domain):
             target, _ = targets.get_or_create(unit=v.target.unit, host=host, username=v.target.username)
 
             if target not in applicable_limits:
