@@ -94,8 +94,9 @@ def apply(request):
         if status == http.HTTPStatus.OK:
             target.update_limit(prop, v)
             target.save()
-            
-        return message_http(f'{message}', status)
+            return message_http(message, 'success')
+        
+        return message_http(f'Unable to apply property: {message}', 'error')
 
 
 @permission_required('arbiter.execute_commands')
