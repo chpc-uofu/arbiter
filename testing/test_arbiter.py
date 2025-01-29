@@ -1,90 +1,15 @@
 import time
 import pytest
-import multiprocessing
-import paramiko
 import logging
-import math
 
-import django.db.models
-import django.utils.timezone
-
-import arbiter.models
-import arbiter.eval
-from arbiter.utils import bytes_to_gib
+from arbiter.eval import evaluate
 from arbiter.models import Target, Violation
 
-from testing.conf import *
-
-
-from testing.conf import *
-from testing.fixtures.policies import *
-from testing.fixtures.limits import *
-from testing.fixtures.penalties import *
-from testing.fixtures.targets import *
+from testing.util import create_violation, duration
 
 
 logger = logging.getLogger(__name__)
 logging.getLogger("paramiko").setLevel(logging.WARNING)
-
-
-# @pytest.fixture
-# def global_eval_cache():
-#     arbiter.eval.cache.clear()
-#     yield arbiter.eval.cache
-#     arbiter.eval.cache.clear()
-
-
-########## HELPER FUNCTIONS ##########
-def launch_ssh_process(comm: str, user: str):
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(
-        TEST_ADDRESS,
-        username=user,
-        password=TEST_USER_PASSWORD,
-        allow_agent=False,
-    )
-    stdin, stdout, stderr = ssh.exec_command(comm)
-    stdin.close()
-    assert stderr.channel.recv_exit_status() == 0
-
-
-def create_violating_command(policy: arbiter.models.Policy) -> str:
-    command = "stress-ng"
-    cpu = policy.query_data.get("params", {}).get("cpu_threshold", None)
-    if cpu:
-        command += f" --cpu {math.ceil(cpu)}"
-    mem = policy.query_data.get("params", {}).get("mem_threshold", None)
-    if mem:
-        command += f" --vm 1 --vm-bytes {math.ceil(bytes_to_gib(mem))}g --vm-populate --vm-keep --vm-madvise willneed"
-    time = int(policy.lookback.total_seconds())
-    if not time:
-        time = 10
-    command += f" --timeout {time}s"
-    return command
-
-
-def get_violations(target: arbiter.eval.Target):
-    now_tz = django.utils.timezone.make_aware(django.utils.timezone.datetime.now())
-    violations = arbiter.models.Violation.objects.filter(
-        unit=target.unit,
-        host=target.host,
-        expiration__gt=now_tz,
-    )
-    return violations
-
-
-def create_violation(target, policy):
-    comm = create_violating_command(policy)
-    window = int(policy.lookback.total_seconds())
-    user = target.unit.split(".")[0]
-    p = multiprocessing.Process(target=launch_ssh_process, args=(comm, user))
-    p.start()
-    return window + 1
-
-
-def duration(policy):
-    return int(policy.penalty_duration.total_seconds()) + 1
 
 
 ##################################################
@@ -99,7 +24,7 @@ def test_single_target_single_policy(short_low_harsh_policy, target1):
     time.sleep(runtime)
 
     # eval and make sure db target was created
-    arbiter.eval.evaluate([short_low_harsh_policy])
+    evaluate([short_low_harsh_policy])
     db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
     assert db_target1 != None  # here
 
@@ -109,7 +34,7 @@ def test_single_target_single_policy(short_low_harsh_policy, target1):
 
     # now wait out violation and make sure limits were removed
     time.sleep(duration(short_low_harsh_policy))
-    arbiter.eval.evaluate([short_low_harsh_policy])
+    evaluate([short_low_harsh_policy])
     db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
     assert db_target1 != None
 
@@ -128,7 +53,7 @@ def test_single_target_overlapping_policy(
     time.sleep(runtime)
 
     # eval and make sure db target was created
-    arbiter.eval.evaluate([short_low_harsh_policy, short_low_medium_policy])
+    evaluate([short_low_harsh_policy, short_low_medium_policy])
     db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
     assert db_target1 != None
 
@@ -141,7 +66,7 @@ def test_single_target_overlapping_policy(
     time.sleep(waiting)
 
     # eval and make sure limits were removed
-    arbiter.eval.evaluate([short_low_harsh_policy, short_low_medium_policy])
+    evaluate([short_low_harsh_policy, short_low_medium_policy])
     db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
     assert db_target1 != None
     assert len(db_target1.limits) == 0
@@ -159,7 +84,7 @@ def test_multiple_target_single_policy(
     time.sleep(max(runtime1, runtime2))
 
     # evaluate and grab db targets
-    arbiter.eval.evaluate([short_low_harsh_policy])
+    evaluate([short_low_harsh_policy])
     db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
     db_target2 = Target.objects.filter(unit=target2.unit, host=target2.host).first()
     assert db_target1 != None
@@ -172,7 +97,7 @@ def test_multiple_target_single_policy(
 
     # now wait out violation and re-evaluate
     time.sleep(duration(short_low_harsh_policy))
-    arbiter.eval.evaluate([short_low_harsh_policy])
+    evaluate([short_low_harsh_policy])
 
     # make sure limits got removed
     db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
@@ -196,7 +121,7 @@ def test_multiple_target_multiple_overlapping_policy(
     time.sleep(max(runtime1, runtime2))
 
     # evaluate and grab db targets
-    arbiter.eval.evaluate([short_low_harsh_policy, short_low_medium_policy])
+    evaluate([short_low_harsh_policy, short_low_medium_policy])
     db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
     db_target2 = Target.objects.filter(unit=target2.unit, host=target2.host).first()
     assert db_target1 != None
@@ -209,7 +134,7 @@ def test_multiple_target_multiple_overlapping_policy(
 
     # now wait out violation and re-evaluate
     time.sleep(max(duration(short_low_harsh_policy), duration(short_low_medium_policy)))
-    arbiter.eval.evaluate([short_low_harsh_policy, short_low_medium_policy])
+    evaluate([short_low_harsh_policy, short_low_medium_policy])
 
     # make sure limits got removed
     db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
@@ -231,7 +156,7 @@ def test_single_target_distinct_policy(
     time.sleep(runtime)
     
     # evaluate and grab db target
-    arbiter.eval.evaluate([short_low_harsh_policy, short_mid_soft_policy])
+    evaluate([short_low_harsh_policy, short_mid_soft_policy])
     db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
     assert db_target1 != None
 
@@ -241,7 +166,7 @@ def test_single_target_distinct_policy(
 
     # now wait out harsh violation and re-evaluate
     time.sleep(duration(short_low_harsh_policy))
-    arbiter.eval.evaluate([short_low_harsh_policy, short_mid_soft_policy])
+    evaluate([short_low_harsh_policy, short_mid_soft_policy])
 
     # penalty for violation of soft policy has a longer duration, so it is still active
     db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
@@ -266,7 +191,7 @@ def test_reviolation_while_in_violation_single_policy(short_low_unset_policy, ta
     time.sleep(runtime)
 
     # eval and make sure first violation applied then grab it
-    arbiter.eval.evaluate([short_low_unset_policy])
+    evaluate([short_low_unset_policy])
 
     target_policy_violations = Violation.objects.filter(
         target__unit=target1.unit,
@@ -279,7 +204,7 @@ def test_reviolation_while_in_violation_single_policy(short_low_unset_policy, ta
     # now continue bad behavior and see if new violation was made
     runtime = create_violation(target1, short_low_unset_policy)
     time.sleep(runtime / 2)
-    arbiter.eval.evaluate([short_low_unset_policy])
+    evaluate([short_low_unset_policy])
 
     # make sure no new violations were added for target with that policy
     assert not target_policy_violations.filter(
@@ -301,7 +226,7 @@ def test_violation_in_grace_single_policy(grace_no_lookback_policy, target1):
     time.sleep(runtime)
 
     # eval and make sure first violation applied then grab it
-    arbiter.eval.evaluate([grace_no_lookback_policy])
+    evaluate([grace_no_lookback_policy])
     target_policy_violations = Violation.objects.filter(
         target__unit=target1.unit,
         target__host=target1.host,
@@ -313,7 +238,7 @@ def test_violation_in_grace_single_policy(grace_no_lookback_policy, target1):
     # now continue bad behavior and see if new violation was made
     runtime = create_violation(target1, grace_no_lookback_policy)
     time.sleep(grace_no_lookback_policy.penalty_duration.total_seconds())
-    arbiter.eval.evaluate([grace_no_lookback_policy])
+    evaluate([grace_no_lookback_policy])
 
     # make sure no new violations were added for target with that policy
     assert not target_policy_violations.filter(
@@ -335,7 +260,7 @@ def test_violation_after_grace_single_policy(grace_no_lookback_policy, target1):
     time.sleep(runtime)
 
     # eval and make sure first violation applied then grab it
-    arbiter.eval.evaluate([grace_no_lookback_policy])
+    evaluate([grace_no_lookback_policy])
     target_policy_violations = Violation.objects.filter(
         target__unit=target1.unit,
         target__host=target1.host,
@@ -346,12 +271,12 @@ def test_violation_after_grace_single_policy(grace_no_lookback_policy, target1):
 
     # sleep until violation expires
     time.sleep(grace_no_lookback_policy.penalty_duration.total_seconds())
-    arbiter.eval.evaluate([grace_no_lookback_policy])
+    evaluate([grace_no_lookback_policy])
 
     # now continue bad behavior and see if new violation was made
     runtime = create_violation(target1, grace_no_lookback_policy)
     time.sleep(grace_no_lookback_policy.grace_period.total_seconds())
-    arbiter.eval.evaluate([grace_no_lookback_policy])
+    evaluate([grace_no_lookback_policy])
 
     # make sure a new violations was added for target with that policy
     assert target_policy_violations.filter(
@@ -385,19 +310,19 @@ def test_violation_in_grace_multiple_policy(
     time.sleep(runtime)
 
     # eval and make sure first violation applied then grab it
-    arbiter.eval.evaluate([grace_no_lookback_policy])
+    evaluate([grace_no_lookback_policy])
 
     first_violation = target_grace_policy_violations.first()
     assert first_violation != None
 
     # sleep until violation expires
     time.sleep(grace_no_lookback_policy.penalty_duration.total_seconds())
-    arbiter.eval.evaluate([grace_no_lookback_policy])
+    evaluate([grace_no_lookback_policy])
 
     # now continue bad behavior and see if new violation was made
     runtime = create_violation(target1, grace_no_lookback_policy)
     time.sleep(grace_no_lookback_policy.grace_period.total_seconds() - 2)
-    arbiter.eval.evaluate([grace_no_lookback_policy, short_low_soft_policy])
+    evaluate([grace_no_lookback_policy, short_low_soft_policy])
 
     # make sure no new violations for policy in grace, but new violation for other policy not in grace
     assert not target_grace_policy_violations.filter(
@@ -428,7 +353,7 @@ def test_violation_in_grace_single_policy_multiple_targets(
     time.sleep(runtime)
 
     # eval and make sure first violation applied then grab it
-    arbiter.eval.evaluate([grace_no_lookback_policy])
+    evaluate([grace_no_lookback_policy])
     target1_policy_violations = Violation.objects.filter(
         target__unit=target1.unit,
         target__host=target1.host,
@@ -441,7 +366,7 @@ def test_violation_in_grace_single_policy_multiple_targets(
     runtime = create_violation(target1, grace_no_lookback_policy)
     runtime = create_violation(target2, grace_no_lookback_policy)
     time.sleep(grace_no_lookback_policy.penalty_duration.total_seconds() + 2)
-    arbiter.eval.evaluate([grace_no_lookback_policy])
+    evaluate([grace_no_lookback_policy])
 
     # make sure no new violations were added for target the original target, but one was for the second target
     target2_policy_violations = Violation.objects.filter(
@@ -475,7 +400,7 @@ def test_repeat_violation_scales(long_lookback_no_grace_policy, target1):
     time.sleep(runtime)
 
     # eval and make sure first violation applied then grab it
-    arbiter.eval.evaluate([long_lookback_no_grace_policy])
+    evaluate([long_lookback_no_grace_policy])
     target_policy_violations = Violation.objects.filter(
         target__unit=target1.unit,
         target__host=target1.host,
@@ -487,7 +412,7 @@ def test_repeat_violation_scales(long_lookback_no_grace_policy, target1):
     # now continue bad behavior and see if new violation was made
     runtime = create_violation(target1, long_lookback_no_grace_policy)
     time.sleep(long_lookback_no_grace_policy.penalty_duration.total_seconds())
-    arbiter.eval.evaluate([long_lookback_no_grace_policy])
+    evaluate([long_lookback_no_grace_policy])
 
     # make sure a new violation was added for target with that policy
     second_violation = target_policy_violations.filter(
@@ -530,7 +455,7 @@ def test_repeat_violation_scales_multiple_targets(
     time.sleep(runtime)
 
     # eval and make sure first violation applied then grab it
-    arbiter.eval.evaluate([long_lookback_no_grace_policy])
+    evaluate([long_lookback_no_grace_policy])
 
     first_violation_target1 = target1_policy_violations.first()
     assert first_violation_target1 != None
@@ -539,7 +464,7 @@ def test_repeat_violation_scales_multiple_targets(
     runtime = create_violation(target1, long_lookback_no_grace_policy)
     runtime = create_violation(target2, long_lookback_no_grace_policy)
     time.sleep(long_lookback_no_grace_policy.penalty_duration.total_seconds() + 1)
-    arbiter.eval.evaluate([long_lookback_no_grace_policy])
+    evaluate([long_lookback_no_grace_policy])
 
     # make sure a new violation was added for target with that policy
     second_violation_target1 = target1_policy_violations.filter(
@@ -578,7 +503,7 @@ def test_repeat_violation_scales_multiple_policy(
     time.sleep(runtime)
 
     # eval and make sure first violation applied then grab it
-    arbiter.eval.evaluate([long_lookback_no_grace_policy])
+    evaluate([long_lookback_no_grace_policy])
 
     target_long_policy_violations = Violation.objects.filter(
         target__unit=target1.unit,
@@ -597,7 +522,7 @@ def test_repeat_violation_scales_multiple_policy(
     # now continue bad behavior and see if new violation was made
     runtime = create_violation(target1, long_lookback_no_grace_policy)
     time.sleep(long_lookback_no_grace_policy.penalty_duration.total_seconds())
-    arbiter.eval.evaluate(
+    evaluate(
         [long_lookback_no_grace_policy, short_lookback_no_grace_policy]
     )
 
@@ -633,7 +558,7 @@ def test_short_lookback_forgets_old_violations(short_lookback_no_grace_policy, t
     time.sleep(runtime)
 
     # eval and make sure first violation applied then grab it
-    arbiter.eval.evaluate([short_lookback_no_grace_policy])
+    evaluate([short_lookback_no_grace_policy])
     target_policy_violations = Violation.objects.filter(
         target__unit=target1.unit,
         target__host=target1.host,
@@ -645,7 +570,7 @@ def test_short_lookback_forgets_old_violations(short_lookback_no_grace_policy, t
     # now continue bad behavior and see if new violation was made
     runtime = create_violation(target1, short_lookback_no_grace_policy)
     time.sleep(short_lookback_no_grace_policy.penalty_duration.total_seconds() + 1)
-    arbiter.eval.evaluate([short_lookback_no_grace_policy])
+    evaluate([short_lookback_no_grace_policy])
 
     # make sure a new violation was added for target with that policy
     second_violation = target_policy_violations.filter(
@@ -661,7 +586,7 @@ def test_short_lookback_forgets_old_violations(short_lookback_no_grace_policy, t
     runtime = create_violation(target1, short_lookback_no_grace_policy)
     time.sleep(runtime)
 
-    arbiter.eval.evaluate([short_lookback_no_grace_policy])
+    evaluate([short_lookback_no_grace_policy])
 
     # make sure a new violation was added for target with that policy
     third_violation = target_policy_violations.filter(
@@ -684,7 +609,7 @@ def test_lookback_and_grace(long_lookback_with_grace_policy, target1):
     time.sleep(runtime)
 
     # eval and make sure first violation applied then grab it
-    arbiter.eval.evaluate([long_lookback_with_grace_policy])
+    evaluate([long_lookback_with_grace_policy])
     target_policy_violations = Violation.objects.filter(
         target__unit=target1.unit,
         target__host=target1.host,
@@ -696,7 +621,7 @@ def test_lookback_and_grace(long_lookback_with_grace_policy, target1):
     # now continue bad behavior and see if new violation was made
     runtime = create_violation(target1, long_lookback_with_grace_policy)
     time.sleep(long_lookback_with_grace_policy.penalty_duration.total_seconds())
-    arbiter.eval.evaluate([long_lookback_with_grace_policy])
+    evaluate([long_lookback_with_grace_policy])
 
     # make sure no new violations were added for target with that policy
     assert not target_policy_violations.filter(
@@ -709,7 +634,7 @@ def test_lookback_and_grace(long_lookback_with_grace_policy, target1):
     time.sleep(runtime)
 
     # make sure a new violation was added for target with that policy
-    arbiter.eval.evaluate([long_lookback_with_grace_policy])
+    evaluate([long_lookback_with_grace_policy])
     second_violation = target_policy_violations.filter(
         timestamp__gt=first_violation.timestamp
     ).first()
