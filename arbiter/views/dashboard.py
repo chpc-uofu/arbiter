@@ -11,7 +11,7 @@ from django.contrib.auth.decorators import permission_required
 
 from arbiter.conf import PROMETHEUS_CONNECTION
 from arbiter.utils import strip_port, cores_to_usec, gib_to_bytes
-from arbiter.models import Violation, Event, Limits, Target, CPU_QUOTA, MEMORY_MAX, UNSET_LIMIT
+from arbiter.models import Violation, Event, Target, CPU_QUOTA, MEMORY_MAX
 from arbiter.eval import set_property
 
 from .nav import navbar
@@ -35,13 +35,11 @@ def view_dashboard(request):
     agents = []
     try:
         result = PROMETHEUS_CONNECTION.custom_query('up{job=~"cgroup-warden.*"} > 0')
-        agents = [strip_port(metric["metric"]["instance"]) for metric in result]
+        agents = [metric["metric"]["instance"] for metric in result]
     except Exception as e:
         LOGGER.error(f"Could not query prometheus for cgroup-agent instances: {e}")
 
     last_eval = Event.objects.order_by("timestamp").last()
-
-    #limits: Limits = {CPU_QUOTA: UNSET_LIMIT, MEMORY_MAX: UNSET_LIMIT}
 
     prop_list = {"CPU Quota (cores)": CPU_QUOTA, "Memory Quota (GiB)": MEMORY_MAX}
 
