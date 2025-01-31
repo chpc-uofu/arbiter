@@ -15,16 +15,19 @@ from arbiter.conf import PROMETHEUS_CONNECTION
 logger = logging.getLogger(__name__)
 
 
+class QueryError(Exception):
+    pass
+
+
 def usage_graph(query: str, start: datetime, end: datetime, step: str, color_by: str, threshold: float | int | None) -> Figure:  
+
     try:
         result = PROMETHEUS_CONNECTION.custom_query_range(query, start_time=start, end_time=end, step=step)
     except PrometheusApiClientException as e:
-        logger.error(f'unable to create usage figures: {e}')
-        return None
-    
+        raise QueryError(f"Could not run query: {e}")
+
     if not result:
-        logger.warning(f"unable to create usage figures: empty query result")
-        return None
+        raise QueryError(f"Query returned no results: {query}")
 
     start, end = time_aligned_and_local(start, end, step)
     df = MetricRangeDataFrame(result)
@@ -33,19 +36,18 @@ def usage_graph(query: str, start: datetime, end: datetime, step: str, color_by:
     df = df.sort_values(by=sort_by)
 
     graph = px.area(df, y="value", line_shape="hv", color=color_by)
+    graph.update_layout(xaxis_title="")
 
     for i in range(len(graph['data'])):
         graph['data'][i]['line']['width'] = 0
 
-
     if threshold:
         graph.add_hline(threshold, line={"dash": "dot", "color": "grey"})
-
 
     return graph
 
 
-def cpu_usage_figures(host: str, start: datetime, end: datetime, step="30s", username: str = None, threshold: float = None) -> Figure | None:
+def cpu_usage_figure(host: str, start: datetime, end: datetime, step="30s", username: str = None, threshold: float = None) -> Figure | None:
     if username:
         query = f'rate(cgroup_warden_proc_cpu_usage_seconds{{instance="{host}", username="{username}"}}[{step}])'
         color_by = "proc"
@@ -53,10 +55,13 @@ def cpu_usage_figures(host: str, start: datetime, end: datetime, step="30s", use
         query = f'rate(cgroup_warden_cpu_usage_seconds{{instance="{host}"}}[{step}])'
         color_by = "username"
 
-    return usage_graph(query, start, end, step, color_by, threshold)
+    figure = usage_graph(query, start, end, step, color_by, threshold)
+    title = f"CPU usage for {username} on {host}" if username else f"CPU usage on {host}"
+    figure.update_layout(title=title, yaxis_title="Cores")
+    return figure
 
 
-def mem_usage_figures(host: str, start: datetime, end: datetime, step="30s", username: str = None, threshold: int = None) -> Figure | None:
+def mem_usage_figure(host: str, start: datetime, end: datetime, step="30s", username: str = None, threshold: int = None) -> Figure | None:
     if username:
         query = f'cgroup_warden_proc_memory_usage_bytes{{instance="{host}", username="{username}"}} / {BYTES_PER_GIB}'
         color_by = "proc"
@@ -64,20 +69,26 @@ def mem_usage_figures(host: str, start: datetime, end: datetime, step="30s", use
         query = f'cgroup_warden_memory_usage_bytes{{instance="{host}"}} / {BYTES_PER_GIB}'
         color_by = "username"
     
-    return usage_graph(query, start, end, step, color_by, threshold)
+    figure = usage_graph(query, start, end, step, color_by, threshold)
+    title = f"Memory usage for {username} on {host}" if username else f"CPU usage on {host}"
+    figure.update_layout(title=title, yaxis_title="GiB")
+    return figure
 
 
-def violation_cpu_usage_figures(violation: Violation, step: str = "30s") -> Figure | None:
+def violation_cpu_usage_figure(violation: Violation, step: str = "30s") -> Figure | None:
     username = violation.target.username
     host = violation.target.host
     start = violation.timestamp - violation.policy.lookback
     end = violation.timestamp
     step = align_with_prom_limit(start, end, step)
     threshold = violation.policy.cpu_threshold
-    return cpu_usage_figures(host, start, end, step, username, threshold)
+    figure = cpu_usage_figure(host, start, end, step, username, threshold)
+    title = f"CPU usage for {username} on {host}"
+    figure.update_layout(title=title, yaxis_title="Cores")
+    return figure
 
 
-def violation_mem_usage_figures(violation: Violation, step: str = "30s") -> Figure | None:
+def violation_mem_usage_figure(violation: Violation, step: str = "30s") -> Figure | None:
     username = violation.target.username
     host = violation.target.host
     start = violation.timestamp - violation.policy.lookback
@@ -85,7 +96,11 @@ def violation_mem_usage_figures(violation: Violation, step: str = "30s") -> Figu
     step = align_with_prom_limit(start, end, step)
     if threshold := violation.policy.mem_threshold:
         threshold = bytes_to_gib(threshold)
-    return mem_usage_figures(host, start, end, step, username, threshold)
+    figure = mem_usage_figure(host, start, end, step, username, threshold)
+    title = f"Memory usage for {username} on {host}"
+    figure.update_layout(title=title, yaxis_title="GiB")
+    return figure
+
 
 
 def time_aligned_and_local(start: datetime, end: datetime, step: datetime) -> tuple[datetime,datetime]:
