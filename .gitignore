@@ -11,3 +11,4 @@ etc/*
 !etc/config.toml
 !etc/arbiter-web.service
 !etc/arbiter-eval.service
+.conf.toml

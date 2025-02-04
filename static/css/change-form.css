@@ -3,7 +3,7 @@ form{
     flex-direction: column;
 }
 
-form div {
+form div, .form-row {
     display: flex;
     flex-direction: row;
     /* display: grid;
@@ -12,12 +12,12 @@ form div {
     padding: 10px;
 }
 
-form div input{
+form div input, .field-value{
     /* grid-column: 2; */
     width: fit-content;
 }
 
-form div label{
+form div label, .form-row label{
     display: block;
     /* grid-column: 1; */
     width: 20%;

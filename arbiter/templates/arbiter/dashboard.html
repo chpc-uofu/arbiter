@@ -3,9 +3,8 @@
 
 {% block extrastyle %}
 {{block.super}}
-<script src="https://unpkg.com/htmx.org@1.9.6"
-    integrity="sha384-FhXw7b6AlE/jyjlZH5iHa/tTe9EpJ1Y55RjcgPbjeWMskSxZt1v9qkxLJWNJaGni"
-    crossorigin="anonymous"></script>
+    <script src="{% static 'js/htmx.min.js' %}"></script>
+    <script src="{% static 'js/plotly.min.js' %}"></script>
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
 {% endblock %}
 {% load humanize %}
@@ -27,8 +26,6 @@
             </div>
 
             <div class="commands-box">
-                <!-- <h3>Commands:</h3>
-                <hr class="box-divider"> -->
                 <div class="commands-list">
                     <form>
                         {% csrf_token %}
@@ -129,7 +126,7 @@
                     <div class="label-input-box">
                         <h3>Host:</h3>
                         <select name="host" id="usage-host">
-                            <option value="all">All</option>
+                            <!-- <option value="all">All</option> -->
                             {% for host in agents %}
                             <option value="{{host}}">{{host}}</option>
                             {% endfor %}
