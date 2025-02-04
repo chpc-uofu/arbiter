@@ -59,7 +59,7 @@ def create_graph_violation(request, figure_func, violation_id):
 
 def violation_cpu_usage(request, violation_id):
     try:
-        figure = create_graph_violation(request, plots.cpu_usage_figure, violation_id)
+        figure = create_graph_violation(request, plots.violation_cpu_usage_figure, violation_id)
     except (PermissionError, Violation.DoesNotExist, plots.QueryError) as e:
         return render(request, "arbiter/graph.html", context=dict(error=e))
     return render_figure(figure, request)
@@ -67,7 +67,7 @@ def violation_cpu_usage(request, violation_id):
 
 def violation_memory_usage(request, violation_id):
     try:
-        figure = create_graph_violation(request, plots.mem_usage_figure, violation_id)
+        figure = create_graph_violation(request, plots.violation_mem_usage_figure, violation_id)
     except (PermissionError, Violation.DoesNotExist, plots.QueryError) as e:
         return render(request, "arbiter/graph.html", context=dict(error=e))
     return render_figure(figure, request)

@@ -44,13 +44,6 @@ def get_uid(unit: str) -> int | None:
     return int(match.group(1))
 
 
-def strip_port(host: str) -> str:
-    """
-    Strips the port from a host string
-    """
-    return host.split(":")[0]
-
-
 def default_user_lookup(username: str) -> tuple[str, str, str]:
     realname = default_realname_lookup(username=username)
     email = default_email_lookup(username=username)

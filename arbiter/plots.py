@@ -47,11 +47,12 @@ def usage_graph(query: str, start: datetime, end: datetime, step: str, color_by:
 
 
 def cpu_usage_figure(host: str, start: datetime, end: datetime, step="30s", username: str = None, threshold: float = None) -> Figure | None:
+    host = host_re(host)
     if username:
-        query = f'rate(cgroup_warden_proc_cpu_usage_seconds{{instance="{host}", username="{username}"}}[{step}])'
+        query = f'rate(cgroup_warden_proc_cpu_usage_seconds{{instance=~"{host}", username="{username}"}}[{step}])'
         color_by = "proc"
     else:
-        query = f'rate(cgroup_warden_cpu_usage_seconds{{instance="{host}"}}[{step}])'
+        query = f'rate(cgroup_warden_cpu_usage_seconds{{instance=~"{host}"}}[{step}])'
         color_by = "username"
 
     figure = usage_graph(query, start, end, step, color_by, threshold)
@@ -61,22 +62,23 @@ def cpu_usage_figure(host: str, start: datetime, end: datetime, step="30s", user
 
 
 def mem_usage_figure(host: str, start: datetime, end: datetime, step="30s", username: str = None, threshold: int = None) -> Figure | None:
+    host = host_re(host)
     if username:
-        query = f'cgroup_warden_proc_memory_usage_bytes{{instance="{host}", username="{username}"}} / {BYTES_PER_GIB}'
+        query = f'cgroup_warden_proc_memory_usage_bytes{{instance=~"{host}", username="{username}"}} / {BYTES_PER_GIB}'
         color_by = "proc"
     else:    
-        query = f'cgroup_warden_memory_usage_bytes{{instance="{host}"}} / {BYTES_PER_GIB}'
+        query = f'cgroup_warden_memory_usage_bytes{{instance=~"{host}"}} / {BYTES_PER_GIB}'
         color_by = "username"
     
     figure = usage_graph(query, start, end, step, color_by, threshold)
-    title = f"Memory usage for {username} on {host}" if username else f"CPU usage on {host}"
+    title = f"Memory usage for {username} on {host}" if username else f"Memory usage on {host}"
     figure.update_layout(title=title, yaxis_title="GiB")
     return figure
 
 
 def violation_cpu_usage_figure(violation: Violation, step: str = "30s") -> Figure | None:
     username = violation.target.username
-    host = violation.target.host
+    host = violation.target.host 
     start = violation.timestamp - violation.policy.lookback
     end = violation.timestamp
     step = align_with_prom_limit(start, end, step)
@@ -136,3 +138,6 @@ def align_with_prom_limit(start: datetime, end: datetime, step: str) -> str:
     else:
         return step
 
+
+def host_re(hostname :str) -> str:
+    return f"^{hostname}(:[0-9]{{1,5}})?$"
