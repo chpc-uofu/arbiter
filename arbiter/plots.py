@@ -11,7 +11,6 @@ from arbiter.models import Violation
 from arbiter.utils import bytes_to_gib, BYTES_PER_GIB
 from arbiter.conf import PROMETHEUS_CONNECTION
 
-
 logger = logging.getLogger(__name__)
 
 
