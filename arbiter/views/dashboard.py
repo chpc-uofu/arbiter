@@ -35,7 +35,7 @@ def view_dashboard(request):
     agents = []
     try:
         result = PROMETHEUS_CONNECTION.custom_query('up{job=~"cgroup-warden.*"} > 0')
-        agents = [metric["metric"]["instance"] for metric in result]
+        agents = [strip_port(metric["metric"]["instance"]) for metric in result]
     except Exception as e:
         LOGGER.error(f"Could not query prometheus for cgroup-agent instances: {e}")
 
