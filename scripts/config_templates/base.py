@@ -3,12 +3,12 @@ Django settings for arbiterportal project.
 """
 
 from pathlib import Path
-
+import arbiter3.portal
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
-
+BASE_DIR = Path(__file__).resolve().parent
+PORTAL_DIR = os.path.dirname(arbiter3.portal.__file__)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -19,7 +19,7 @@ SECRET_KEY = 'changeme'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'host.docker.internal']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 # Application definition
 
@@ -32,7 +32,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.humanize",
 
-    'arbiter3.arbiter',
+    'arbiter',
 ]
 
 MIDDLEWARE = [
@@ -113,7 +113,7 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = (
-  os.path.join(BASE_DIR, 'static'),
+  os.path.join(PORTAL_DIR, 'static'),
 )
 
 # Default primary key field type

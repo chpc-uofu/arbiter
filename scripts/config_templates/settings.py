@@ -4,7 +4,7 @@ import logging
 
 from django.core.exceptions import ImproperlyConfigured
 
-from arbiter3.portal.base import *
+from base import *
 
 
 logger = logging.getLogger(__name__)
