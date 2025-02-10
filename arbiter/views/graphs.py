@@ -23,7 +23,11 @@ def create_graph(request, figure_func):
     if start >= end:
         raise InvalidRequest("Given start time is after given end time")
     
-    step = request.GET.get("step-value", "30") + request.GET.get("step-unit", "s")
+    step_value = request.GET.get("step-value", "30")
+    if not step_value.isdigit():
+        raise InvalidRequest("step value must be a number")
+    
+    step = f'{step_value}{request.GET.get("step-unit", "s")}'
     step = plots.align_with_prom_limit(start, end, step)
 
     if not (host := request.GET.get("host")):

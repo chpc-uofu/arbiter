@@ -76,7 +76,7 @@ installation guide.
 See the [Prometheus](https://prometheus.io/docs/prometheus/latest/installation/) installation guide. 
 For general configuration, see [here](https://prometheus.io/docs/prometheus/latest/configuration/). 
 
-Each cgroup-warden instance needs to be scraped. For example, 
+Each cgroup-warden instance needs to be scraped. The job looks like:
 ```yaml
 scrape_configs:
   - job_name: 'cgroup-warden'
@@ -87,4 +87,15 @@ scrape_configs:
         - login2.yoursite.edu:2112
         - login3.yoursite.edu:2112
         - login4.yoursite.edu:2112
+    scheme: https
+
+    # recommended but optional, strip port from instance
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __address__
+        regex: '^(.*):[0-9]+$'
+        replacement: '${1}'
 ```
+
+- The recommended value of `scrape_interval` is `30s`. 
+- The job name **must** be `cgroup-warden` or have it as a prefix. 
