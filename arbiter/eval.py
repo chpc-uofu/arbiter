@@ -9,16 +9,14 @@ from django.utils import timezone
 
 from prometheus_api_client import PrometheusApiClientException
 
-from arbiter.utils import strip_port, get_uid, log_debug
+from arbiter.utils import split_port, get_uid, log_debug
 from arbiter.models import Target, Violation, Policy, Limits, Event, UNSET_LIMIT
 from arbiter.email import send_violation_email
 from arbiter.conf import (
     PROMETHEUS_CONNECTION,
     WARDEN_JOB,
     ARBITER_PERMISSIVE_MODE,
-    ARBITER_NOTIFY_USERS,
     ARBITER_MIN_UID,
-    ARBITER_ADMIN_EMAILS,
     WARDEN_VERIFY_SSL,
     WARDEN_USE_TLS,
     WARDEN_PORT,
@@ -31,9 +29,9 @@ logger = logging.getLogger(__name__)
 @log_debug
 async def set_property(target: Target, session: aiohttp.ClientSession, name: str, value: any) -> tuple[http.HTTPStatus, str]:
     if WARDEN_USE_TLS:
-        endpoint = f"https://{target.host}:{WARDEN_PORT}/control"
+        endpoint = f"https://{target.instance}/control"
     else:
-        endpoint = f"http://{target.host}:{WARDEN_PORT}/control"
+        endpoint = f"http://{target.instance}/control"
 
     payload = {"unit": target.unit, "property": {'name': name, 'value': value}}
 
@@ -108,13 +106,13 @@ def query_violations(policies: list[Policy]) -> list[Violation]:
                 logger.warning(f"invalid cgroup: {cgroup}")
                 continue
             unit = matches[0]
-            host = strip_port(result["metric"]["instance"])
+            host, port = split_port(result["metric"]["instance"])
             username = result["metric"]["username"]
 
             if get_uid(unit) < ARBITER_MIN_UID:
                 continue
 
-            target, created = Target.objects.get_or_create(unit=unit, host=host, username=username)
+            target, created = Target.objects.update_or_create(unit=unit, host=host, username=username, port=port)
             if created:
                 logger.info(f"new target {target}")
 
@@ -129,7 +127,7 @@ def query_violations(policies: list[Policy]) -> list[Violation]:
 def get_affected_hosts(domain) -> list[str]:
     up_query = f"up{{job=~'{WARDEN_JOB}', instance=~'{domain}'}}"
     result = PROMETHEUS_CONNECTION.custom_query(up_query)
-    return [strip_port(r["metric"]["instance"]) for r in result]
+    return [split_port(r["metric"]["instance"]) for r in result]
 
 
 @log_debug
@@ -219,8 +217,8 @@ def evaluate(policies=None):
     targets = Target.objects.all()
     applicable_limits = {target: [] for target in targets}
     for v in unexpired:
-        for host in get_affected_hosts(v.policy.domain):
-            target, _ = targets.get_or_create(unit=v.target.unit, host=host, username=v.target.username)
+        for host, port in get_affected_hosts(v.policy.domain):
+            target, _ = targets.update_or_create(unit=v.target.unit, host=host, username=v.target.username, port=port)
 
             if target not in applicable_limits:
                 applicable_limits[target] = []
