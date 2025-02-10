@@ -97,10 +97,5 @@ scrape_configs:
         replacement: '${1}'
 ```
 
-- The recommended value of `scrape_interval` is `30s`. This value **must** match the respective value in the arbiter config: 
-```toml
-[prometheus]
-scrape_interval=1m
-```
-
-Additionally the job name **must** be `cgroup-warden`.  
+- The recommended value of `scrape_interval` is `30s`. 
+- The job name **must** be `cgroup-warden` or have it as a prefix. 
