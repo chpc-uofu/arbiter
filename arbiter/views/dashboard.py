@@ -62,7 +62,7 @@ def apply(request):
         
         host, port = split_port(instance)
         
-        target, created = Target.objects.update_or_create(username=username, host=host, port=port)
+        target, created= Target.objects.update_or_create(host=host, username=username, defaults=dict(port=port))
         if not (prop := request.POST.get("prop")):
             return message_http("Property is required.",'error')
         if not (value := request.POST.get("value")):

@@ -19,7 +19,6 @@ from arbiter.conf import (
     ARBITER_MIN_UID,
     WARDEN_VERIFY_SSL,
     WARDEN_USE_TLS,
-    WARDEN_PORT,
     WARDEN_BEARER,
 )
 
@@ -112,7 +111,7 @@ def query_violations(policies: list[Policy]) -> list[Violation]:
             if get_uid(unit) < ARBITER_MIN_UID:
                 continue
 
-            target, created = Target.objects.update_or_create(unit=unit, host=host, username=username, port=port)
+            target, created= Target.objects.update_or_create(host=host, username=username, defaults=dict(port=port, unit=unit))
             if created:
                 logger.info(f"new target {target}")
 
@@ -218,7 +217,7 @@ def evaluate(policies=None):
     applicable_limits = {target: [] for target in targets}
     for v in unexpired:
         for host, port in get_affected_hosts(v.policy.domain):
-            target, _ = targets.update_or_create(unit=v.target.unit, host=host, username=v.target.username, port=port)
+            target, _ = targets.update_or_create(host=host, username=v.target.username, defaults=dict(port=port, unit=v.target.unit))
 
             if target not in applicable_limits:
                 applicable_limits[target] = []
