@@ -9,11 +9,6 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.module_loading import import_string
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from plotly.graph_objects import Figure
-
 
 logger = logging.getLogger(__name__)
 
