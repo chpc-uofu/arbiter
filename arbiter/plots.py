@@ -26,7 +26,7 @@ def usage_graph(query: str, start: datetime, end: datetime, step: str, color_by:
         raise QueryError(f"Could not run query: {e}")
 
     if not result:
-        raise QueryError(f"Query returned no results: {query}")
+        raise QueryError(f"Query returned no results: {query}. Try increasing step size.")
 
     start, end = time_aligned_and_local(start, end, step)
     df = MetricRangeDataFrame(result)
@@ -74,7 +74,7 @@ def mem_usage_figure(host: str, start: datetime, end: datetime, step="30s", user
     return figure
 
 
-def violation_cpu_usage_figure(violation: Violation, step: str = "30s") -> Figure | None:
+def violation_cpu_usage_figure(violation: Violation, step: str = "1m") -> Figure | None:
     username = violation.target.username
     host = violation.target.instance 
     start = violation.timestamp - violation.policy.lookback
@@ -87,7 +87,7 @@ def violation_cpu_usage_figure(violation: Violation, step: str = "30s") -> Figur
     return figure
 
 
-def violation_mem_usage_figure(violation: Violation, step: str = "30s") -> Figure | None:
+def violation_mem_usage_figure(violation: Violation, step: str = "1m") -> Figure | None:
     username = violation.target.username
     host = violation.target.instance
     start = violation.timestamp - violation.policy.lookback
