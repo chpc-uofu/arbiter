@@ -169,7 +169,7 @@ class Target(models.Model):
         verbose_name_plural = "Targets"
         constraints = [
             models.UniqueConstraint(
-                fields=["unit", "host", "username"], name="unique_target"
+                fields=["host", "username"], name="unique_target"
             ),
         ]
 
