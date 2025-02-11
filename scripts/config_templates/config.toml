@@ -12,7 +12,7 @@ permissive_mode = false
 notify_users = true
 host = 'your.mail.server.edu'
 port = '25'
-lookup_function = 'your.python.function'
+lookup_function = 'arbiter.utils.default_user_lookup'
 admin_emails = ['your.email@site.edu', 'other.email@site.edu']
 from_email = 'arbiter@site.edu'
 

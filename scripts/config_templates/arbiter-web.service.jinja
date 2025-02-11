@@ -5,9 +5,9 @@ After=network.target
 [Service]
 Type=notify
 RuntimeDirectory=gunicorn
-Environment=DJANGO_SETTINGS_MODULE="portal.settings"
-WorkingDirectory=/opt/arbiter3
-ExecStart=/opt/arbiter3/venv/bin/gunicorn portal.wsgi --workers=2 --timeout=180 --bind 0.0.0.0:8000 --certfile cert.pem --keyfile privkey.pem
+Environment=DJANGO_SETTINGS_MODULE="settings"
+WorkingDirectory={{ working_dir }}
+ExecStart={{ working_dir }}/manage.py runserver
 ExecReload=/bin/kill -s HUP $MAINPID
 KillMode=mixed
 TimeoutStopSec=180
