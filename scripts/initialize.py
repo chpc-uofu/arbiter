@@ -1,6 +1,7 @@
 import shutil, os, sys
-from jinja2 import Template, Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader
 from importlib.resources import files
+from arbiter3.scripts import config_templates
 
 def initialize_config():
     interpreter_path = sys.executable
@@ -18,8 +19,8 @@ def initialize_config():
     created_eval_service = os.path.join(arbiter_conf_dir, "arbiter-eval.service")
 
 
-    #for whatever reason despite outputing the same type, the config template str does not output the path unless joined with ""
-    jinja_env = Environment(loader=FileSystemLoader(str(config_template_dir.joinpath(""))))
+    #using import for path here bc import lib has inconsitent output for the directory
+    jinja_env = Environment(loader=FileSystemLoader(config_templates.__path__))
 
     # Config templates sources
     manage_template = str(config_template_dir.joinpath("manage.py"))
