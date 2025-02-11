@@ -190,8 +190,12 @@ class Target(models.Model):
             self.update_limit(propname, propvalue)
 
     @property
-    def instance(self):
+    def endpoint(self):
         return f'{self.host}:{self.port or WARDEN_PORT}'
+    
+    @property
+    def instance(self):
+        return f"{self.host}{f':{self.port}' if self.port else ''}"
 
     @property
     def uid(self):
