@@ -28,9 +28,9 @@ logger = logging.getLogger(__name__)
 @log_debug
 async def set_property(target: Target, session: aiohttp.ClientSession, name: str, value: any) -> tuple[http.HTTPStatus, str]:
     if WARDEN_USE_TLS:
-        endpoint = f"https://{target.instance}/control"
+        endpoint = f"https://{target.endpoint}/control"
     else:
-        endpoint = f"http://{target.instance}/control"
+        endpoint = f"http://{target.endpoint}/control"
 
     payload = {"unit": target.unit, "property": {'name': name, 'value': value}}
 
