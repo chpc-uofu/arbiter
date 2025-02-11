@@ -6,6 +6,7 @@ from django.utils import timezone
 
 from arbiter.utils import get_uid
 from arbiter.query import Q, increase, sum_by, sum_over_time
+from arbiter.conf import WARDEN_PORT
 
 
 Limits = dict[str, any]
@@ -168,11 +169,12 @@ class Target(models.Model):
         verbose_name_plural = "Targets"
         constraints = [
             models.UniqueConstraint(
-                fields=["unit", "host", "username"], name="unique_target"
+                fields=["host", "username"], name="unique_target"
             ),
         ]
 
     unit = models.CharField(max_length=255)
+    port = models.IntegerField(null=True)
     host = models.CharField(max_length=255)
     username = models.CharField(max_length=255)
     limits: Limits = models.JSONField(default=dict)
@@ -186,6 +188,10 @@ class Target(models.Model):
     def update_limits(self, limits: Limits):
         for propname, propvalue in limits.items(): 
             self.update_limit(propname, propvalue)
+
+    @property
+    def instance(self):
+        return f'{self.host}:{self.port or WARDEN_PORT}'
 
     @property
     def uid(self):
@@ -211,8 +217,11 @@ class Violation(models.Model):
     @property
     def limits(self) -> Limits:    
         tiers = self.policy.penalty_constraints['tiers']
+
+        if self.policy.is_base_policy:
+            return tiers[0]
+
         penalty_tier = min(self.offense_count-1, len(tiers)-1)
-        
         return tiers[penalty_tier]
 
     @property

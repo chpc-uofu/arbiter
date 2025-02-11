@@ -1,156 +1,81 @@
+from datetime import datetime
+
 from django.shortcuts import render
-from arbiter.models import  Violation
 from django.db.models import Count
 from django.utils.safestring import mark_safe
-import arbiter.plots as plots
 from django.utils import timezone
 from django.http import HttpResponse
 from arbiter.plots import Figures
 
-def user_proc_graph(request, usage_type):
+import arbiter.plots as plots
+from arbiter.models import Violation
+
+
+class InvalidRequest(Exception):
+    pass
+
+
+def create_graph(request, figure_func):
     if not request.user.has_perm("arbiter.change_dashboard"):
-        return render(
-            request,
-            "arbiter/graph.html",
-            context={"warning": "You do not have permission to view usage graphs"},
-        )
-
-    start_time = request.GET.get("start-time")
-    end_time = request.GET.get("end-time")
-    step = request.GET.get("step-value", "30") + request.GET.get("step-unit", "s")
-
-    if not end_time:
-        end_time = timezone.now()
-    else:
-        end_time = timezone.make_aware(timezone.datetime.fromisoformat(end_time))
-
-    if not start_time:
-        start_time = end_time - timezone.timedelta(minutes=10)
-    else:
-        start_time = timezone.make_aware(timezone.datetime.fromisoformat(start_time))
-
-    if start_time >= end_time:
-        return render(
-            request,
-            "arbiter/graph.html",
-            context={"error": "Given start time is after given end time"},
-        )
-
-    messages = {}
-    aligned_step = plots.align_with_prom_limit(start_time, end_time, step)
-
-    if aligned_step != step:
-        message = f"Step size exceeded Promtheus's limit of {plots.PROMETHUS_POINT_LIMIT} points, so was aligned to {aligned_step}"
-        messages["warning"] = message
-        step = aligned_step
-    username = request.GET.get("username", ".*")
-    host = request.GET.get("host", ".*")
-    if len(username) == 0:
-        username = ".*"
-    if host == "all":
-        host = ".*"
-
-    if host == ".*" and username == ".*":
-        return render(
-            request,
-            "arbiter/graph.html",
-            context={"warning": "Please specify either a username or host"},
-        )
-
-    if usage_type == plots.CPU_USAGE:
-        figures = plots.cpu_usage_figures(
-            username_re=username,
-            host_re=host,
-            start_time=start_time,
-            end_time=end_time,
-            step=step,
-        )
-    elif usage_type == plots.MEM_USAGE:
-        figures = plots.mem_usage_figures(
-            username_re=username,
-            host_re=host,
-            start_time=start_time,
-            end_time=end_time,
-            step=step,
-        )
+        raise PermissionError("You do not have permission to view usage graphs")
     
-    if not figures:
-        return render(
-            request,
-            "arbiter/graph.html",
-            context={
-                "error": "Unable to form graphs (check that Prometheus is up or that usage is nonempty)"
-            }
-        )
-    else:
-        fig, pie = figures
+    end = make_aware(request.GET.get("end-time")) or timezone.now()
+    start = make_aware(request.GET.get("start-time")) or end - timezone.timedelta(minutes=10)
+    if start >= end:
+        raise InvalidRequest("Given start time is after given end time")
+    
+    step_value = request.GET.get("step-value", "30")
+    if not step_value.isdigit():
+        raise InvalidRequest("step value must be a number")
+    
+    step = f'{step_value}{request.GET.get("step-unit", "s")}'
+    step = plots.align_with_prom_limit(start, end, step)
 
-    return render(
-        request,
-        "arbiter/graph.html",
-        context={
-            "graph": mark_safe(
-                fig.to_html(default_width="100%", default_height="400px")
-            ),
-            "pie": mark_safe(pie.to_html(default_width="100%", default_height="400px")),
-            **messages,
-        },
-    )
+    if not (host := request.GET.get("host")):
+        raise InvalidRequest("Hostname is required")
+
+    username = request.GET.get("username")
+
+    return figure_func(host=host, start=start, end=end, step=step, username=username)
 
 
 def user_proc_cpu_graph(request):
-    return user_proc_graph(request, plots.CPU_USAGE)
+    try:
+        figure = create_graph(request, plots.cpu_usage_figure)
+    except (PermissionError, InvalidRequest, plots.QueryError) as e:
+        return render(request, "arbiter/graph.html", context=dict(error=e))
+    return render_figure(figure, request)
 
 
 def user_proc_memory_graph(request):
-    return user_proc_graph(request, plots.MEM_USAGE)
+    try:
+        figure = create_graph(request, plots.mem_usage_figure)
+    except (PermissionError, InvalidRequest, plots.QueryError) as e:
+        return render(request, "arbiter/graph.html", context=dict(error=e))
+    return render_figure(figure, request)
 
 
-def violation_usage(request, violation_id, usage_type):
+def create_graph_violation(request, figure_func, violation_id):
     if not request.user.has_perm("arbiter.change_dashboard"):
-        return render(
-            request,
-            "arbiter/graph.html",
-            context={"warning": "You do not have permission to view usage graphs"},
-        )
-
-    violation = Violation.objects.filter(pk=violation_id).first()
-    if not violation:
-        return render(
-            request,
-            "arbiter/graph.html",
-            context={"error": "Violation not found"},
-        )
-
-    step = request.GET.get("step-value", "30") + request.GET.get("step-unit", "s")
-
-    graph, pie = plots.violation_usage_figures(violation, usage_type, step)
-
-    messages = {}
-
-    return render(
-        request,
-        "arbiter/graph.html",
-        context={
-            "graph": mark_safe(
-                graph.to_html(default_width="100%", default_height="400px",  include_plotlyjs=False)
-            ),
-            "pie": mark_safe(pie.to_html(default_width="100%", default_height="400px",  include_plotlyjs=False)),
-            **messages,
-        },
-    )
+        raise PermissionError("You do not have permission to view usage graphs")
+    violation = Violation.objects.get(pk=violation_id)
+    return figure_func(violation)
 
 
 def violation_cpu_usage(request, violation_id):
-    return violation_usage(request, violation_id, plots.CPU_USAGE)
+    try:
+        figure = create_graph_violation(request, plots.violation_cpu_usage_figure, violation_id)
+    except (PermissionError, Violation.DoesNotExist, plots.QueryError) as e:
+        return render(request, "arbiter/graph.html", context=dict(error=e))
+    return render_figure(figure, request)
 
 
 def violation_memory_usage(request, violation_id):
-    return violation_usage(request, violation_id, plots.MEM_USAGE)
-
-
-def apply_property_for_user(request):
-    return render(request, "arbiter/message.html")
+    try:
+        figure = create_graph_violation(request, plots.violation_mem_usage_figure, violation_id)
+    except (PermissionError, Violation.DoesNotExist, plots.QueryError) as e:
+        return render(request, "arbiter/graph.html", context=dict(error=e))
+    return render_figure(figure, request)
 
 
 def violation_metrics_scrape(request):
@@ -171,3 +96,20 @@ def violation_metrics_scrape(request):
         exported_str += f'{metric_name}{{policy="{policy_name}", offense_count="{offense_count}"}} {violation_count}'
 
     return HttpResponse(exported_str, content_type="text")
+
+
+def make_aware(time: datetime | None) -> datetime | None:
+    if not time:
+        return None
+    else:
+        return timezone.make_aware(timezone.datetime.fromisoformat(time))
+
+
+def render_figure(figure, request):
+    context = dict()
+    if figure:
+        context["graph"] = mark_safe(figure.to_html(default_width="100%", default_height="400px"))
+    else:
+        context["error"] = 'unable to generate graph'
+
+    return render(request, "arbiter/graph.html", context=context)

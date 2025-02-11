@@ -7,19 +7,18 @@ import re
 from django.db.models import Q
 from django.utils import timezone
 
-from arbiter.utils import strip_port, get_uid, log_debug
+from prometheus_api_client import PrometheusApiClientException
+
+from arbiter.utils import split_port, get_uid, log_debug
 from arbiter.models import Target, Violation, Policy, Limits, Event, UNSET_LIMIT
 from arbiter.email import send_violation_email
 from arbiter.conf import (
     PROMETHEUS_CONNECTION,
     WARDEN_JOB,
     ARBITER_PERMISSIVE_MODE,
-    ARBITER_NOTIFY_USERS,
     ARBITER_MIN_UID,
-    ARBITER_ADMIN_EMAILS,
     WARDEN_VERIFY_SSL,
     WARDEN_USE_TLS,
-    WARDEN_PORT,
     WARDEN_BEARER,
 )
 
@@ -29,9 +28,9 @@ logger = logging.getLogger(__name__)
 @log_debug
 async def set_property(target: Target, session: aiohttp.ClientSession, name: str, value: any) -> tuple[http.HTTPStatus, str]:
     if WARDEN_USE_TLS:
-        endpoint = f"https://{target.host}:{WARDEN_PORT}/control"
+        endpoint = f"https://{target.instance}/control"
     else:
-        endpoint = f"http://{target.host}:{WARDEN_PORT}/control"
+        endpoint = f"http://{target.instance}/control"
 
     payload = {"unit": target.unit, "property": {'name': name, 'value': value}}
 
@@ -45,7 +44,7 @@ async def set_property(target: Target, session: aiohttp.ClientSession, name: str
             json=payload,
             timeout=5,
             headers=auth_header,
-            verify_ssl=WARDEN_VERIFY_SSL,
+            ssl=WARDEN_VERIFY_SSL,
         ) as response:
             status = response.status
             message = await response.text()
@@ -92,8 +91,13 @@ def create_violation(target: Target, policy: Policy) -> Violation:
 def query_violations(policies: list[Policy]) -> list[Violation]:
     violations = []
     for policy in policies:
-        
-        response = PROMETHEUS_CONNECTION.custom_query(policy.query)
+
+        try:
+            response = PROMETHEUS_CONNECTION.custom_query(policy.query)
+        except PrometheusApiClientException as e:
+            logger.error(f"Unable to query violations: {e}")
+            return violations
+
         for result in response:
             cgroup = result["metric"]["cgroup"]
             matches = re.findall(r"^/user.slice/(user-\d+.slice)$", cgroup)
@@ -101,13 +105,13 @@ def query_violations(policies: list[Policy]) -> list[Violation]:
                 logger.warning(f"invalid cgroup: {cgroup}")
                 continue
             unit = matches[0]
-            host = strip_port(result["metric"]["instance"])
+            host, port = split_port(result["metric"]["instance"])
             username = result["metric"]["username"]
 
             if get_uid(unit) < ARBITER_MIN_UID:
                 continue
 
-            target, created = Target.objects.get_or_create(unit=unit, host=host, username=username)
+            target, created= Target.objects.update_or_create(host=host, username=username, defaults=dict(port=port, unit=unit))
             if created:
                 logger.info(f"new target {target}")
 
@@ -122,7 +126,7 @@ def query_violations(policies: list[Policy]) -> list[Violation]:
 def get_affected_hosts(domain) -> list[str]:
     up_query = f"up{{job=~'{WARDEN_JOB}', instance=~'{domain}'}}"
     result = PROMETHEUS_CONNECTION.custom_query(up_query)
-    return [strip_port(r["metric"]["instance"]) for r in result]
+    return [split_port(r["metric"]["instance"]) for r in result]
 
 
 @log_debug
@@ -210,11 +214,10 @@ def evaluate(policies=None):
     unexpired = unexpired.prefetch_related("policy")
 
     targets = Target.objects.all()
-    affected_hosts = {policy.domain: get_affected_hosts(policy.domain) for policy in policies}
     applicable_limits = {target: [] for target in targets}
     for v in unexpired:
-        for host in affected_hosts[v.policy.domain]:
-            target, _ = targets.get_or_create(unit=v.target.unit, host=host, username=v.target.username)
+        for host, port in get_affected_hosts(v.policy.domain):
+            target, _ = targets.update_or_create(host=host, username=v.target.username, defaults=dict(port=port, unit=v.target.unit))
 
             if target not in applicable_limits:
                 applicable_limits[target] = []

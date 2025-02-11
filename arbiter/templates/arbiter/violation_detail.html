@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block content %}
-<form action="{{ request.path }}" method="post"></form>
+<form action="{{ request.path }}" method="post">
     <div class="form-row">
         <label>Violator:</label> <div class= "field-value">{{ violation.target }}</div>
     </div>
@@ -37,18 +37,21 @@
     <div class="form-row">
         <label>Is Base Status:</label> <div class= "field-value">{{ violation.is_base_status}}</div>
     </div>
-    <div class="form-row">
-        <label>CPU Usage:</label> 
-        <div class= "field-value">
-            <div hx-get="{% url 'arbiter:violation-proc-cpu-graph' violation.id%}" hx-trigger="load" hx-target="this" hx-swap="innerHTML" ></div>
+
+    {% if not violation.policy.is_base_policy %}
+        <div class="form-row">
+            <label>CPU Usage:</label> 
+            <div class= "field-value">
+                <div hx-get="{% url 'arbiter:violation-proc-cpu-graph' violation.id%}" hx-trigger="load" hx-target="this" hx-swap="innerHTML" ></div>
+            </div>
         </div>
-    </div>
-    <div class="form-row">
-        <label>Memory Usage:</label> 
-        <div class= "field-value">
-            <div hx-get="{% url 'arbiter:violation-proc-memory-graph' violation.id%}" hx-trigger="load" hx-target="this" hx-swap="innerHTML" ></div>
+        <div class="form-row">
+            <label>Memory Usage:</label> 
+            <div class= "field-value">
+                <div hx-get="{% url 'arbiter:violation-proc-memory-graph' violation.id%}" hx-trigger="load" hx-target="this" hx-swap="innerHTML" ></div>
+            </div>
         </div>
-    </div>
+    {% endif %}
 
     {% if can_change %}
 

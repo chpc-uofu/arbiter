@@ -72,11 +72,16 @@ This should also be set up to run as a service, see [`/etc/arbiter-eval.service`
 See the [cgroup-warden](https://github.com/chpc-uofu/cgroup-warden)
 installation guide.
 
+It is highly recommended to communicate with cgroup-wardens in secure mode.
+Each warden must be configured to use TLS and bearer token auth, and arbiter must be configured to reflect this by modifying
+`verify_ssl`, `use_tls`, and `bearer` in the [configuration](https://github.com/chpc-uofu/arbiter/blob/main/docs/settings.md#warden)
+
+
 ## Prometheus
 See the [Prometheus](https://prometheus.io/docs/prometheus/latest/installation/) installation guide. 
 For general configuration, see [here](https://prometheus.io/docs/prometheus/latest/configuration/). 
 
-Each cgroup-warden instance needs to be scraped. For example, 
+Each cgroup-warden instance needs to be scraped. The job looks like:
 ```yaml
 scrape_configs:
   - job_name: 'cgroup-warden'
@@ -87,4 +92,15 @@ scrape_configs:
         - login2.yoursite.edu:2112
         - login3.yoursite.edu:2112
         - login4.yoursite.edu:2112
+    scheme: https
+
+    # recommended but optional, strip port from instance
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __address__
+        regex: '^(.*):[0-9]+$'
+        replacement: '${1}'
 ```
+
+- The recommended value of `scrape_interval` is `30s`. 
+- The job name **must** be `cgroup-warden` or have it as a prefix. 

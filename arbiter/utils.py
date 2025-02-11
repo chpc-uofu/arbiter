@@ -33,8 +33,11 @@ def log_debug(func):
     return f
 
 
-def strip_port(host: str) -> str:
-    return host.split(":")[0]
+def split_port(host: str) -> tuple[str, int | None]:
+    values = host.split(":")
+    if len(values) < 2:
+        return values[0], None
+    return values[0], int(values[1])
 
 
 def get_uid(unit: str) -> int | None:
@@ -42,13 +45,6 @@ def get_uid(unit: str) -> int | None:
     if not match:
         return None
     return int(match.group(1))
-
-
-def strip_port(host: str) -> str:
-    """
-    Strips the port from a host string
-    """
-    return host.split(":")[0]
 
 
 def default_user_lookup(username: str) -> tuple[str, str, str]:

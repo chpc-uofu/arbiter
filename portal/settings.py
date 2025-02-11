@@ -68,6 +68,8 @@ with open(conf_file, "rb") as f:
     PROMETHEUS_USER = prometheus.get('user', None)
 
     PROMETHEUS_PASS = prometheus.get('password', None)
+
+    PROMETHEUS_INTERVAL = prometheus.get("scrape_interval", "30s")
     
     if not PROMETHEUS_URL:
         raise ImproperlyConfigured('prometheus.url is required')

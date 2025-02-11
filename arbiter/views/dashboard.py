@@ -10,8 +10,8 @@ from django.core.management.base import CommandError
 from django.contrib.auth.decorators import permission_required
 
 from arbiter.conf import PROMETHEUS_CONNECTION
-from arbiter.utils import strip_port, cores_to_usec, gib_to_bytes
-from arbiter.models import Violation, Event, Limits, Target, CPU_QUOTA, MEMORY_MAX, UNSET_LIMIT
+from arbiter.utils import split_port, cores_to_usec, gib_to_bytes
+from arbiter.models import Violation, Event, Target, CPU_QUOTA, MEMORY_MAX
 from arbiter.eval import set_property
 
 from .nav import navbar
@@ -28,20 +28,11 @@ def view_dashboard(request):
     agents = []
     try:
         result = PROMETHEUS_CONNECTION.custom_query('up{job=~"cgroup-warden.*"} > 0')
-        agents = [strip_port(metric["metric"]["instance"]) for metric in result]
-    except Exception as e:
-        LOGGER.error(f"Could not query promethues for cgroup-agent instances: {e}")
-    
-    agents = []
-    try:
-        result = PROMETHEUS_CONNECTION.custom_query('up{job=~"cgroup-warden.*"} > 0')
-        agents = [strip_port(metric["metric"]["instance"]) for metric in result]
+        agents = [metric["metric"]["instance"] for metric in result]
     except Exception as e:
         LOGGER.error(f"Could not query prometheus for cgroup-agent instances: {e}")
 
     last_eval = Event.objects.order_by("timestamp").last()
-
-    #limits: Limits = {CPU_QUOTA: UNSET_LIMIT, MEMORY_MAX: UNSET_LIMIT}
 
     prop_list = {"CPU Quota (cores)": CPU_QUOTA, "Memory Quota (GiB)": MEMORY_MAX}
 
@@ -66,13 +57,12 @@ def apply(request):
     if request.method == "POST":
         if not (username := request.POST.get("username")):
             return message_http("Username is required.",'error')
-        if not (host := request.POST.get("host")):
+        if not (instance := request.POST.get("apply-host")):
             return message_http("Host is required.",'error')
         
-        target = Target.objects.filter(username=username, host=host).first()
-        if not target:
-            return message_http(f"No Target with name {username} on {host} found.",'error')
+        host, port = split_port(instance)
         
+        target, created= Target.objects.update_or_create(host=host, username=username, defaults=dict(port=port))
         if not (prop := request.POST.get("prop")):
             return message_http("Property is required.",'error')
         if not (value := request.POST.get("value")):
@@ -94,8 +84,11 @@ def apply(request):
         if status == http.HTTPStatus.OK:
             target.update_limit(prop, v)
             target.save()
-            
-        return message_http(f'{message}', status)
+            if created:
+                return message_http(f"Applied property for new target {username} on {host}.")
+            return message_http(f"Applied property for target {username} on {host}.")
+        
+        return message_http(f'Unable to apply property: {message}', 'error')
 
 
 @permission_required('arbiter.execute_commands')

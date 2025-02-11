@@ -160,7 +160,7 @@ LOGGING = {
             "propagate": False,
         },
         "arbiter": {
-            "handlers": ["console", "debug_console"],
+            "handlers": ["debug_console"],
             "level": os.getenv("ARBITER_LOG_LEVEL", "DEBUG"),
             "propagate": False,
         },

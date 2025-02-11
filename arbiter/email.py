@@ -9,10 +9,8 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.module_loading import import_string
 
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from plotly.graph_objects import Figure
+logger = logging.getLogger(__name__)
 
 
 user_lookup = import_string(ARBITER_USER_LOOKUP)
@@ -29,15 +27,13 @@ def send_violation_email(violation: Violation | None) -> str:
     if not recipients:
         return f'No recipients specified, skipping email delivery.'
 
-    figures : dict[str: Figure] = dict()
+    try:
+        cpu = plots.violation_cpu_usage_figure(violation)
+        mem = plots.violation_mem_usage_figure(violation)
+    except plots.QueryError as e:
+        return f'Unable to create violation plots: {e}'
 
-    if cpu_figures := plots.violation_cpu_usage_figures(violation):
-        figures['cpu_chart'] = cpu_figures.chart
-        figures['cpu_pie'] = cpu_figures.pie
-
-    if mem_figures := plots.violation_mem_usage_figures(violation):
-        figures['mem_chart'] = mem_figures.chart
-        figures['mem_pie'] = mem_figures.pie
+    figures = dict(cpu_chart = cpu, mem_chart = mem)
 
     subject = f"Violation of usage policy {violation.policy} on {violation.target.host} by {username} ({realname})"
     text_content = f"Violation of usage policy {violation.policy} on {violation.target.host} by {username} ({realname})"

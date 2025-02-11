@@ -37,7 +37,7 @@ class BasePolicyForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         if constraints := self.instance.penalty_constraints:
-            for  name, value in constraints.items():
+            for  name, value in constraints['tiers'][0].items():
                 if name == "CPUQuotaPerSecUSec":
                     self.fields['cpu'].initial = usec_to_cores(value)
                 if name == "MemoryMax":
