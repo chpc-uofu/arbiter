@@ -72,6 +72,11 @@ This should also be set up to run as a service, see [`/etc/arbiter-eval.service`
 See the [cgroup-warden](https://github.com/chpc-uofu/cgroup-warden)
 installation guide.
 
+It is highly recommended to communicate with cgroup-wardens in secure mode.
+Each warden must be configured to use TLS and bearer token auth, and arbiter must be configured to reflect this by modifying
+`verify_ssl`, `use_tls`, and `bearer` in the [configuration](https://github.com/chpc-uofu/arbiter/blob/main/docs/settings.md#warden)
+
+
 ## Prometheus
 See the [Prometheus](https://prometheus.io/docs/prometheus/latest/installation/) installation guide. 
 For general configuration, see [here](https://prometheus.io/docs/prometheus/latest/configuration/). 
