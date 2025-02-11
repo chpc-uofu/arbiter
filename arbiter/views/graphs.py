@@ -5,7 +5,6 @@ from django.db.models import Count
 from django.utils.safestring import mark_safe
 from django.utils import timezone
 from django.http import HttpResponse
-from arbiter.plots import Figures
 
 import arbiter.plots as plots
 from arbiter.models import Violation
