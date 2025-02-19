@@ -1,0 +1,10 @@
+[Unit]
+Description=Arbiter Evaluation Loop
+After=network.target
+
+[Service]
+Type=simple
+Environment=DJANGO_SETTINGS_MODULE="settings"
+WorkingDirectory={{ working_dir }}
+ExecStart={{ working_dir }}/manage.py runserver
+ExecReload=/bin/kill -s HUP $MAINPID

@@ -5,9 +5,7 @@ description = ""
 authors = ["Kai Forrest <kai.forrest@utah.edu>", "Jackson McKay <jay.mckay@utah.edu>", "Paul Fischer <p.fischer@utah.edu>"]
 readme = "README.md"
 packages = [
-    { include = "arbiter"}, 
-    { include = "portal", to = "arbiter3/" },
-    { include = "scripts", to = "arbiter3/" },
+    { include = "arbiter3"}, 
 ]
 
 [tool.poetry.scripts]
