@@ -1,4 +1,4 @@
-import shutil, os, sys, pwd
+import shutil, os, sys, pwd, warnings
 from jinja2 import Environment, FileSystemLoader
 from importlib.resources import files 
 from arbiter3.portal import manage, settings
@@ -9,7 +9,7 @@ def get_username() -> str :
         uid = os.getuid()
         return pwd.getpwuid(uid).pw_name
     except:
-        print("Unable to get current user, please update generated service file with desired user")
+        warnings.warn("Unable to get current user, please update generated service file with desired user")
         return "CHANGEME"
     
 def get_gunicorn_path() -> str:
@@ -17,8 +17,8 @@ def get_gunicorn_path() -> str:
         gunicorn_path = shutil.which("gunicorn")
         return gunicorn_path
     except:
-        print("Unable to determine where gunicorn is. Please update gnerated service files with the output of 'which gunicorn'")
-        return "CHANGEME"
+        warnings.warn("Unable to determine where gunicorn is. Please update gnerated service files with the output of 'which gunicorn'")
+        return "gunicorn"
     
 
 
