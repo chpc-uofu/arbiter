@@ -9,7 +9,7 @@ from arbiter3.portal.base import *
 # ============================================================
 ARBITER_MIN_UID = 1000
 
-ARBITER_PERMISSIVE_MODE = True  # changeme to enable setting limits
+ARBITER_PERMISSIVE_MODE = False  # changeme to enable setting limits
 
 # ============================================================
 #                         Prometheus
@@ -42,7 +42,6 @@ WARDEN_BEARER = 'insecure-95axve4fn4j2u8ih0j1ltg272g1n297l8'
 # ============================================================
 
 ARBITER_NOTIFY_USERS = True  # turn on after email is configured
-
 
 ARBITER_USER_LOOKUP = default_user_lookup
 
