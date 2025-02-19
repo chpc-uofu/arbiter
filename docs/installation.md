@@ -9,7 +9,7 @@ Arbiter 3 was created for the Rocky 8 and 9 interactive systems at the Center fo
 The core arbiter service is a Django application. This needs to be installed on a machine
 with secure network access to Prometheus and the desired login nodes.
 
-### Installing Python 3.11
+### Installing Prerequistite Python 3.11
 Python 3.11+ is required for the arbiter service. It is likely that your package manager has Python 3.11 available as a package. On Rocky 9.2+, it can be installed with
 ```shell
 sudo dnf install python3.11
@@ -20,7 +20,44 @@ pip is required as well.
 python3.11 -m ensurepip --default-pip
 ```
 
-### Installing the source code
+### From here, there are two options for installation:
+
+### Option 1: Install with pip (Recommended)
+
+Start by navigating to the directory where you want arbiter's configuration placed.
+```shell
+cd /path/to/config_dst
+```
+
+Create a python venv for arbiter then install the arbiter3 pypi package. 
+```shell
+python3.11 -m venv venv
+source venv/bin/activate
+pip install arbiter3
+```
+
+From here, initialize the default configuration files by running this command <u>as the user you wish to run arbiter</u> in your config directory.
+```shell
+arbiter-init
+```
+This will generate the following files:
+
+`manage.py` - The entry point to run arbiter evaluation loop, webserver, or database management
+
+`settings.py` - The main configuration file for arbiter.
+
+`arbiter-web.service` - A starting point for the service that runs the webserver. 
+
+`arbiter-eval.service` - A starting point for the service that runs the evaluation loop. You may want to adjust how often it evaluates, by default it evaluates usage every 30s
+
+The last thing to do is to initialize the database. Do this by running the migrations. However, if you wish to use something else than sqlite ensure you change the database in `settings.py` before running the migrations.
+```shell
+./manage.py migrate
+```
+
+Now that everything is set up and migrated, see the [configuration section](#configuration) on how to configure your installation.
+
+### Option 2: Install from Source
 
 ```shell
 cd /path/to/install
@@ -39,7 +76,7 @@ pip install .
 This will install the arbiter modules and its dependencies in `venv/lib/source-packages/`.
 
 ### Configuration
-Configuration is stored in the `config.toml` file. 
+Configuration is stored in the `settings.py` file. 
 See [settings.md](settings.md) for details.
 
 ### Running the service
