@@ -4,7 +4,8 @@ After=network.target
 
 [Service]
 Type=simple
+User={{ user }}
 Environment=DJANGO_SETTINGS_MODULE="settings"
 WorkingDirectory={{ working_dir }}
-ExecStart={{ working_dir }}/manage.py runserver
+ExecStart={{ python }} {{ working_dir }}/manage.py runserver
 ExecReload=/bin/kill -s HUP $MAINPID

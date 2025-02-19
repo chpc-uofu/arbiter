@@ -12,8 +12,6 @@ SEC_PER_WEEK = 60**2 * 24 * 7
 
 logger = logging.getLogger(__name__)
 
-
-
 def log_debug(func):
     def f(*args):
         args_str = '('

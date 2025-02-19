@@ -1,8 +1,27 @@
-import shutil, os, sys
+import shutil, os, sys, pwd
 from jinja2 import Environment, FileSystemLoader
 from importlib.resources import files 
 from arbiter3.portal import manage, settings
 from arbiter3.scripts import config_templates
+
+def get_username() -> str : 
+    try:
+        uid = os.getuid()
+        return pwd.getpwuid(uid).pw_name
+    except:
+        print("Unable to get current user, please update generated service file with desired user")
+        return "CHANGEME"
+    
+def get_gunicorn_path() -> str:
+    try:
+        gunicorn_path = shutil.which("gunicorn")
+        return gunicorn_path
+    except:
+        print("Unable to determine where gunicorn is. Please update gnerated service files with the output of 'which gunicorn'")
+        return "CHANGEME"
+    
+
+
 
 def initialize_config():
     interpreter_path = sys.executable
@@ -36,12 +55,15 @@ def initialize_config():
     shutil.copy(setting_template, created_settings)
     print(f"Generated {created_settings}")
 
+    user = get_username()
+    gunicorn_path = get_gunicorn_path()
+
     with open(created_eval_service, "w") as file:
-        file.write(eval_service_template.render(working_dir=str(arbiter_conf_dir)))
+        file.write(eval_service_template.render(working_dir=arbiter_conf_dir, user=user, python = interpreter_path))
         print(f"Generated {created_eval_service}")
 
     with open(created_web_service, "w") as file:
-        file.write(web_service_template.render(working_dir=arbiter_conf_dir))
+        file.write(web_service_template.render(working_dir=arbiter_conf_dir, user=user, gunicorn_path=gunicorn_path))
         print(f"Generated {created_web_service}")
 
 
