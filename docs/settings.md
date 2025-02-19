@@ -1,79 +1,47 @@
 # Settings
-The Arbiter Django app is configured with in the `config.toml` file.  
-## `[django]`
-`debug` (boolean, default=true)
-- Whether to run the Django server in debug mode.
-- [Documentation](https://docs.djangoproject.com/en/5.1/ref/settings/#debug)
+The arbiter settings are configured within the `settings.py` file generated with `arbiter-init`.
+The settings are represented with native Python types.
 
-`allowed_hosts` (list of string, default=['localhost'])
-- A list of hostnames from which the Arbiter site can be accessed from.
-- Should be set to the fully qualified domain name of the server running arbiter. 
-- [Documentation](https://docs.djangoproject.com/en/5.1/ref/settings/#allowed-hosts)
+## General
+`ARBITER_MIN_UID` **(int)** : Arbiter will ignore all accounts with a uid less than this number.
 
-`secret_key` (string, required)
-- A secret used for cryptographic signing and other security purposes.
-- [Documentation](https://docs.djangoproject.com/en/5.1/ref/settings/#secret-key)
+`ARBITER_PERMISSIVE_MODE` **(bool)** : If enabled, Arbiter will not set resource limits.
 
-`time_zone` (string, default='UTC')  
-- Time zone used when displaying time.
-- Should be set to your local timezone.
-- [Documentation](https://docs.djangoproject.com/en/5.1/ref/settings/#time-zone)
+## Prometheus
+`PROMETHEUS_URL` **(string)** : URL of your prometheus instance that scrapes the wardens.
 
-## `[general]`
-`min_uid` (integer, default=1000)  
-- Arbiter will ignore all accounts with a uid less than this number.
+`PROMETHUS_VERIFY_SSL` **(bool)** : If enabled, arbiter will verify the certificate of your prometheus instance if using TLS.
 
-`permissive_mode` (boolean, default=False)
-- If enabled, Arbiter will not set resource limits.
+`PROMETHEUS_AUTH` **(tuple[string, string] | None)** : If using basic auth, the username and password to query Prometheus with. 
 
-## `[email]`
+## cgroup-warden
+`WARDEN_JOB` **(string)** : The Prometheus scrape job name. Should be 'cgroup-warden'.
 
-`notify_users` (boolean, default=True)
-- If enabled, Arbiter will send emails to users.
-- Emails and users are resolved with the `lookup_function`. 
+`WARDEN_PORT` **(int)** : The port the cgroup-warden is listening on.
 
-`lookup_function` (string, default='arbiter.utils.default_user_lookup')
-- Path to Python function that will resolve a user. 
-- For API, see `default_user_lookup` in [`utils.py`](../arbiter/utils.py)
+`WARDEN_VERIFY_SSL` **(bool)** : If enabled, verify the certificate of the wardens if using TLS.
 
-`host` (string, required if `notify_users`)  
-- Address of your mail server.
+`WARDEN_USE_TLS` **(bool)** : If enabled, use TLS to make requests to the wardens (https).
 
-`port` (string, default='25')  
-- Port the mail server is listening to requests on.
+`WARDEN_BEARER` **(string | None)** : If given, will be used as the bearer token to authenticate with the cgroup-wardens.
 
-`domain` (string, required if default `lookup_function` is used)
-- Used as part of the default user lookup function. 
-- Email is `username@domain`.
+## Email
+`ARBITER_NOTIFY_USERS` **(bool)** : If enabled, arbiter will email users about their violations.
 
-`admin_emails` (list of string, default=[])
-- List of admin emails to forward violation emails to.
+`ARBITER_USER_LOOKUP` **(func)** : A function to lookup a users username, email, and realname given a username. This is a Python function.  
 
-## `[prometheus]`
-`url` (string, required)
-- URL of your prometheus instance that scrapes the wardens.
+`ARBITER_ADMIN_EMAILS` **(list[string])** : A list of email addresses that arbiter will send all violations to. 
 
-`verify_ssl` (boolean, default=True)
-- If enabled, arbiter will verify the certificate of your prometheus instance if using TLS.
+`ARBITER_FROM_EMAIL` **(string)** : The email address arbiter will send mail from.
 
-`user` (string, optional)
-- If given, will be used as part of the basic auth with your prometheus instance.
+`EMAIL_HOST` **(string)** : The mail server arbiter will route emails through. 
 
-`password` (string, optional)
-- If given, will be used as part of the basic auth with your prometheus instance.
+`EMAIL_PORT` **(int)** : The port arbiter will use with the mail server.
 
-## `[warden]`
-`job` (string, default='cgroup-warden')
-- The name of the prometheus scrape job that collects cgroup-warden data.
+`EMAIL_HOST_USER` **(string)** If given, arbiter will use this username to authenticate with the mail server.
 
-`port` (string, default='2112')
-- The port that your wardens listen on. 
+`EMAIL_HOST_PASSWORD` **(string)** If given, arbiter will use this password to authenticate with the mail server.
 
-`verify_ssl` (boolean, default=true)
-- If enabled, verify the certificate of the wardens if using TLS.
+## Djagno
 
-`use_tls` (boolean, default=true)
-- If enabled, use TLS to make requests to the wardens (https).
-
-`bearer` (string, optional)
-- If given, will be used as the bearer token to authenticate with the wardens
+`DEBUG`
