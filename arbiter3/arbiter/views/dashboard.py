@@ -9,7 +9,7 @@ from django.http import HttpResponse
 from django.core.management.base import CommandError
 from django.contrib.auth.decorators import permission_required
 
-from arbiter3.arbiter.conf import PROMETHEUS_CONNECTION
+from arbiter3.arbiter.conf import PROMETHEUS_CONNECTION, WARDEN_JOB
 from arbiter3.arbiter.utils import split_port, cores_to_usec, gib_to_bytes
 from arbiter3.arbiter.models import Violation, Event, Target, CPU_QUOTA, MEMORY_MAX
 from arbiter3.arbiter.eval import set_property
@@ -28,7 +28,7 @@ def view_dashboard(request):
     agents = []
     try:
         result = PROMETHEUS_CONNECTION.custom_query(
-            'up{job=~"cgroup-warden.*"} > 0')
+            f'up{{job="{WARDEN_JOB}"}} > 0')
         agents = [metric["metric"]["instance"] for metric in result]
     except Exception as e:
         LOGGER.error(

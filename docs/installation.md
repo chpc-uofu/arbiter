@@ -69,15 +69,29 @@ We can then install the project and its dependencies using `pip`. It is probably
 
 ```shell
 python3.11 -m venv venv
-source venv/bin/activate
-pip install .
+venv/bin/python3.11 pip install arbiter3
 ```
+This will install the arbiter modules and its dependencies in `venv/lib/source-packages/`, as well as the setup command `arbiter-init`.
 
-This will install the arbiter modules and its dependencies in `venv/lib/source-packages/`.
+### Initialize Config
 
-### Configuration
-Configuration is stored in the `settings.py` file. 
-See [settings.md](settings.md) for details.
+To initialize the arbiter configuration, run the init program:
+```
+venv/bin/arbiter-init
+```
+This will create four files: `manage.py`, `settings.py`, `arbiter-eval.serivce`, and `arbiter-web.service`.
+
+
+### Configure Settings
+The settings for arbiter are configured in the `settings.py` file. This must be configured to run arbiter. See [settings.md](settings.md) for details.
+
+### Initialize Database
+
+```shell
+venv/bin/python3.11 ./manage.py migrate
+```
+This will create all the initial database tables. If using the default database of SQLite, this will create a `db.sqlite3` file. 
+
 
 ### Running the service
 The arbiter service has two components, the web server and the core evaluation loop.
@@ -93,7 +107,7 @@ gunicorn portal.wsgi --bind 0.0.0.0:8000
 ```
 Preferably, this will be set up behind a proxy such as NGINX. 
 
-It should also be set up to run as a systemd service. See an example service file in [`etc/arbiter-web.service`](../etc/arbiter-web.service)
+An Example for running this as a service were generated with `arbiter-init`, located in `arbiter-web.service`. Update this to suite your needs. 
 
 #### Evaluation Service
 The arbiter evaluation loop can be run with
@@ -102,7 +116,7 @@ The arbiter evaluation loop can be run with
 ```
 To run it in a loop, you can pass the `--seconds`, `--minutes`, or `--hours` flags.
 
-This should also be set up to run as a service, see [`/etc/arbiter-eval.service`](../etc/arbiter-eval.service)
+This should also be set up to run as a service, see `arbiter-eval.service`.
 
 
 ## cgroup-warden
