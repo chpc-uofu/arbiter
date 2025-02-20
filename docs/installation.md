@@ -36,27 +36,6 @@ source venv/bin/activate
 pip install arbiter3
 ```
 
-From here, initialize the default configuration files by running this command <u>as the user you wish to run arbiter</u> in your config directory.
-```shell
-arbiter-init
-```
-This will generate the following files:
-
-`manage.py` - The entry point to run arbiter evaluation loop, webserver, or database management
-
-`settings.py` - The main configuration file for arbiter.
-
-`arbiter-web.service` - A starting point for the service that runs the webserver. 
-
-`arbiter-eval.service` - A starting point for the service that runs the evaluation loop. You may want to adjust how often it evaluates, by default it evaluates usage every 30s
-
-The last thing to do is to initialize the database. Do this by running the migrations. However, if you wish to use something else than sqlite ensure you change the database in `settings.py` before running the migrations.
-```shell
-./manage.py migrate
-```
-
-Now that everything is set up and migrated, see the [configuration section](#configuration) on how to configure your installation.
-
 ### Option 2: Install from Source
 
 ```shell
@@ -74,13 +53,24 @@ venv/bin/python3.11 pip install arbiter3
 This will install the arbiter modules and its dependencies in `venv/lib/source-packages/`, as well as the setup command `arbiter-init`.
 
 ### Initialize Config
+Initialize the default configuration files by running this command <u>as the user you wish to run arbiter</u> in your config directory.
+```shell
+#pip installation
+arbiter-init 
 
-To initialize the arbiter configuration, run the init program:
+#git installation
+venv/bin/python3.11 arbiter3/scripts/initialize.py
 ```
-venv/bin/arbiter-init
-```
-This will create four files: `manage.py`, `settings.py`, `arbiter-eval.serivce`, and `arbiter-web.service`.
 
+This will generate the following files:
+
+`arbiter.py` - The entry point to run arbiter evaluation loop, webserver, or database management
+
+`settings.py` - The main configuration file for arbiter.
+
+`arbiter-web.service` - A starting point for the service that runs the webserver. 
+
+`arbiter-eval.service` - A starting point for the service that runs the evaluation loop. You may want to adjust how often it evaluates, by default it evaluates usage every 30s
 
 ### Configure Settings
 The settings for arbiter are configured in the `settings.py` file. This must be configured to run arbiter. See [settings.md](settings.md) for details.
@@ -88,7 +78,7 @@ The settings for arbiter are configured in the `settings.py` file. This must be 
 ### Initialize Database
 
 ```shell
-venv/bin/python3.11 ./manage.py migrate
+venv/bin/python3.11 arbiter.py migrate
 ```
 This will create all the initial database tables. If using the default database of SQLite, this will create a `db.sqlite3` file. 
 
@@ -99,11 +89,11 @@ The arbiter service has two components, the web server and the core evaluation l
 #### Web Service
 The arbiter web service can be run in a testing capacity with the following command:
 ```shell
-./manage.py runserver 
+venv/bin/python3.11 arbiter.py runserver 
 ```
 Which will listen on `localhost:8000`. For production, Arbiter should be run with Gunicorn. For example,
 ```shell
-gunicorn portal.wsgi --bind 0.0.0.0:8000 
+gunicorn arbiter3.portal.wsgi --bind 0.0.0.0:8000 
 ```
 Preferably, this will be set up behind a proxy such as NGINX. 
 

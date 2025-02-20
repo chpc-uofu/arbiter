@@ -7,5 +7,5 @@ Type=simple
 User={{ user }}
 Environment=DJANGO_SETTINGS_MODULE="settings"
 WorkingDirectory={{ working_dir }}
-ExecStart={{ python }} {{ working_dir }}/manage.py runserver
+ExecStart={{ python }} {{ working_dir }}/arbiter.py evaluate --seconds 30
 ExecReload=/bin/kill -s HUP $MAINPID
