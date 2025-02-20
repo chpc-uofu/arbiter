@@ -7,8 +7,9 @@ db.sqlite3
 **/__pycache__/
 .pytest_cache/
 testing/warden/cgroup-warden
-etc/*
-!etc/config.toml
-!etc/arbiter-web.service
-!etc/arbiter-eval.service
-.conf.toml
+dist/*
+/settings.py
+/manage.py
+/arbiter.py
+/arbiter-eval.service
+/arbiter-web.service

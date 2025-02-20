@@ -21,6 +21,9 @@
 			]
 		}
 	},
+	"containerEnv": {
+		"DJANGO_SETTINGS_MODULE": "testing.settings"
+	},
 	"postCreateCommand": "pip3 install poetry && poetry install --with=dev && poetry self add poetry-plugin-shell",
 	"remoteUser": "vscode"
 }

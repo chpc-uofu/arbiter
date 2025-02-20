@@ -1,23 +1,27 @@
 [tool.poetry]
-name = "arbiter"
-version = "0.0.0"
+name = "arbiter3"
+version = "0.0.3"
 description = ""
 authors = ["Kai Forrest <kai.forrest@utah.edu>", "Jackson McKay <jay.mckay@utah.edu>", "Paul Fischer <p.fischer@utah.edu>"]
 readme = "README.md"
-packages = [{ include = "arbiter" }, { include = "portal" }]
+packages = [
+    { include = "arbiter3"}, 
+]
+
+[tool.poetry.scripts]
+arbiter-init = "arbiter3.scripts.initialize:initialize_config"
 
 [tool.poetry.dependencies]
 python = "^3.11"
 requests = "^2.31.0"
 prometheus-api-client = "^0.5.3"
-prometheus-client = "^0.17.1"
 django = "^5.0.0"
 aiohttp = "^3.9.1"
 asyncio = "^3.4.3"
 plotly = "^5.20.0"
-pyarrow = "^15.0.0"
 kaleido = "0.2.1"
 gunicorn = "^23.0.0"
+jinja2 = "^3.1.5"
 
 [tool.poetry.group.dev.dependencies]
 pytest-django = "^4.6.0"

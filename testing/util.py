@@ -5,9 +5,9 @@ import django
 import multiprocessing
 import re
 
-from arbiter.models import Target, Policy, Violation
-from arbiter.conf import WARDEN_USE_TLS, WARDEN_PORT, WARDEN_BEARER, WARDEN_VERIFY_SSL
-from arbiter.utils import bytes_to_gib
+from arbiter3.arbiter.models import Target, Policy, Violation
+from arbiter3.arbiter.conf import WARDEN_USE_TLS, WARDEN_PORT, WARDEN_BEARER, WARDEN_VERIFY_SSL
+from arbiter3.arbiter.utils import bytes_to_gib
 
 
 RE_PROM_METRIC = re.compile(r"(?P<metric>.*){(?P<labels>.*)} (?P<value>.*)")
@@ -57,7 +57,7 @@ def set_property_sync(target: Target, name: str, value: any):
         headers=auth_header,
         verify=WARDEN_VERIFY_SSL,
     )
-    
+
     return response
 
 
@@ -69,6 +69,7 @@ def get_metrics(target: Target):
 
     response = requests.get(url=endpoint, verify=WARDEN_VERIFY_SSL)
     return response
+
 
 def unset_limits(target: Target):
     set_property_sync(target, "CPUAccounting", True)
@@ -107,7 +108,8 @@ def create_violating_command(policy: Policy) -> str:
 
 
 def get_violations(target: Target):
-    now_tz = django.utils.timezone.make_aware(django.utils.timezone.datetime.now())
+    now_tz = django.utils.timezone.make_aware(
+        django.utils.timezone.datetime.now())
     violations = Violation.objects.filter(
         unit=target.unit,
         host=target.host,
@@ -121,7 +123,8 @@ def create_violation(target, policy):
     comm = create_violating_command(policy)
     window = int(policy.lookback.total_seconds())
     user = target.unit.split(".")[0]
-    p = multiprocessing.Process(target=launch_ssh_process, args=(target, comm, password))
+    p = multiprocessing.Process(
+        target=launch_ssh_process, args=(target, comm, password))
     p.start()
     return window + 1
 
