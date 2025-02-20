@@ -1,6 +1,5 @@
 import shutil, os, sys, pwd, warnings
 from jinja2 import Environment, FileSystemLoader
-from importlib.resources import files 
 from arbiter3.portal import arbiter, settings
 from arbiter3.scripts import config_templates
 
@@ -44,7 +43,7 @@ def initialize_config():
     web_service_template = jinja_env.get_template("arbiter-web.service.jinja")
 
     #Generate config files from source templates
-
+    
     shutil.copy(manage_template, created_manage)
     os.chmod(created_manage, 0o744)
     print(f"Generated {created_manage}")
