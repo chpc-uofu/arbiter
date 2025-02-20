@@ -2,22 +2,18 @@
 Arbiter's policy and penalty configurations are stored as objects in its database. To configure policies, use the forms on on Arbiter's web-server.. This provides a basic CRUD interface for configuration as well as a way to view graphs for usage data.
 
 ## Configuration on Web
-Before begining this step, ensure web-server is started. If it is not, run `python3 manage.py runserver 0.0.0.0:8000` with your desired IP+port. Now that that is done, make sure you created an admin user for Arbiter's admin portal. If you have not, run `python3 manage.py createsuperuser` and give it the username/passcode when prompted.
+Before beginning this step, ensure web-server is started. If it is not, run `python3 arbiter.py runserver 0.0.0.0:8000` with your desired IP+port. Now that that is done, make sure you created an admin user for Arbiter's admin portal. If you have not, run `python3 arbiter.py createsuperuser` and give it the username/passcode when prompted.
 
 Now that everything is set up, navigate to the site on (`localhost:8000/` if run locally). Here you can create your Base and Usage Policies. 
 Here you can configure Arbiter's models. 
 
 ## Data Models
 Arbiter relies on the following models: 
-- Limits
 - Policies (Base and Usage)
 - Violations
 - Targets
 
 Violations and targets are created automatically by the core evaluation process. Limits are configured as part of the policy creation. 
-
-### Limits
-Limits represent a value for the systemd properties `CPUQuotaPerSecUSec` and `MemoryMax` that can be applied to a user slice. These are created when policies are configured. 
 
 ### Policies
 Policies are the rules users can violate. Policies use a Prometheus query to determine if a user is in violation. There are two type of policies, Base and Usage.
