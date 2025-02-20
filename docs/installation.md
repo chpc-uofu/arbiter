@@ -53,7 +53,7 @@ venv/bin/python3.11 pip install arbiter3
 This will install the arbiter modules and its dependencies in `venv/lib/source-packages/`, as well as the setup command `arbiter-init`.
 
 ### Initialize Config
-Initialize the default configuration files by running this command <u>as the user you wish to run arbiter</u> in your config directory.
+Initialize the default configuration files by running the respective command for your installation method. <u>as the user you wish to run arbiter</u> in your config directory.
 ```shell
 #pip installation
 arbiter-init 
