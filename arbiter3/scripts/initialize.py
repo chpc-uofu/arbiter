@@ -14,11 +14,12 @@ def get_username() -> str :
 def get_gunicorn_path() -> str:
     try:
         gunicorn_path = shutil.which("gunicorn")
+        assert gunicorn_path
         return gunicorn_path
     except:
-        warnings.warn("Unable to determine where gunicorn is. Please update generated service files with the output of 'which gunicorn'")
-        return "gunicorn"
-
+        path = Path(sys.executable).parent / 'gunicorn'
+        warnings.warn(f"Unable to determine where gunicorn is. defaulting to '{path}'")
+        return path
 
 def initialize_config():
     interpreter_path = sys.executable
