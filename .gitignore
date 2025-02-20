@@ -10,5 +10,6 @@ testing/warden/cgroup-warden
 dist/*
 /settings.py
 /manage.py
+/arbiter.py
 /arbiter-eval.service
 /arbiter-web.service

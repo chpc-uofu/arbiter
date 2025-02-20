@@ -1,7 +1,7 @@
 import shutil, os, sys, pwd, warnings
 from jinja2 import Environment, FileSystemLoader
 from importlib.resources import files 
-from arbiter3.portal import manage, settings
+from arbiter3.portal import arbiter, settings
 from arbiter3.scripts import config_templates
 
 def get_username() -> str : 
@@ -17,31 +17,28 @@ def get_gunicorn_path() -> str:
         gunicorn_path = shutil.which("gunicorn")
         return gunicorn_path
     except:
-        warnings.warn("Unable to determine where gunicorn is. Please update gnerated service files with the output of 'which gunicorn'")
+        warnings.warn("Unable to determine where gunicorn is. Please update generated service files with the output of 'which gunicorn'")
         return "gunicorn"
-    
-
 
 
 def initialize_config():
     interpreter_path = sys.executable
     current_path = os.getcwd()
-    config_template_dir = files("arbiter3.scripts.config_templates")
     arbiter_conf_dir = current_path
     os.makedirs(arbiter_conf_dir, exist_ok=True)    
 
     # Target file destinations
-    created_manage = os.path.join(arbiter_conf_dir, "manage.py")
+    created_manage = os.path.join(arbiter_conf_dir, "arbiter.py")
     created_settings = os.path.join(arbiter_conf_dir, "settings.py")
     created_web_service = os.path.join(arbiter_conf_dir, "arbiter-web.service")
     created_eval_service = os.path.join(arbiter_conf_dir, "arbiter-eval.service")
 
 
-    #using import for path here bc import lib has inconsitent output for the directory
+    #using import for path here bc import lib has inconsistent output for the directory
     jinja_env = Environment(loader=FileSystemLoader(config_templates.__path__))
 
     # Config templates sources
-    manage_template = manage.__file__
+    manage_template = arbiter.__file__
     setting_template = settings.__file__
     eval_service_template = jinja_env.get_template("arbiter-eval.service.jinja")
     web_service_template = jinja_env.get_template("arbiter-web.service.jinja")
