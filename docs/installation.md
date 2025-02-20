@@ -29,26 +29,28 @@ Start by navigating to the directory where you want arbiter's configuration plac
 cd /path/to/config_dst
 ```
 
-Create a python venv for arbiter then install the arbiter3 pypi package. 
+Create a virtual environment and then install the arbiter3 PyPi package. 
 ```shell
 python3.11 -m venv venv
 source venv/bin/activate
 pip install arbiter3
 ```
+This will install the arbiter modules and its dependencies in `venv/lib/source-packages/`, as well as the setup command `arbiter-init`.
 
 ### Option 2: Install from Source
 
+First obtain the source code via git
 ```shell
 cd /path/to/install
 git clone https://github.com/chpc-uofu/arbiter
 cd arbiter
 ```
 
-We can then install the project and its dependencies using `pip`. It is probably best installed into a virtual environment, like 
-
+Create a virtual environment and install arbiter with pip. 
 ```shell
 python3.11 -m venv venv
-venv/bin/python3.11 pip install arbiter3
+source venv/bin/activate
+pip install .
 ```
 This will install the arbiter modules and its dependencies in `venv/lib/source-packages/`, as well as the setup command `arbiter-init`.
 
