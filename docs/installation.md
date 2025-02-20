@@ -104,7 +104,7 @@ An Example for running this as a service were generated with `arbiter-init`, loc
 #### Evaluation Service
 The arbiter evaluation loop can be run with
 ```
-./manage.py evaluate
+./arbiter.py evaluate
 ```
 To run it in a loop, you can pass the `--seconds`, `--minutes`, or `--hours` flags.
 
