@@ -5,7 +5,9 @@ The settings are represented with native Python types.
 ## General
 `ARBITER_MIN_UID` **(int)** : Arbiter will ignore all accounts with a uid less than this number.
 
-`ARBITER_PERMISSIVE_MODE` **(bool)** : If enabled, Arbiter will not set resource limits.
+`ARBITER_PERMISSIVE_MODE` **(bool)** : If enabled, Arbiter will not set 
+resource limits.
+
 
 ## Prometheus
 `PROMETHEUS_URL` **(string)** : URL of your prometheus instance that scrapes the wardens.
@@ -42,6 +44,16 @@ The settings are represented with native Python types.
 
 `EMAIL_HOST_PASSWORD` **(string)** If given, arbiter will use this password to authenticate with the mail server.
 
-## Djagno
+## Django
 
-`DEBUG`
+The following are Django specific settings. See [here](https://docs.djangoproject.com/en/5.1/topics/settings/) for details on all of the following.
+
+`DEBUG` **(boolean)** : Whether to run the webserver in debug mode.
+
+`DATABASES` **(dict)** : Database configuration.
+
+`SECRET_KEY` **(string)** : A secret used for cryptographic signing and other security purposes.
+
+`ALLOWED_HOSTS` **(list[string])** : A list of hostnames from which the Arbiter site can be accessed as.
+
+`TIME_ZONE` **(string)** : Time zone used when displaying time.

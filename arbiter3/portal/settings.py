@@ -99,23 +99,25 @@ EMAIL_HOST_PASSWORD = None
 # ============================================================
 #                          Django
 # ============================================================
+# django settings for running. To inherit default django settings, set variable
+# to the same value, e.g.
+#
+# DEBUG = DEBUG 
+#
+# See https://docs.djangoproject.com/en/5.1/topics/settings/ for more information
 
 DEBUG = True
 
-WORKING_DIR = Path(__file__).resolve().parent
-
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
+# default DB is sqlite in this directory
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": WORKING_DIR / "db.sqlite3",
+        "NAME": Path(__file__).resolve().parent / "db.sqlite3",
     }
 }
 
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'changeme'
 
-ALLOWED_HOSTS = ALLOWED_HOSTS
+ALLOWED_HOSTS = ['localhost']
 
-TIME_ZONE = TIME_ZONE
+TIME_ZONE = 'America/Denver'
