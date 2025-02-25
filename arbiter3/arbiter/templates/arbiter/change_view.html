@@ -17,7 +17,10 @@
     <div class="form-submit-box">
         {% block submit-box %}
         <input type="submit" name="save" value="save"/>
-        <input type="submit" name="delete" value="delete"/>
+
+        {% if form.instance.pk %}
+            <input type="submit" name="delete" value="delete"/>
+        {% endif %}
         {% endblock %}
     </div>
     {% endif %}
