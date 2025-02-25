@@ -12,7 +12,7 @@ resource limits.
 ## Prometheus
 `PROMETHEUS_URL` **(string)** : URL of your prometheus instance that scrapes the wardens.
 
-`PROMETHUS_VERIFY_SSL` **(bool)** : If enabled, arbiter will verify the certificate of your prometheus instance if using TLS.
+`PROMETHEUS_VERIFY_SSL` **(bool)** : If enabled, arbiter will verify the certificate of your prometheus instance if using TLS.
 
 `PROMETHEUS_AUTH` **(tuple[string, string] | None)** : If using basic auth, the username and password to query Prometheus with. 
 
@@ -54,6 +54,6 @@ The following are Django specific settings. See [here](https://docs.djangoprojec
 
 `SECRET_KEY` **(string)** : A secret used for cryptographic signing and other security purposes.
 
-`ALLOWED_HOSTS` **(list[string])** : A list of hostnames from which the Arbiter site can be accessed as.
+`ALLOWED_HOSTS` **(list[string])** : A list of host names from which the Arbiter site can be accessed as.
 
 `TIME_ZONE` **(string)** : Time zone used when displaying time.
