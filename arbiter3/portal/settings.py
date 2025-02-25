@@ -23,9 +23,10 @@ PROMETHEUS_URL = 'https://your.prometheus.host:9090'
 # arbiter will verify certificate of your prometheus instance if using tls if enabled
 PROMETHEUS_VERIFY_SSL = True
 
-# arbiter will use basic auth to communicate with your prometheus instance if set, e.g.
-# PROMETHEUS_AUTH = ('username', 'password')
-PROMETHEUS_AUTH = None
+# arbiter will use basic auth to communicate with your prometheus instance if set
+PROMETHEUS_USERNAME = None
+
+PROMETHEUS_PASSWORD = None
 
 # ============================================================
 #                        cgroup-warden
@@ -54,7 +55,7 @@ WARDEN_BEARER = None
 ARBITER_NOTIFY_USERS = False  # turn on after email is configured
 
 """
-import os
+from pwd import getpwnam
 
 def user_lookup(username):
     realname = f'unknown real name'
@@ -81,6 +82,10 @@ ARBITER_ADMIN_EMAILS = []
 # arbiter will send mail from this address if set, e.g.
 # ARBITER_FROM_EMAIL = 'arbiter@site.edu'
 ARBITER_FROM_EMAIL = None
+
+# arbiter will use the templates in this dir called 'email_body.html' and 'email_subject.html' when sending email
+# ARBITER_EMAIL_TEMPLATE_DIR = '/path/to/installation/templates/'
+ARBITER_EMAIL_TEMPLATE_DIR = None
 
 # arbiter will route the mail through this mail server
 EMAIL_HOST = 'your.mail.server.edu'

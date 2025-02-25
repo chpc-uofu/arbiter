@@ -1,0 +1,12 @@
+
+## update me
+<h2>Violation of usage policy</h2>
+<p>A <strong>violation of the usage policy</strong> by <strong>{{ username }} ({{ realname }})</strong> on {{ hostname }} was automatically detected starting at {{ time }}.</p>
+<p>This may indicate that you are running computationally-intensive work on the interactive node (when it should be run on compute nodes instead).</p>
+<p>Your CPU usage is now limited to {{ cpu_limit }} cores for the next {{ duration }} minutes. In addition, your memory limit is now {{ memory_limit }} GIB for the same period of time.</p>
+<p><strong>These limits will apply on {{ affected_hosts }}.</strong></p>
+
+## include graphs in email
+{% for figure in figures %}
+    <img src="cid:{{figure}}"/>
+{% endfor %}

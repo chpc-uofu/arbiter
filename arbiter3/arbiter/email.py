@@ -1,9 +1,11 @@
 import logging
 from email.mime.image import MIMEImage
 
+from jinja2 import Environment, FileSystemLoader
+
 from arbiter3.arbiter.models import Violation
 from arbiter3.arbiter import plots
-from arbiter3.arbiter.conf import ARBITER_USER_LOOKUP, ARBITER_ADMIN_EMAILS, ARBITER_NOTIFY_USERS, ARBITER_FROM_EMAIL
+from arbiter3.arbiter.conf import ARBITER_USER_LOOKUP, ARBITER_ADMIN_EMAILS, ARBITER_NOTIFY_USERS, ARBITER_FROM_EMAIL, ARBITER_EMAIL_TEMPLATE_DIR
 
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
@@ -13,6 +15,11 @@ logger = logging.getLogger(__name__)
 
 
 user_lookup = ARBITER_USER_LOOKUP
+
+
+jinja_env = Environment(loader=FileSystemLoader(ARBITER_EMAIL_TEMPLATE_DIR))
+body_template = jinja_env.get_template('email_body.html')
+subject_template = jinja_env.get_template('email_subject.html')
 
 
 def send_violation_email(violation: Violation | None) -> str:
@@ -36,6 +43,7 @@ def send_violation_email(violation: Violation | None) -> str:
 
     subject = f"Violation of usage policy {violation.policy} on {violation.target.host} by {username} ({realname})"
     text_content = f"Violation of usage policy {violation.policy} on {violation.target.host} by {username} ({realname})"
+    body_template.render(username="jackson")
     message = EmailMultiAlternatives(
         subject, text_content, ARBITER_FROM_EMAIL, recipients)
 
@@ -49,7 +57,7 @@ def send_violation_email(violation: Violation | None) -> str:
         image.add_header("Content-ID", f"<{name}>")
         message.attach(image)
 
-    html_content = render_to_string("arbiter/email.html", {"figures": figures})
+    html_content = render_to_string("email.html", {"figures": figures})
     message.attach_alternative(html_content, "text/html")
     message.mixed_subtype = "related"
     try:
