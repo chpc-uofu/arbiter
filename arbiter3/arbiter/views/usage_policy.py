@@ -229,7 +229,7 @@ def change_usage_policy(request, policy_id):
                 url = reverse("arbiter:change-usage-policy", kwargs = {'policy_id' : policy.id})
                 return redirect(url)
             except:
-                messages.error(request, f"Unable to copy policy. Check that the name {policy.name}(copy) isn't taken.")
+                messages.error(request, f"Unable to copy policy. Check that the name {policy.name} isn't taken.")
                 return redirect("arbiter:list-usage-policy")
 
     else:
