@@ -7,6 +7,14 @@ Before beginning this step, ensure web-server is started. If it is not, run `pyt
 Now that everything is set up, navigate to the site on (`localhost:8000/` if run locally). Here you can create your Base and Usage Policies. 
 Here you can configure Arbiter's models. 
 
+## Loading Default Fixtures
+To begin, you can start by loading a fixture for our default policy.
+```shell
+./arbiter.py loaddata default_policy
+```
+This will load a new Policy 
+
+
 ## Data Models
 Arbiter relies on the following models: 
 - Policies (Base and Usage)
