@@ -27,9 +27,8 @@ def message_http(message: str, status: str = "success"):
 def view_dashboard(request):
     agents = []
     try:
-        result = PROMETHEUS_CONNECTION.custom_query(
-            f'up{{job="{WARDEN_JOB}"}} > 0')
-        agents = [metric["metric"]["instance"] for metric in result]
+        result = PROMETHEUS_CONNECTION.query(f'up{{job="{WARDEN_JOB}"}} == 1')
+        agents = [r.metric['instance'] for r in result]
     except Exception as e:
         LOGGER.error(
             f"Could not query prometheus for cgroup-agent instances: {e}")
