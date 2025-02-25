@@ -1,12 +1,11 @@
-from django.forms.renderers import BaseRenderer
 from django.shortcuts import render, redirect
 from django import forms
-from django.utils.safestring import mark_safe
 from django.views.generic.list import ListView
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse_lazy, reverse
+
 import json
 from dataclasses import dataclass
 
@@ -221,11 +220,18 @@ def change_usage_policy(request, policy_id):
             messages.success(request, "Successfully removed usage policy.")
             return redirect("arbiter:list-usage-policy")
         if "copy" in request.POST:
-            kwargs = request.POST.dict()
-            kwargs.pop("csrfmiddlewaretoken", None)
-            url = reverse("arbiter:new-usage-policy", kwargs=kwargs)
-            
-            return redirect(url)
+            try:
+                policy.pk = None
+                policy.name += "(copy)"
+                policy.save()
+
+                messages.success(request, "Successfully copied usage policy.")
+                url = reverse("arbiter:change-usage-policy", kwargs = {'policy_id' : policy.id})
+                return redirect(url)
+            except:
+                messages.error(request, f"Unable to copy policy. Check that the name {policy.name}(copy) isn't taken.")
+                return redirect("arbiter:list-usage-policy")
+
     else:
         if can_change:
             form = UsagePolicyForm(instance=policy)
