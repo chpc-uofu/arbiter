@@ -96,20 +96,20 @@ def query_violations(policies: list[Policy]) -> list[Violation]:
     for policy in policies:
 
         try:
-            response = PROMETHEUS_CONNECTION.custom_query(policy.query)
+            response = PROMETHEUS_CONNECTION.query(policy.query)
         except PrometheusApiClientException as e:
             logger.error(f"Unable to query violations: {e}")
             return violations
 
         for result in response:
-            cgroup = result["metric"]["cgroup"]
+            cgroup = result.metric['cgroup']
             matches = re.findall(r"^/user.slice/(user-\d+.slice)$", cgroup)
             if len(matches) < 1:
                 logger.warning(f"invalid cgroup: {cgroup}")
                 continue
             unit = matches[0]
-            host, port = split_port(result["metric"]["instance"])
-            username = result["metric"]["username"]
+            host, port = split_port(result.metric["instance"])
+            username = result.metric["username"]
 
             if get_uid(unit) < ARBITER_MIN_UID:
                 continue
@@ -129,8 +129,8 @@ def query_violations(policies: list[Policy]) -> list[Violation]:
 @log_debug
 def get_affected_hosts(domain) -> list[str]:
     up_query = f"up{{job=~'{WARDEN_JOB}', instance=~'{domain}'}}"
-    result = PROMETHEUS_CONNECTION.custom_query(up_query)
-    return [split_port(r["metric"]["instance"]) for r in result]
+    result = PROMETHEUS_CONNECTION.query(up_query)
+    return [split_port(r.metric["instance"]) for r in result]
 
 
 @log_debug

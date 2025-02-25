@@ -1,15 +1,15 @@
 import logging
 from datetime import datetime, timedelta, timezone
 
-from plotly.graph_objects import Figure
-from prometheus_api_client import MetricRangeDataFrame, PrometheusApiClientException
-import plotly.express as px
+from plotly.graph_objects import Figure, Scatter
 
 from django.utils.timezone import get_current_timezone, localtime
 
 from arbiter3.arbiter.models import Violation
 from arbiter3.arbiter.utils import bytes_to_gib, BYTES_PER_GIB
 from arbiter3.arbiter.conf import PROMETHEUS_CONNECTION
+from arbiter3.arbiter.promclient import sort_matrices_by_avg, combine_last_matrices
+
 
 logger = logging.getLogger(__name__)
 
@@ -21,11 +21,38 @@ class QueryError(Exception):
 def usage_graph(query: str, start: datetime, end: datetime, step: str, color_by: str, threshold: float | int | None) -> Figure:
 
     try:
-        result = PROMETHEUS_CONNECTION.custom_query_range(
-            query, start_time=start, end_time=end, step=step)
-    except PrometheusApiClientException as e:
-        raise QueryError(f"Could not run query: {e}")
+        matrices = PROMETHEUS_CONNECTION.query_range(query=query, start=start.timestamp(), end=end.timestamp(), step=step)
+    except Exception as e:
+        raise QueryError(f'Could not run query: {e}')
 
+    if not matrices:
+        raise QueryError(f"Query returned no results: {query}")
+
+    matrices = sort_matrices_by_avg(matrices)
+
+    if color_by == 'proc':
+        matrices = combine_last_matrices(matrices, 9)
+
+    fig = Figure()
+    for a in reversed(matrices):
+        timestamps = [datetime.fromtimestamp(s.timestamp) for s in a.values]
+        values = [float(s.value) for s in a.values]
+
+        fig.add_trace(
+            Scatter(
+                x=timestamps, 
+                y=values,
+                hoverinfo="name+x+y",
+                mode='lines',
+                line=dict(width=0.0),
+                stackgroup='one',
+                name=a.metric[color_by] 
+            ),
+        )
+
+    return fig
+
+    """
     if not result:
         raise QueryError(
             f"Query returned no results: {query}. Try increasing step size.")
@@ -46,6 +73,7 @@ def usage_graph(query: str, start: datetime, end: datetime, step: str, color_by:
         graph.add_hline(threshold, line={"dash": "dot", "color": "grey"})
 
     return graph
+    """
 
 
 def cpu_usage_figure(host: str, start: datetime, end: datetime, step="30s", username: str = None, threshold: float = None) -> Figure | None:
