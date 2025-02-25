@@ -31,7 +31,7 @@ def usage_graph(query: str, start: datetime, end: datetime, step: str, color_by:
     matrices = sort_matrices_by_avg(matrices)
 
     if color_by == 'proc':
-        matrices = combine_last_matrices(matrices, 9)
+        matrices = combine_last_matrices(matrices, 7)
 
     fig = Figure()
     for a in reversed(matrices):
