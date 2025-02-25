@@ -223,6 +223,7 @@ def change_usage_policy(request, policy_id):
             try:
                 policy.pk = None
                 policy.name += "(copy)"
+                policy.active = False
                 policy.save()
 
                 messages.success(request, "Successfully copied usage policy.")
