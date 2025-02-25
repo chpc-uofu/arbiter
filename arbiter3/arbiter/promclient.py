@@ -109,6 +109,8 @@ def sort_matrices_by_avg(matrices: list[Matrix]) -> list[Matrix]:
     for m in matrices:
         total = sum([float(s.value) for s in m.values])
         count = len(m.values)
+        if count == 0:
+            continue
         average = total / count
         averages.append( (average, m) )
     averages = sorted(averages, key=lambda a: a[0], reverse=True)
