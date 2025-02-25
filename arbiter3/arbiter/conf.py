@@ -77,9 +77,14 @@ except AttributeError:
     raise ImproperlyConfigured("setting PROMETHEUS_VERIFY_SSL is required")
 
 try:
-    PROMETHEUS_AUTH = settings.PROMETHEUS_AUTH
+    PROMETHEUS_USERNAME = settings.PROMETHEUS_USERNAME
 except AttributeError:
-    raise ImproperlyConfigured("setting PROMETHEUS_AUTH is required")
+    raise ImproperlyConfigured("setting PROMETHEUS_USERNAME is required")
+
+try:
+    PROMETHEUS_PASSWORD = settings.PROMETHEUS_PASSWORD
+except AttributeError:
+    raise ImproperlyConfigured("setting PROMETHEUS_PASSWORD is required")
 
 ########## WARDEN SETTINGS ##########
 
@@ -108,14 +113,7 @@ try:
 except AttributeError:
     raise ImproperlyConfigured("setting WARDEN_BEARER is required")
 
-from prometheus_api_client import PrometheusConnect
 
-PROMETHEUS_CONNECTION = PrometheusConnect(
-    url=PROMETHEUS_URL, auth=PROMETHEUS_AUTH, disable_ssl=(not PROMETHEUS_VERIFY_SSL)
-)
+from arbiter3.arbiter.promclient import PrometheusSession
 
-# FIXME this will hang if route is not reachable, timeout does not seem to work
-#if not PROMETHEUS_CONNECTION.check_prometheus_connection():
-#    raise ImproperlyConfigured(
-#        "Prometheus cannot be reached. Is PROMETHEUS_URL, PROMETHEUS_USER, PROMETHEUS_PASS, and PROMETHEUS_DISABLE_SSL properly configured?"
-#    )
+PROMETHEUS_CONNECTION = PrometheusSession(base_url=PROMETHEUS_URL, username=PROMETHEUS_USERNAME, password=PROMETHEUS_PASSWORD, verify=PROMETHEUS_VERIFY_SSL)

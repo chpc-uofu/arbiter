@@ -20,7 +20,9 @@ PROMETHEUS_URL = 'http://prometheus:9090'
 PROMETHEUS_VERIFY_SSL = False
 
 # if using basic auth set to tuple (username, password)
-PROMETHEUS_AUTH = None
+PROMETHEUS_USERNAME = None
+
+PROMETHEUS_PASSWORD = None
 
 
 # ============================================================
