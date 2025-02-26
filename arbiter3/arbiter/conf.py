@@ -106,7 +106,7 @@ try:
         from arbiter3.arbiter.templates import arbiter
         ARBITER_EMAIL_TEMPLATE_DIR = arbiter.__path__
     else:
-        assert isinstance(ARBITER_TEMPLATE_DIR, str)
+        assert isinstance(ARBITER_EMAIL_TEMPLATE_DIR, str)
 except AttributeError:
     raise ImproperlyConfigured("setting ARBITER_EMAIL_TEMPLATE_DIR is required")
 except AssertionError:
