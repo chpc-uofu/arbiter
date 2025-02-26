@@ -34,24 +34,23 @@ def get_gunicorn_path() -> str:
 
 def initialize_config():
     interpreter_path = sys.executable
-    current_path = os.getcwd()
+    current_path = Path(os.getcwd()).resolve()
     arbiter_ref_templates_dir = Path(arbiter.__file__).resolve().parent / "templates" / "arbiter"
 
     arbiter_conf_dir = current_path
-    arbiter_templates_dir = os.path.join(current_path, "templates")
+    arbiter_templates_dir = current_path / "templates"
     os.makedirs(arbiter_conf_dir, exist_ok=True)
     os.makedirs(arbiter_templates_dir, exist_ok=True)
 
     # Target file destinations
-    created_manage = os.path.join(arbiter_conf_dir, "arbiter.py")
-    created_settings = os.path.join(arbiter_conf_dir, "settings.py")
-    created_web_service = os.path.join(arbiter_conf_dir, "arbiter-web.service")
-    created_eval_service = os.path.join(
-        arbiter_conf_dir, "arbiter-eval.service")
+    created_manage = arbiter_conf_dir / "arbiter.py"
+    created_settings = arbiter_conf_dir / "settings.py"
+    created_web_service = arbiter_conf_dir / "arbiter-web.service"
+    created_eval_service = arbiter_conf_dir / "arbiter-eval.service"
 
     # Created email templates
-    created_email_body = os.path.join(arbiter_templates_dir, "email_body.html")
-    created_email_subject = os.path.join(arbiter_templates_dir, "email_subject.html")
+    created_email_body = arbiter_templates_dir / "email_body.html"
+    created_email_subject = arbiter_templates_dir / "email_subject.html"
 
     # using import for path here bc import lib has inconsistent output for the directory
     jinja_env = Environment(loader=FileSystemLoader(config_templates.__path__))
