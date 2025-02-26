@@ -58,11 +58,11 @@ except AssertionError:
 try:
     EMAIL_PORT = settings.EMAIL_PORT
     if EMAIL_PORT is not None:
-        assert isinstance(EMAIL_PORT, str)
+        assert isinstance(EMAIL_PORT, int)
 except AttributeError:
     raise ImproperlyConfigured("setting EMAIL_PORT is required")
 except AssertionError:
-    raise ImproperlyConfigured("setting EMAIL_PORT is a string or None")
+    raise ImproperlyConfigured("setting EMAIL_PORT is an integer or None")
 
 try:
     EMAIL_HOST_USER = settings.EMAIL_HOST_PASSWORD
