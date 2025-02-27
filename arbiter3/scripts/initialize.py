@@ -7,7 +7,7 @@ import warnings
 from jinja2 import Environment, FileSystemLoader
 from arbiter3.portal import arbiter, settings
 from arbiter3.scripts import config_templates
-from arbiter3 import arbiter
+import arbiter3.arbiter as arbiter_app
 
 
 def get_username() -> str:
@@ -35,7 +35,7 @@ def get_gunicorn_path() -> str:
 def initialize_config():
     interpreter_path = sys.executable
     current_path = Path(os.getcwd()).resolve()
-    arbiter_ref_templates_dir = Path(arbiter.__file__).resolve().parent / "templates" / "arbiter"
+    arbiter_ref_templates_dir = Path(arbiter_app.__file__).resolve().parent / "templates" / "arbiter"
 
     arbiter_conf_dir = current_path
     arbiter_templates_dir = current_path / "templates"
