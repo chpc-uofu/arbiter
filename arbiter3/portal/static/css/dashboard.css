@@ -18,6 +18,7 @@
 .notification-box,
 .usage-box {
     display: grid;
+    min-width: 670px;
     padding: 0px 10px 10px 10px;
 }
 
@@ -42,6 +43,7 @@
     grid-template-columns: 1fr 1fr;
     padding: 0px;
     width: 100%;
+    min-width: 670px;
     height: auto;
     flex: 1;
 }
@@ -110,7 +112,7 @@
 }
 
 .usage-box {
-    width: 70vw;
+    width: 90vw;
 }
 
 .usage-options {
