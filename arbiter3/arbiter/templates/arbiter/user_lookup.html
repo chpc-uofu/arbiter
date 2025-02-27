@@ -1,0 +1,50 @@
+{% extends 'arbiter/base.html'%}
+{% load static %}
+
+{% block extrastyle %}
+{{block.super}}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div>
+    <div class="card">
+        <h2 class="box-header">Management</h2>
+        <hr class="box-divider">
+            <div class="apply-box">
+                <form>
+                    {% csrf_token %}
+                    <h3>Apply Property</h3>
+                    <hr class="box-divider">
+                    <div class="apply-options">
+                        <h3>Host</h3>
+                        <select name="apply-host">
+                            <!-- <option value="all">All</option> -->
+                            {% for host in agents %}
+                            <option value="{{host}}">{{host}}</option>
+                            {% endfor %}
+                        </select>
+
+                        <h3>Username</h3>
+                        <input type="text" name="username" placeholder="">
+
+                        <h3>Property</h3>
+                        <select name="prop">
+                            {% for name, property in limits.items %}
+                            <option value="{{ property }}">{{name}}</option>
+                            {% endfor %}
+                        </select>
+                        <h3>Value</h3>
+                        <input type="text" name="value" placeholder="0">
+                        <input type="button" value="Apply Limit" 
+                            hx-post="{% url 'arbiter:apply' %}"
+                            hx-swap="afterbegin" hx-target=".messagelist"
+                            hx-include="[name='apply-host'],[name='username'],[name='prop'],[name='value']">
+                </form>
+            </div>
+
+        </div>
+    </div>
+    </div>
+</div>
+{% endblock %}
