@@ -4,9 +4,9 @@ from dataclasses import dataclass, asdict
 from django.db import models
 from django.utils import timezone
 
-from arbiter3.arbiter.utils import get_uid
+from arbiter3.arbiter.utils import get_uid, split_port
 from arbiter3.arbiter.query import Q, increase, sum_by, sum_over_time
-from arbiter3.arbiter.conf import WARDEN_PORT
+from arbiter3.arbiter.conf import WARDEN_PORT, PROMETHEUS_CONNECTION, WARDEN_JOB
 
 
 Limits = dict[str, any]
@@ -135,6 +135,12 @@ class Policy(models.Model):
     @property
     def mem_threshold(self):
         return self.query_data.get("params", {}).get("mem_threshold")
+
+    @property
+    def affected_hosts(self):
+        up_query = f"up{{job=~'{WARDEN_JOB}', instance=~'{self.domain}'}}"
+        result = PROMETHEUS_CONNECTION.query(up_query)
+        return [split_port(r.metric["instance"]) for r in result]
 
 
 class BasePolicy(Policy):

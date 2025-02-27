@@ -2,8 +2,12 @@ import logging
 
 from django.core import mail
 from django.core.management.base import BaseCommand
+from jinja2 import Environment, FileSystemLoader
 
-from arbiter3.arbiter.conf import ARBITER_ADMIN_EMAILS, ARBITER_FROM_EMAIL
+from arbiter3.arbiter.conf import ARBITER_ADMIN_EMAILS, ARBITER_FROM_EMAIL, ARBITER_USER_LOOKUP
+from arbiter3.arbiter.models import Violation
+from arbiter3.arbiter.email import send_email, format_limits
+from arbiter3.arbiter.plots import QueryError, violation_cpu_usage_figure, violation_mem_usage_figure 
 
 
 class Command(BaseCommand):
@@ -11,16 +15,18 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--recipients", nargs="+", type=str)
+        parser.add_argument('--violation', action='store_true')
 
     def handle(self, *args, **options):
-        result = send_test_email(options['recipients'])
+        if test_violation := options['violation']:
+            result = send_test_violation_mail(options['recipients'])
+        else:
+            result = send_test_email(options['recipients'])
+        
         print(result)
 
 
 def send_test_email(recipients: list[str]) -> str:
-
-    recipients = recipients or ARBITER_ADMIN_EMAILS
-
     if not recipients:
         return f'No recipients specified'
 
@@ -32,3 +38,35 @@ def send_test_email(recipients: list[str]) -> str:
     except Exception as e:
         return f"Could not send email to {recipients}: {e}"
     return f"Sent mail to recipients {recipients} successfully"
+
+
+def send_test_violation_mail(recipients: list[str]) -> str:
+    violation = Violation.objects.last()
+    if not violation:
+        return "No violatons found"
+
+    username, realname, email = ARBITER_USER_LOOKUP(violation.target.username)
+
+    try:
+        cpu = violation_cpu_usage_figure(violation)
+        mem = violation_mem_usage_figure(violation)
+    except QueryError as e:
+        return f'Could not send email to {recipients}: error generating figures: {e}'
+
+    figures = dict(cpu_chart=cpu, mem_chart=mem)
+    if not figures:
+        return f'Could not send email to {recipients}: no figures generated'
+
+    context = dict(
+        username=username,
+        realname=email,
+        limits=format_limits(violation.limits),
+        violation=violation,
+    )
+
+    try:
+        send_email(recipients, figures, context)
+    except Exception as e:
+        return f'Could not send email to {recipients}: {e}'
+    
+    return f"Sent mail to {recipients} successfully"

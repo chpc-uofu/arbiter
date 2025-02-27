@@ -94,7 +94,8 @@ except AssertionError:
 
 try: 
     ARBITER_FROM_EMAIL = settings.ARBITER_FROM_EMAIL
-    assert isinstance(ARBITER_FROM_EMAIL, str)
+    if ARBITER_FROM_EMAIL is not None:
+        assert isinstance(ARBITER_FROM_EMAIL, str)
 except AttributeError:
     raise ImproperlyConfigured("setting ARBITER_FROM_EMAIL is required")
 except AssertionError:
@@ -116,9 +117,14 @@ except AssertionError:
 if ARBITER_ADMIN_EMAILS and EMAIL_HOST is None:
     raise ImproperlyConfigured("setting EMAIL_HOST is required if ARBITER_ADMIN_EMAILS is not empty")
 
+if ARBITER_ADMIN_EMAILS and ARBITER_FROM_EMAIL is None:
+    raise ImproperlyConfigured("setting ARBITER_FROM_EMAIL is required if ARBITER_ADMIN_EMAILS is not empty")
 
 if ARBITER_NOTIFY_USERS and EMAIL_HOST is None:
     raise ImproperlyConfigured("setting EMAIL_HOST is required if ARBITER_NOTIFY_USERS=True")
+
+if ARBITER_NOTIFY_USERS and ARBITER_FROM_EMAIL is None:
+    raise ImproperlyConfigured("setting ARBITER_FROM_EMAIL is required if ARBITER_NOTIFY_USERS=True")
 
 
 ########## PROMETHEUS SETTINGS ##########

@@ -1,12 +1,42 @@
 
-## update me
 <h2>Violation of usage policy</h2>
-<p>A <strong>violation of the usage policy</strong> by <strong>{{ username }} ({{ realname }})</strong> on {{ hostname }} was automatically detected starting at {{ time }}.</p>
-<p>This may indicate that you are running computationally-intensive work on the interactive node (when it should be run on compute nodes instead).</p>
-<p>Your CPU usage is now limited to {{ cpu_limit }} cores for the next {{ duration }} minutes. In addition, your memory limit is now {{ memory_limit }} GIB for the same period of time.</p>
-<p><strong>These limits will apply on {{ affected_hosts }}.</strong></p>
 
-## include graphs in email
+<p>
+    A violation of the usage policy by {{ username }} ({{ realname }})
+    on {{ violation.target.host }} was automatically detected starting at  {{ violation.timestamp.strftime('%X') }}
+    on {{ violation.timestamp.strftime('%x')}}.
+</p>
+
+<p>Because the usage has exceeded the usage policy, the following resource limits will be applied:</p>
+
+    {% for limit, value in limits.items() %}
+        <p>
+            {{ limit }} : {{ value }}
+        
+            {% if limit == "CPU" %}
+                (cores)
+            {% endif %}
+
+            {% if limit == "Memory" %}
+                (GIB)
+            {% endif %}
+        </p>
+    {% endfor %}
+
+<p>
+    These limits will apply until {{ violation.timestamp.strftime('%X') }}
+    on {{ violation.timestamp.strftime('%x')}}, on the following hosts:
+</p>
+
+{% for host, port in violation.policy.affected_hosts %}
+    {{ host }}
+{% endfor %}
+
+
+<p>
+    Below is a summary of the usage that caused the violation.
+</p>
+
 {% for figure in figures %}
     <img src="cid:{{figure}}"/>
 {% endfor %}

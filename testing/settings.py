@@ -48,7 +48,9 @@ ARBITER_USER_LOOKUP = default_user_lookup
 
 ARBITER_ADMIN_EMAILS = []
 
-ARBITER_FROM_EMAIL = None
+ARBITER_FROM_EMAIL = 'arbiter@testing'
+
+ARBITER_EMAIL_TEMPLATE_DIR = None
 
 EMAIL_HOST = 'mailhog'  # changeme
 
