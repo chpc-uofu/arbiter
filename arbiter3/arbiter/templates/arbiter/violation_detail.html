@@ -57,7 +57,7 @@
 
         {% csrf_token %}
 
-        {% if not violation.expired %}
+        {% if not violation.expired and violation.expiration%}
             <input type="submit" name="expire" value="expire"/>
         {% endif %}
         <input type="submit" name="delete" value="delete"/>
