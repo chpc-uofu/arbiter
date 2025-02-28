@@ -56,18 +56,35 @@
     padding: 10px;
 }
 
-.search-box {
+.search-box, .user-box {
     border: 1px solid gray;
     border-style: hidden hidden hidden solid;
     padding: 10px;
 }
 
-.options-box .options-column{
-    flex-grow: 0;
+.user-box {
+    display: grid;
+    grid-template-rows: 2fr 1fr;
+    grid-template-columns: 1fr 1fr;
 }
 
-#search-card {
-    max-width: 60vw;
+.user-limits-box {
+    grid-row: 1;
+    grid-column: 1;
+}
+
+.user-active-viol-box {
+    grid-row: 1;
+    grid-column: 2;
+}
+
+.user-recent-viol-box {
+    grid-row: 2;
+    grid-column: 1 / 2;
+}
+
+.options-box .options-column{
+    flex-grow: 0;
 }
 
 .apply-options {

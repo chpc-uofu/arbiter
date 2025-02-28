@@ -38,7 +38,9 @@ def get_user_breakdown(request, target_id):
     if not target:
         messages.error(request, "Usage Policy not found.")
         return redirect("arbiter:list-usage-policy")
+    
+    active_violations = Violation.objects.filter(target_id=target_id)
 
-    context = {"navbar": navbar(request), "target": target, "title": "User Breakdown"}
+    context = {"navbar": navbar(request),"title": "User Breakdown", "target": target, "active_violations": active_violations}
 
     return render(request, "arbiter/user_breakdown.html", context)
