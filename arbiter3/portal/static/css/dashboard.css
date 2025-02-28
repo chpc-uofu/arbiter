@@ -48,12 +48,26 @@
     flex: 1;
 }
 
-.apply-box {
+.apply-box{
     border: 1px solid gray;
     border-style: hidden hidden hidden solid;
     grid-row: 1 / 3;
     grid-column: 2;
     padding: 10px;
+}
+
+.search-box {
+    border: 1px solid gray;
+    border-style: hidden hidden hidden solid;
+    padding: 10px;
+}
+
+.options-box .options-column{
+    flex-grow: 0;
+}
+
+#search-card {
+    max-width: 60vw;
 }
 
 .apply-options {
@@ -115,7 +129,7 @@
     width: 90vw;
 }
 
-.usage-options {
+.usage-options, .options-box {
     display: flex;
     justify-content: space-between;
     margin-bottom: 10px;
@@ -124,6 +138,10 @@
     height: min-content;
     flex-wrap: wrap;
     width: 100%;
+}
+
+.options-box {
+    justify-content: start;
 }
 
 .options-column input[type="text"],

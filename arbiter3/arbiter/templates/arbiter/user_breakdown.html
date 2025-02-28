@@ -1,0 +1,16 @@
+{% extends "arbiter/base.html" %}
+{% load static %}
+{% block extrastyle %}
+{{block.super}}
+{% endblock %}
+
+{% block content %}
+<div class="form-row">
+    <label>User:</label>
+    <div class="field-value">{{ target.username }}</div>
+</div>
+<div class="form-row">
+    <label>Host:</label>
+    <div class="field-value">{{ target.host }}</div>
+</div>
+{% endblock content %}
