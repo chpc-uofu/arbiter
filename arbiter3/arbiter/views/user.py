@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.utils import timezone
 
 from arbiter3.arbiter.models import Target, Violation
+from arbiter3.arbiter.utils import to_readable_limits
 from .nav import navbar
 
 
@@ -43,6 +44,9 @@ def get_user_breakdown(request, target_id):
     active_violations = Violation.objects.filter(target_id=target_id).exclude(expiration__lt = timezone.now())
     recent_violations = Violation.objects.filter(target_id=target_id, expiration__lt = timezone.now()).order_by("-timestamp")[:10]
 
-    context = {"navbar": navbar(request),"title": "User Breakdown", "target": target, "active_violations": active_violations, "recent_violations": recent_violations}
+    readable_limits = target.limits
+    readable_limits = to_readable_limits(readable_limits)
+
+    context = {"navbar": navbar(request),"title": "User Breakdown", "target": target, "limits":readable_limits, "active_violations": active_violations, "recent_violations": recent_violations}
 
     return render(request, "arbiter/user_breakdown.html", context)
