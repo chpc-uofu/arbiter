@@ -118,3 +118,17 @@ def gib_to_bytes(gib: float) -> int:
 
 def bytes_to_gib(byts: int) -> float:
     return byts / BYTES_PER_GIB
+
+
+def to_readable_limits(limits: dict) -> dict:
+    cpu_quota = limits.pop("CPUQuotaPerSecUSec", None)
+    memory_max = limits.pop("MemoryMax", None)
+
+    if cpu_quota:
+        limits["CPU-Quota (Cores)"] = usec_to_cores(cpu_quota)
+
+    if memory_max:
+        limits["Memory-Max (Gib)"] = bytes_to_gib(memory_max)
+
+    return limits
+

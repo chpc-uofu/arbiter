@@ -1,0 +1,40 @@
+{% extends 'arbiter/base.html'%}
+{% load static %}
+
+{% block extrastyle %}
+{{block.super}}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div>
+    <div class="card">
+        <div class="search-box">
+            <form method="post">
+                {% csrf_token %}
+                <h3>Quick Search</h3>
+                <hr class="box-divider">
+                <div class="options-box">
+                    <div class="options-column">
+                        <div class="label-input-box">
+                            <h3>Username</h3>
+                            <input type="text" name="user" placeholder="">
+                        </div>
+                    </div>
+                    <div class="options-column">
+                        <div class="label-input-box">
+                            <h3>Host</h3>
+                            <select name="host">
+                                {% for host in hosts %}
+                                    <option value="{{host}}">{{host}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <input type="submit" value="search">
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

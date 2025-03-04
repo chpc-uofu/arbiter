@@ -20,6 +20,7 @@ def navbar(request):
         routes["Base Policy"] = reverse("arbiter:list-base-policy")
         routes["Usage Policy"] = reverse("arbiter:list-usage-policy")
         routes["Violations"] = reverse("arbiter:list-violation")
+        routes["User Lookup"] = reverse("arbiter:user-lookup")
 
     items = []
 
