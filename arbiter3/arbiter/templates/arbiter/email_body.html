@@ -1,0 +1,42 @@
+
+<h2>Violation of usage policy</h2>
+
+<p>
+    A violation of the usage policy by {{ username }} ({{ realname }})
+    on {{ violation.target.host }} was automatically detected starting at  {{ violation.timestamp.strftime('%X') }}
+    on {{ violation.timestamp.strftime('%x')}}.
+</p>
+
+<p>Because the usage has exceeded the usage policy, the following resource limits will be applied:</p>
+
+    {% for limit, value in limits.items() %}
+        <p>
+            {{ limit }} : {{ value }}
+        
+            {% if limit == "CPU" %}
+                (cores)
+            {% endif %}
+
+            {% if limit == "Memory" %}
+                (GIB)
+            {% endif %}
+        </p>
+    {% endfor %}
+
+<p>
+    These limits will apply until {{ violation.timestamp.strftime('%X') }}
+    on {{ violation.timestamp.strftime('%x')}}, on the following hosts:
+</p>
+
+{% for host, port in violation.policy.affected_hosts %}
+    {{ host }}
+{% endfor %}
+
+
+<p>
+    Below is a summary of the usage that caused the violation.
+</p>
+
+{% for figure in figures %}
+    <img src="cid:{{figure}}"/>
+{% endfor %}

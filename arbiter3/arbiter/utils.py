@@ -10,6 +10,7 @@ SEC_PER_HOUR = 60**2
 SEC_PER_DAY = 60**2 * 24
 SEC_PER_WEEK = 60**2 * 24 * 7
 
+
 logger = logging.getLogger(__name__)
 
 def log_debug(func):

@@ -127,13 +127,6 @@ def query_violations(policies: list[Policy]) -> list[Violation]:
 
 
 @log_debug
-def get_affected_hosts(domain) -> list[str]:
-    up_query = f"up{{job=~'{WARDEN_JOB}', instance=~'{domain}'}}"
-    result = PROMETHEUS_CONNECTION.query(up_query)
-    return [split_port(r.metric["instance"]) for r in result]
-
-
-@log_debug
 async def apply_limits(limits: Limits, target: Target, session: aiohttp.ClientSession) -> tuple[Target, Limits]:
     applied: Limits = {}
     for name, value in limits.items():
@@ -229,7 +222,7 @@ def evaluate(policies=None):
     targets = Target.objects.all()
     applicable_limits = {target: [] for target in targets}
     for v in unexpired:
-        for host, port in get_affected_hosts(v.policy.domain):
+        for host, port in v.policy.affected_hosts:
             target, _ = targets.update_or_create(
                 host=host, username=v.target.username, defaults=dict(port=port, unit=v.target.unit))
 

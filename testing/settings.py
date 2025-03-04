@@ -19,7 +19,6 @@ PROMETHEUS_URL = 'http://prometheus:9090'
 
 PROMETHEUS_VERIFY_SSL = False
 
-# if using basic auth set to tuple (username, password)
 PROMETHEUS_USERNAME = None
 
 PROMETHEUS_PASSWORD = None
@@ -49,7 +48,9 @@ ARBITER_USER_LOOKUP = default_user_lookup
 
 ARBITER_ADMIN_EMAILS = []
 
-ARBITER_FROM_EMAIL = None
+ARBITER_FROM_EMAIL = 'arbiter@testing'
+
+ARBITER_EMAIL_TEMPLATE_DIR = None
 
 EMAIL_HOST = 'mailhog'  # changeme
 

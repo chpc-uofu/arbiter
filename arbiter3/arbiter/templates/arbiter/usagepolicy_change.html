@@ -1,0 +1,8 @@
+{% extends "arbiter/change_view.html" %}
+
+{% block submit-box %}
+{{ block.super }}
+{% if form.instance.pk %}
+<input type="submit" name="copy" value="copy" />
+{% endif %}
+{% endblock %}

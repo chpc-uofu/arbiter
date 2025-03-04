@@ -5,7 +5,7 @@
 Arbiter is released using [semantic versioning](https://semver.org/) ([major].[minor].[release]).
 
 ## Update Process for Pip Installation
-1. Activate virtual enviroment (set up during install)
+1. Activate virtual environment (set up during install)
 ```shell
 source venv/bin/activate
 ```
@@ -31,7 +31,7 @@ systemctl restart arbiter-eval.service
 git pull
 ```
 
-2. Activate virtual enviroment (set up during install)
+2. Activate virtual environment (set up during install)
 ```shell
 source venv/bin/activate
 ```

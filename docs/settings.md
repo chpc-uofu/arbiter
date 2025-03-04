@@ -12,9 +12,11 @@ resource limits.
 ## Prometheus
 `PROMETHEUS_URL` **(string)** : URL of your prometheus instance that scrapes the wardens.
 
-`PROMETHUS_VERIFY_SSL` **(bool)** : If enabled, arbiter will verify the certificate of your prometheus instance if using TLS.
+`PROMETHEUS_VERIFY_SSL` **(bool)** : If enabled, arbiter will verify the certificate of your prometheus instance if using TLS.
 
-`PROMETHEUS_AUTH` **(tuple[string, string] | None)** : If using basic auth, the username and password to query Prometheus with. 
+`PROMETHEUS_USERNAME` **(string | None)** : If using basic auth, the username to query prometheus with.
+
+`PROMETHEUS_PASSWORD` **(string | None)** : If using basic auth, the password to query prometheus with.
 
 ## cgroup-warden
 `WARDEN_JOB` **(string)** : The Prometheus scrape job name. Should be 'cgroup-warden'.
@@ -30,19 +32,22 @@ resource limits.
 ## Email
 `ARBITER_NOTIFY_USERS` **(bool)** : If enabled, arbiter will email users about their violations.
 
-`ARBITER_USER_LOOKUP` **(func)** : A function to lookup a users username, email, and realname given a username. This is a Python function.  
+`ARBITER_USER_LOOKUP` **(callabe | None)** : A function to lookup a users username, email, and realname given a username. This is a Python function.  
 
 `ARBITER_ADMIN_EMAILS` **(list[string])** : A list of email addresses that arbiter will send all violations to. 
 
 `ARBITER_FROM_EMAIL` **(string)** : The email address arbiter will send mail from.
 
-`EMAIL_HOST` **(string)** : The mail server arbiter will route emails through. 
+`ARBITER_EMAIL_TEMPLATE_DIR` **(string | None)** : If given, arbiter will use the templates of `email_body.html` and `email_subject.html` in this dir when sending emails.
 
-`EMAIL_PORT` **(int)** : The port arbiter will use with the mail server.
+`EMAIL_HOST` **(string | None)** : The mail server arbiter will route emails through. 
 
-`EMAIL_HOST_USER` **(string)** If given, arbiter will use this username to authenticate with the mail server.
+`EMAIL_PORT` **(int | None)** : The port arbiter will use with the mail server.
 
-`EMAIL_HOST_PASSWORD` **(string)** If given, arbiter will use this password to authenticate with the mail server.
+`EMAIL_HOST_USER` **(string | None)** If given, arbiter will use this username to authenticate with the mail server.
+
+`EMAIL_HOST_PASSWORD` **(string | None)** If given, arbiter will use this password to authenticate with the mail server.
+
 
 ## Django
 
@@ -54,6 +59,6 @@ The following are Django specific settings. See [here](https://docs.djangoprojec
 
 `SECRET_KEY` **(string)** : A secret used for cryptographic signing and other security purposes.
 
-`ALLOWED_HOSTS` **(list[string])** : A list of hostnames from which the Arbiter site can be accessed as.
+`ALLOWED_HOSTS` **(list[string])** : A list of host names from which the Arbiter site can be accessed as.
 
 `TIME_ZONE` **(string)** : Time zone used when displaying time.

@@ -1,16 +1,15 @@
-from django.forms.renderers import BaseRenderer
 from django.shortcuts import render, redirect
 from django import forms
-from django.utils.safestring import mark_safe
 from django.views.generic.list import ListView
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
+
 import json
 from dataclasses import dataclass
 
-from arbiter3.arbiter.models import UsagePolicy, Limits, QueryData, QueryParameters, CPU_QUOTA, MEMORY_MAX
+from arbiter3.arbiter.models import UsagePolicy, QueryData, QueryParameters, CPU_QUOTA, MEMORY_MAX
 from arbiter3.arbiter.utils import usec_to_cores, bytes_to_gib, cores_to_usec, gib_to_bytes
 
 from .nav import navbar
@@ -184,11 +183,15 @@ def new_usage_policy(request):
             messages.success(request, "Successfully created usage policy.")
             return redirect("arbiter:list-usage-policy")
     else:
-        form = UsagePolicyForm()
+        if request.GET:
+            form = UsagePolicyForm(request.GET)
+        else:
+            form = UsagePolicyForm()
+
 
     context = {"form": form, "navbar": navbar(
         request), "can_change": can_change, "title": "Create Usage Policy"}
-    return render(request, "arbiter/change_view.html", context)
+    return render(request, "arbiter/usagepolicy_change.html", context)
 
 
 @login_required(login_url=reverse_lazy("login"))
@@ -216,6 +219,20 @@ def change_usage_policy(request, policy_id):
             policy.delete()
             messages.success(request, "Successfully removed usage policy.")
             return redirect("arbiter:list-usage-policy")
+        if "copy" in request.POST:
+            try:
+                policy.pk = None
+                policy.name += "(copy)"
+                policy.active = False
+                policy.save()
+
+                messages.success(request, "Successfully copied usage policy.")
+                url = reverse("arbiter:change-usage-policy", kwargs = {'policy_id' : policy.id})
+                return redirect(url)
+            except:
+                messages.error(request, f"Unable to copy policy. Check that the name {policy.name} isn't taken.")
+                return redirect("arbiter:list-usage-policy")
+
     else:
         if can_change:
             form = UsagePolicyForm(instance=policy)
@@ -224,4 +241,4 @@ def change_usage_policy(request, policy_id):
 
     context = {"form": form, "navbar": navbar(
         request), "can_change": can_change, "title": "Change Usage Policy"}
-    return render(request, "arbiter/change_view.html", context)
+    return render(request, "arbiter/usagepolicy_change.html", context)

@@ -13,3 +13,4 @@ dist/*
 /arbiter.py
 /arbiter-eval.service
 /arbiter-web.service
+/templates/*
