@@ -31,7 +31,9 @@
     border-radius: 8px 8px 0px 0px;
 }
 
-.box-divider {
+.sub-box
+
+.box-divider, .sub-box-divider {
     background-color: gray;
     padding: 0px;
     margin: 0px;

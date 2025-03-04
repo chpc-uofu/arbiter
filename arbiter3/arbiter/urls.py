@@ -23,7 +23,7 @@ urlpatterns = [
     path("violation/", violation.ViolationListView.as_view(), name="list-violation"),
     path("violation/<int:violation_id>",
          violation.change_violation, name="change-violation"),
-    path("user/<int:target_id>", user.get_user_breakdown, name="user-breakdown"),
+    path("user/<str:username>", user.get_user_breakdown, name="user-breakdown"),
     path("user/lookup/", user.get_user_lookup, name="user-lookup"),
 
     path("", index.view_index, name="view-index"),
