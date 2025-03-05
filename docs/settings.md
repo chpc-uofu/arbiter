@@ -8,6 +8,7 @@ The settings are represented with native Python types.
 `ARBITER_PERMISSIVE_MODE` **(bool)** : If enabled, Arbiter will not set 
 resource limits.
 
+`ARBITER_LOG_LEVEL` **(string)** : The level of messages to log out. Options are `debug`, `info`, `warning`, and `critical`. 
 
 ## Prometheus
 `PROMETHEUS_URL` **(string)** : URL of your prometheus instance that scrapes the wardens.
@@ -62,3 +63,19 @@ The following are Django specific settings. See [here](https://docs.djangoprojec
 `ALLOWED_HOSTS` **(list[string])** : A list of host names from which the Arbiter site can be accessed as.
 
 `TIME_ZONE` **(string)** : Time zone used when displaying time.
+
+
+# Verifying Settings
+## Settings File
+To verify that the settings are valid, you can run the webserver:
+```shell
+./arbiter.py runserver 
+```
+This will throw exceptions if your settings file is improperly configured.
+
+## Email
+To verify that emails are working correctly, you can use the `test_email` command with arbiter:
+```shell
+./arbiter.py test_email --recipients admin1@yoursite.edu admin2@yoursite.edu
+``` 
+This will send a small test email to the recipients. If the `--violation` flag is included, it will send an example violation email, provided a violation exists in the database.
