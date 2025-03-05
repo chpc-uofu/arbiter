@@ -13,24 +13,6 @@ SEC_PER_WEEK = 60**2 * 24 * 7
 
 logger = logging.getLogger(__name__)
 
-def log_debug(func):
-    def f(*args):
-        args_str = '('
-        for arg in args:
-            if isinstance(arg, float):
-                args_str += '%.2f' % arg
-            elif isinstance(arg, int):
-                args_str += '%d' % arg
-            elif isinstance(arg, str):
-                args_str += '"%s"' % arg
-            else:
-                args_str += '%s' % arg
-            args_str += ', '
-        args_str = args_str[:-2] + ')'
-        logger.debug(f'{func.__name__}{args_str}')
-        return func(*args)
-    return f
-
 
 def split_port(host: str) -> tuple[str, int | None]:
     values = host.split(":")

@@ -28,6 +28,28 @@ except AssertionError:
     raise ImproperlyConfigured("setting ARBITER_PERMISSIVE_MODE is a boolean")
 
 
+try:
+    ARBITER_LOG_LEVEL = settings.ARBITER_LOG_LEVEL
+    assert isinstance(ARBITER_LOG_LEVEL, str)
+    match ARBITER_LOG_LEVEL:
+        case 'debug':
+            logging_level = logging.DEBUG
+        case 'info':
+            logging_level = logging.INFO
+        case 'warning':
+            logging_level = logging.WARNING
+        case 'critical':
+            logging_level = logging.CRITICAL
+        case _:
+            raise ValueError
+    logging.getLogger().setLevel(logging_level)
+except AttributeError:
+    raise ImproperlyConfigured("setting ARBITER_LOG_LEVEL is required")
+except AssertionError:
+    raise ImproperlyConfigured("setting ARBITER_LOG_LEVEL is a string")
+except ValueError:
+    raise ImproperlyConfigured("setting ARBITER_LOG_LEVEL must be set to either 'debug', 'info', 'warning', or 'critical'")
+
 ########## EMAIL SETTINGS ##########
 
 try:
