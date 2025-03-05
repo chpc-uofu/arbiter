@@ -39,7 +39,7 @@ These represent the CPU and memory limits you want to have applied to users at a
 - Domain: Machines that this policy will apply to. Supports wildcards and conditionals, such as `node.*.site.edu` or `node1.site.edu | node2.site.edu`. 
 - Description (optional): A text field that may be used to describe what the policy does.
 - Penalty Duration: The initial length of time the user will be in penalty when a this policy is violated.
-- Repeated Offense Scalar: The value to multiply the initial penalty duration upon each subsequent violation created in the repeateed offense lookback range.
+- Repeated Offense Scalar: The value to multiply the initial penalty duration upon each subsequent violation created in the repeated offense lookback range.
 - Repeated Offense Lookback: The window in which repeated violations increase the penalty duration times and upgrade the penalty constraints.
 - Grace Period: How long after a violation expires to allow another to be created. 
 - Lookback: The window at which to look at CPU and memory utilization violations. 
