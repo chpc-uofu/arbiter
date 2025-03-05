@@ -24,7 +24,7 @@
     {% endfor %}
 
 <p>
-    These limits will apply until {{ violation.timestamp.strftime('%X') }}
+    These limits will apply until {{ violation.expiration.strftime('%X') }}
     on {{ violation.timestamp.strftime('%x')}}, on the following hosts:
 </p>
 
