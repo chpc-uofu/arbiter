@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block page-title %}
-{{ username }} Breakdown
+User Breakdown for {{ username }}
 {% endblock %}
 
 {% block content %}
@@ -21,7 +21,8 @@
                 <h3>Active Limits</h3>
                 <hr class="box-divider">
                 {% for target in targets %}
-
+                
+                <h3 class="target-host-header">{{ target.host }}</h3>
                 
                 <ul>
                     {% for propname, propvalue in target.limits.items %}

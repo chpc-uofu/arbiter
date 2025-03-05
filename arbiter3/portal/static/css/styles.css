@@ -24,10 +24,6 @@
 }
 
 a {
-    color: var(--light-accent);
-}
-
-a:visited, a:hover {
     color: var(--darker-accent);
 }
 

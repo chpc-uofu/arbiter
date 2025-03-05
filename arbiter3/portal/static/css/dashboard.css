@@ -200,6 +200,11 @@
     flex-grow: 0.25;
 }
 
+.target-host-header{
+    border-bottom: 1px solid var(--darker-bg);
+    max-width: min-content;
+}
+
 #before-input {
     display: flex;
     flex-direction: row;
