@@ -12,6 +12,9 @@ ARBITER_MIN_UID = 1000
 
 # arbiter will not set resource limits if enabled
 ARBITER_PERMISSIVE_MODE = True
+    
+# arbiter logging level, debug, info, warning, or critical    
+ARBITER_LOG_LEVEL = 'debug'
 
 # ============================================================
 #                         Prometheus

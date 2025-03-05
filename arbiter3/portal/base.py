@@ -116,40 +116,38 @@ LOGGING = {
     "disable_existing_loggers": False,
     "handlers": {
         "console": {
-            "level": "INFO",
-            "class": "logging.StreamHandler",
-            "formatter": "simple",
-        },
-        "debug_console": {
-            "level": "DEBUG",
             "class": "logging.StreamHandler",
             "formatter": "verbose",
-        }
+        },
+        "file": {
+            "class": "logging.FileHandler",
+            "formatter": "verbose",
+            "filename": "arbiter.log",
+        },
+
+    },
+    "loggers": {
+        "arbiter3.arbiter": {
+            "handlers": ["console", "file"],
+            "propagate": False,
+        },
+        "django": {
+            "handlers": ["console"],
+            "propogate": False,
+        },
+        "django.server": {
+            "handlers": ["console"],
+            "propogate": False,
+        },
     },
     "formatters": {
         "verbose": {
-            "format": "{levelname} {asctime} {message}",
+            "format": "{levelname} {asctime:s} {message}",
             "style": "{",
         },
         "simple": {
             "format": "{levelname} {message}",
             "style": "{",
-        },
-    },
-    "root": {
-        "handlers": ["console"],
-        "level": "WARNING",
-    },
-    "loggers": {
-        "django": {
-            "handlers": ["console"],
-            "level": os.getenv("DJANGO_LOG_LEVEL", "WARNING"),
-            "propagate": False,
-        },
-        "arbiter3.arbiter": {
-            "handlers": ["debug_console"],
-            "level": os.getenv("ARBITER_LOG_LEVEL", "DEBUG"),
-            "propagate": False,
-        },
-    },
+        }
+    }
 }

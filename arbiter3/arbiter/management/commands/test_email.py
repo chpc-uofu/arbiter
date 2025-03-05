@@ -2,6 +2,7 @@ import logging
 
 from django.core import mail
 from django.core.management.base import BaseCommand
+from django.utils import timezone
 from jinja2 import Environment, FileSystemLoader
 
 from arbiter3.arbiter.conf import ARBITER_ADMIN_EMAILS, ARBITER_FROM_EMAIL, ARBITER_USER_LOOKUP
@@ -24,6 +25,10 @@ class Command(BaseCommand):
             result = send_test_email(options['recipients'])
         
         print(result)
+
+
+def convert_to_local_timezone(utctime):
+    return utctime.astimezone(timezone.get_current_timezone())
 
 
 def send_test_email(recipients: list[str]) -> str:
@@ -62,6 +67,8 @@ def send_test_violation_mail(recipients: list[str]) -> str:
         realname=email,
         limits=format_limits(violation.limits),
         violation=violation,
+        timestamp=convert_to_local_timezone(violation.timestamp),
+        expiration=convert_to_local_timezone(violation.expiration),
     )
 
     try:

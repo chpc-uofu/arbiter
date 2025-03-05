@@ -9,7 +9,7 @@ from django.utils import timezone
 
 from prometheus_api_client import PrometheusApiClientException
 
-from arbiter3.arbiter.utils import split_port, get_uid, log_debug
+from arbiter3.arbiter.utils import split_port, get_uid
 from arbiter3.arbiter.models import Target, Violation, Policy, Limits, Event, UNSET_LIMIT
 from arbiter3.arbiter.email import send_violation_email
 from arbiter3.arbiter.conf import (
@@ -25,7 +25,6 @@ from arbiter3.arbiter.conf import (
 logger = logging.getLogger(__name__)
 
 
-@log_debug
 async def set_property(target: Target, session: aiohttp.ClientSession, name: str, value: any) -> tuple[http.HTTPStatus, str]:
     if WARDEN_USE_TLS:
         endpoint = f"https://{target.endpoint}/control"
@@ -56,7 +55,6 @@ async def set_property(target: Target, session: aiohttp.ClientSession, name: str
     return status, message
 
 
-@log_debug
 def create_violation(target: Target, policy: Policy) -> Violation:
     unit_violations = Violation.objects.filter(policy=policy, target=target)
 
@@ -90,7 +88,6 @@ def create_violation(target: Target, policy: Policy) -> Violation:
     return None
 
 
-@log_debug
 def query_violations(policies: list[Policy]) -> list[Violation]:
     violations = []
     for policy in policies:
@@ -126,7 +123,6 @@ def query_violations(policies: list[Policy]) -> list[Violation]:
     return violations
 
 
-@log_debug
 async def apply_limits(limits: Limits, target: Target, session: aiohttp.ClientSession) -> tuple[Target, Limits]:
     applied: Limits = {}
     for name, value in limits.items():
@@ -142,7 +138,6 @@ async def apply_limits(limits: Limits, target: Target, session: aiohttp.ClientSe
     return target, applied
 
 
-@log_debug
 def reduce_limits(limits_list: list[Limits]) -> Limits:
     reduced: Limits = {}
     for limits in limits_list:
@@ -155,7 +150,6 @@ def reduce_limits(limits_list: list[Limits]) -> Limits:
     return reduced
 
 
-@log_debug
 def resolve_limits(target: Target, limits: Limits) -> Limits:
     resolved = {name: value for name, value in limits.items()}
 
@@ -168,7 +162,6 @@ def resolve_limits(target: Target, limits: Limits) -> Limits:
     return resolved
 
 
-@log_debug
 async def reduce_and_apply_limits(applicable: dict[Target, list[Limits]]):
     async with aiohttp.ClientSession() as session, asyncio.TaskGroup() as tg:
         tasks = []
@@ -190,7 +183,6 @@ async def reduce_and_apply_limits(applicable: dict[Target, list[Limits]]):
     return final_applications
 
 
-@log_debug
 def create_event_for_eval(violations):
     violations_json = []
     for violation in violations:
@@ -207,7 +199,6 @@ def create_event_for_eval(violations):
     )
 
 
-@log_debug
 def evaluate(policies=None):
     policies = policies or Policy.objects.all()
     policies = [p for p in policies if p.active]
