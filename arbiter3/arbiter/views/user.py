@@ -36,8 +36,8 @@ def get_user_breakdown(request, username):
         target["limits"] = to_readable_limits(target["limits"])
 
     if len(targets) == 0:
-        messages.error(request, "Usage Policy not found.")
-        return redirect("arbiter:list-usage-policy")
+        messages.error(request, "Specified user is not in arbiter's records (this may be because the names are incorrect or the user has not gone into penalty/base status before)")
+        return redirect("arbiter:user-lookup")
 
     
     active_violations = Violation.objects.filter(target__username=username).exclude(expiration__lt = timezone.now())
