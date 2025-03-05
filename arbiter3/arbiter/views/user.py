@@ -22,7 +22,6 @@ def get_user_lookup(request):
     
     context = dict(
         title="User Lookup",
-        hosts=set(Target.objects.values_list("host", flat=True)),
         navbar=navbar(request),
     )
 
@@ -39,7 +38,7 @@ def get_user_breakdown(request, username):
 
     
     active_violations = Violation.objects.filter(target__username=username).exclude(expiration__lt = timezone.now())
-    recent_violations = Violation.objects.filter(target__username=username, expiration__lt = timezone.now()).order_by("-timestamp")[:10]
+    recent_violations = Violation.objects.filter(target__username=username, expiration__isnull=False).order_by("-timestamp")[:10]
 
     context = {"navbar": navbar(request),"title": "User Breakdown", "username":username, "targets": targets, "active_violations": active_violations, "recent_violations": recent_violations}
 
