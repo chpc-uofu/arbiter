@@ -30,7 +30,10 @@ def get_user_lookup(request):
 
 @permission_required('arbiter.view_dashboard')
 def get_user_breakdown(request, username):
-    targets = Target.objects.filter(username=username)
+    targets = Target.objects.filter(username=username).values("host", "limits")
+
+    for target in targets:
+        target["limits"] = to_readable_limits(target["limits"])
 
     if len(targets) == 0:
         messages.error(request, "Usage Policy not found.")

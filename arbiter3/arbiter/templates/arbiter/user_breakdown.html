@@ -27,6 +27,8 @@ User Breakdown for {{ username }}
                 <ul>
                     {% for propname, propvalue in target.limits.items %}
                     <li>{{ propname }} : {{ propvalue }}</li>
+                    {% empty %}
+                    None
                     {% endfor %}
                 </ul>
                 {% endfor %}
