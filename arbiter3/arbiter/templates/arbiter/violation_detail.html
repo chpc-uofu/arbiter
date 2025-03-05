@@ -10,7 +10,10 @@
 {% block content %}
 <form action="{{ request.path }}" method="post">
     <div class="form-row">
-        <label>Violator:</label> <div class= "field-value">{{ violation.target }}</div>
+        <label>Violator:</label> 
+        <div class= "field-value">
+            <a href="{% url 'arbiter:user-breakdown' violation.target.username%}">{{violation.target.username}}</a>@{{violation.target.host}}
+        </div>
     </div>
     <div class="form-row">
         <label>Name:</label> <div class= "field-value">{{ realname }}</div>

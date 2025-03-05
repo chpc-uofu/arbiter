@@ -31,7 +31,9 @@
     border-radius: 8px 8px 0px 0px;
 }
 
-.box-divider {
+.sub-box
+
+.box-divider, .sub-box-divider {
     background-color: gray;
     padding: 0px;
     margin: 0px;
@@ -196,6 +198,11 @@
 .label-input-box input[type="datetime-local"] {
     border-radius: 4px;
     flex-grow: 0.25;
+}
+
+.target-host-header{
+    border-bottom: 1px solid var(--darker-bg);
+    max-width: min-content;
 }
 
 #before-input {

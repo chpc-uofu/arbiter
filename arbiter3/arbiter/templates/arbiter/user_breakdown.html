@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block page-title %}
-{{ target.username }}@{{ target.host }} Breakdown
+User Breakdown for {{ username }}
 {% endblock %}
 
 {% block content %}
@@ -20,8 +20,17 @@
             <div class="user-limits-box">
                 <h3>Active Limits</h3>
                 <hr class="box-divider">
-                {% for propname, propvalue in limits.items %}
-                <p>{{ propname }} : {{ propvalue }}</p>
+                {% for target in targets %}
+                
+                <h3 class="target-host-header">{{ target.host }}</h3>
+                
+                <ul>
+                    {% for propname, propvalue in target.limits.items %}
+                    <li>{{ propname }} : {{ propvalue }}</li>
+                    {% empty %}
+                    None
+                    {% endfor %}
+                </ul>
                 {% endfor %}
             </div>
             <div class="user-active-viol-box">
@@ -31,7 +40,7 @@
                     {% for violation in active_violations %}
                     <li>
                         <a href="{% url 'arbiter:change-violation' violation.id %}">
-                            {{violation.policy.name}}
+                            {{violation.policy.name}} on {{ violation.target.host }}
                         </a> 
                     </li>
                     {% endfor %}
@@ -45,7 +54,7 @@
                     {% for violation in recent_violations %}
                     <li>
                         <a href="{% url 'arbiter:change-violation' violation.id %}">
-                            {{violation.policy.name}}- {{violation.timestamp | naturaltime}}
+                            {{violation.policy.name}}- {{violation.timestamp | naturaltime}} on {{ violation.target.host }}
                         </a> 
                     </li>
                     {% endfor %}
