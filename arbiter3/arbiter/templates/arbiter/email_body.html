@@ -3,8 +3,7 @@
 
 <p>
     A violation of the usage policy by {{ username }} ({{ realname }})
-    on {{ violation.target.host }} was automatically detected starting at  {{ violation.timestamp.strftime('%X') }}
-    on {{ violation.timestamp.strftime('%x')}}.
+    on {{ violation.target.host }} was automatically detected starting on {{ timestamp.strftime('%x') }} at {{ timestamp.strftime('%X') }}.
 </p>
 
 <p>Because the usage has exceeded the usage policy, the following resource limits will be applied:</p>
@@ -24,8 +23,7 @@
     {% endfor %}
 
 <p>
-    These limits will apply until {{ violation.expiration.strftime('%X') }}
-    on {{ violation.timestamp.strftime('%x')}}, on the following hosts:
+    These limits will apply until {{ expiration.strftime('%x') }} at {{expiration.strftime('%X')}} on the following hosts:
 </p>
 
 {% for host, port in violation.policy.affected_hosts %}

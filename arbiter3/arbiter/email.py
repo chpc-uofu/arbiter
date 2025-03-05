@@ -1,6 +1,8 @@
 import logging
 from email.mime.image import MIMEImage
 
+
+from datetime import datetime
 from jinja2 import Environment, FileSystemLoader
 from plotly.graph_objects import Figure
 
@@ -11,7 +13,7 @@ from arbiter3.arbiter.utils import bytes_to_gib, usec_to_cores
 
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
-
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 user_lookup = ARBITER_USER_LOOKUP
@@ -22,7 +24,6 @@ subject_template = jinja_env.get_template('email_subject.html')
 
 def format_limits(limits: dict[str, int]) -> dict[str, str]:
     results = {}
-
     for limit, value in limits.items():
         if limit == "CPUQuotaPerSecUSec":
             results['CPU'] = usec_to_cores(value)
@@ -30,6 +31,10 @@ def format_limits(limits: dict[str, int]) -> dict[str, str]:
             results['Memory'] = bytes_to_gib(value)
     
     return results
+
+
+def convert_to_local_timezone(utctime):
+    return utctime.astimezone(timezone.get_current_timezone())
 
 
 def send_email(recipients: list[str], figures: dict[str, Figure], context: dict[str,str]) -> str:
@@ -73,6 +78,8 @@ def send_violation_email(violation: Violation | None) -> str:
         realname=realname,
         limits=format_limits(violation.limits),
         violation=violation,
+        timestamp=convert_to_local_timezone(violation.timestamp),
+        expiration=convert_to_local_timezone(violation.expiration),
     )
 
     try:
