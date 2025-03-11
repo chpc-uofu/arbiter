@@ -56,7 +56,7 @@ def send_email(recipients: list[str], figures: dict[str, Figure], context: dict[
 def send_violation_email(violation: Violation | None) -> str:
     username, realname, email = user_lookup(violation.target.username)
 
-    recipients = ARBITER_ADMIN_EMAILS
+    recipients = list(ARBITER_ADMIN_EMAILS)
     if ARBITER_NOTIFY_USERS and email:
         recipients.append(email)
 
