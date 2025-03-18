@@ -30,6 +30,8 @@ resource limits.
 
 `WARDEN_BEARER` **(string | None)** : If given, will be used as the bearer token to authenticate with the cgroup-wardens.
 
+`WARDEN_RUNTIME` **(bool)** : If enabled, the cgroup-warden will not write out persistant drop-in files for limits in `/etc/systemd`, and will instead write these files to `/run`. This means that when enabled, upon reboot all limits will be reset. Arbiter will account for this and sync limits, requiring no action. 
+
 ## Email
 `ARBITER_NOTIFY_USERS` **(bool)** : If enabled, arbiter will email users about their violations.
 

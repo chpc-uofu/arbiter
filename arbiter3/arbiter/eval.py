@@ -10,7 +10,7 @@ from django.utils import timezone
 from prometheus_api_client import PrometheusApiClientException
 
 from arbiter3.arbiter.utils import split_port, get_uid
-from arbiter3.arbiter.models import Target, Violation, Policy, Limits, Event, UNSET_LIMIT
+from arbiter3.arbiter.models import Target, Violation, Policy, Limits, Event, UNSET_LIMIT, CPU_QUOTA, MEMORY_MAX
 from arbiter3.arbiter.email import send_violation_email
 from arbiter3.arbiter.conf import (
     PROMETHEUS_CONNECTION,
@@ -20,9 +20,57 @@ from arbiter3.arbiter.conf import (
     WARDEN_VERIFY_SSL,
     WARDEN_USE_TLS,
     WARDEN_BEARER,
+    WARDEN_RUNTIME,
 )
 
 logger = logging.getLogger(__name__)
+
+def refresh_limits():
+    refresh_limits_cpu()
+    refresh_limits_mem()
+    
+
+def refresh_limits_cpu():
+    return refresh_limit(limit_query="cgroup_warden_cpu_quota", limit_name="CPUQuotaPerSecUSec")
+
+
+def refresh_limits_mem():
+    return refresh_limit(limit_query="cgroup_warden_memory_max", limit_name="MemoryMax")
+
+
+def refresh_limit(limit_query: str, limit_name: str) -> list[Target]:
+    invalid_targets = []
+
+    try: 
+        response = PROMETHEUS_CONNECTION.query(limit_query)
+    except PrometheusApiClientException as e:
+        logger.error(f"Unable to assert limits set: {e}")
+
+    for result in response:
+        cgroup = result.metric['cgroup']
+        matches = re.findall(r"^/user.slice/(user-\d+.slice)$", cgroup)
+        if len(matches) < 1:
+            logger.warning(f"invalid cgroup: {cgroup}")
+            continue
+        unit = matches[0]
+        host, port = split_port(result.metric["instance"])
+        username = result.metric["username"]
+        value = int(result.value.value)
+
+        if get_uid(unit) < ARBITER_MIN_UID:
+            continue
+
+        target = Target.objects.filter(host=host, username=username).first()
+        if not target:
+            continue
+
+        expected = target.limits.get(limit_name, -1) 
+        if expected != value:
+            logger.warning(f"targets limits to not match actual: expected {expected}, actual: {value}")
+            target.limits[limit_name] = value
+            target.save()
+
+    return invalid_targets
 
 
 async def set_property(target: Target, session: aiohttp.ClientSession, name: str, value: any) -> tuple[http.HTTPStatus, str]:
@@ -31,7 +79,7 @@ async def set_property(target: Target, session: aiohttp.ClientSession, name: str
     else:
         endpoint = f"http://{target.endpoint}/control"
 
-    payload = {"unit": target.unit, "property": {'name': name, 'value': value}}
+    payload = {"unit": target.unit, "property": {'name': name, 'value': value}, "runtime": WARDEN_RUNTIME}
 
     if WARDEN_BEARER:
         auth_header = {"Authorization": "Bearer " + WARDEN_BEARER}
@@ -237,3 +285,5 @@ def evaluate(policies=None):
     except ExceptionGroup as eg:
         for e in eg.exceptions:
             logger.error(f"{e} ")
+
+    # assert_cpu_limits_set()

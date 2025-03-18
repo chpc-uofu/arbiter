@@ -106,7 +106,9 @@ The arbiter evaluation loop can be run with
 ```
 ./arbiter.py evaluate
 ```
-To run it in a loop, you can pass the `--seconds`, `--minutes`, or `--hours` flags.
+To run it in a loop, you can pass the `--seconds`, `--minutes`, or `--hours` flags. 
+
+Additionally, you may pass the `--refresh-interval` flag, of the format `1h15m5s`, to determine the interval at which arbiter ensures reported limits are accurate. Default is `10m`. 
 
 This should also be set up to run as a service, see `arbiter-eval.service`.
 
