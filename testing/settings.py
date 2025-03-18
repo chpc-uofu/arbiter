@@ -39,6 +39,8 @@ WARDEN_USE_TLS = True
 
 WARDEN_BEARER = 'insecure-95axve4fn4j2u8ih0j1ltg272g1n297l8'
 
+WARDEN_RUNTIME = True
+
 
 # ============================================================
 #                           Email

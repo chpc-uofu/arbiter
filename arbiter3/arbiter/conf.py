@@ -230,3 +230,11 @@ except AttributeError:
     raise ImproperlyConfigured("setting WARDEN_BEARER is required")
 except AssertionError:
     raise ImproperlyConfigured("setting WARDEN_BEARER is a string or None")
+
+try:
+    WARDEN_RUNTIME = settings.WARDEN_RUNTIME
+    assert isinstance(WARDEN_RUNTIME, bool) 
+except AttributeError:
+    raise ImproperlyConfigured("setting WARDEN_RUNTIME is required")
+except AssertionError:
+    raise ImproperlyConfigured("setting WARDEN_RUNTIME is a bool")
