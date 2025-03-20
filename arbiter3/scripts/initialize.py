@@ -10,6 +10,13 @@ from arbiter3.scripts import config_templates
 import arbiter3.arbiter as arbiter_app
 
 
+def create_if_not_present(template, dst):
+    if not os.path.exists(dst):
+        shutil.copy(template, dst)
+        print(f"Generated {dst}")
+    else: 
+        print(f"{dst} already exists")
+
 def get_username() -> str:
     try:
         uid = os.getuid()
@@ -67,31 +74,33 @@ def initialize_config():
 
 
     # Generate config files from source templates
-    shutil.copy(manage_template, created_manage)
-    os.chmod(created_manage, 0o744)
-    print(f"Generated {created_manage}")
+    create_if_not_present(manage_template, created_manage)
+    os.chmod(created_manage, 0o740)
 
-    shutil.copy(settings_template, created_settings)
-    print(f"Generated {created_settings}")
+    create_if_not_present(settings_template, created_settings)
 
     user = get_username()
     gunicorn_path = get_gunicorn_path()
 
-    with open(created_eval_service, "w") as file:
-        file.write(eval_service_template.render(
-            working_dir=arbiter_conf_dir, user=user, python=interpreter_path))
-        print(f"Generated {created_eval_service}")
+    try:
+        with open(created_eval_service, "x") as file:
+            file.write(eval_service_template.render(
+                working_dir=arbiter_conf_dir, user=user, python=interpreter_path))
+            print(f"Generated {created_eval_service}")
+    except FileExistsError:
+        print(f"{created_eval_service} already exists")
 
-    with open(created_web_service, "w") as file:
-        file.write(web_service_template.render(
-            working_dir=arbiter_conf_dir, user=user, gunicorn_path=gunicorn_path))
-        print(f"Generated {created_web_service}")
+    try:
+        with open(created_web_service, "x") as file:
+            file.write(web_service_template.render(
+                working_dir=arbiter_conf_dir, user=user, gunicorn_path=gunicorn_path))
+            print(f"Generated {created_web_service}")
+    except FileExistsError:
+        print(f"{created_eval_service} already exists")
     
-    shutil.copy(email_body_template, created_email_body)
-    print(f"Generated {created_email_body}")
+    create_if_not_present(email_body_template, created_email_body)
 
-    shutil.copy(email_subject_template, created_email_subject)
-    print(f"Generated {created_email_subject}")
+    create_if_not_present(email_subject_template, created_email_subject)
 
 
 if __name__ == "__main__":
