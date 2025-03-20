@@ -1,0 +1,9 @@
+.current-page {
+    text-decoration: underline;
+    color: #3a0303;
+}
+
+.current-page:visited {
+    text-decoration: underline;
+}
+
