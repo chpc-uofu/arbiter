@@ -29,6 +29,9 @@ class ViolationListView(LoginRequiredMixin, ListView):
         context["navbar"] = navbar(self.request)
         context["title"] = "Violations"
         return context
+    
+    def get_queryset(self):
+        return super().get_queryset().filter(is_base_status=False, policy__active=True)
 
 
 @login_required(login_url=reverse_lazy("login"))
