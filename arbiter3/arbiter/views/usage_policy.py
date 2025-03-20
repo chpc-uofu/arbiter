@@ -72,7 +72,7 @@ class UsagePolicyForm(forms.ModelForm):
     proc_whitelist = forms.CharField(
         label="Query Process Whitelist", required=False)
     user_whitelist = forms.CharField(
-        label="Query User Whitelist", required=False)
+        label="Query User Whitelist", required=False, initial="arbiter|nobody")
     cpu_threshold = forms.FloatField(
         label="Query CPU Threshold", required=False)
     mem_threshold = forms.FloatField(

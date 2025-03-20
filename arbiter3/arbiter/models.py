@@ -32,12 +32,13 @@ class QueryData:
     params: QueryParameters | None
 
     def json(self):
+        print(f"e:{self.params}")
         json_params = self.params.json() if self.params else None
         return {"query": self.query, "params": json_params}
 
     @staticmethod
-    def raw_query(query: str) -> "QueryData":
-        return QueryData(query=query, params=None)
+    def raw_query(query: str, params = None) -> "QueryData":
+        return QueryData(query=query, params=params)
 
     @staticmethod
     def build_query(lookback: timedelta, domain: str, params: QueryParameters) -> "QueryData":
@@ -155,8 +156,19 @@ class BasePolicy(Policy):
 
     def save(self, **kwargs):
         self.is_base_policy = True
-        query = f'cgroup_warden_cpu_usage_seconds{{instance=~"{self.domain}"}}'
-        self.query_data = QueryData.raw_query(query).json()
+        
+        filters = f'instance=~"{self.domain}"'
+        params = None
+
+        
+        if stored_params := self.query_data.get("params"):
+            whitelist = stored_params.get("user_whitelist", "")
+            if whitelist:
+                filters += f', user!~"{whitelist}"'
+            params = QueryParameters(0, 0, user_whitelist=whitelist)
+        
+        query = f'cgroup_warden_cpu_usage_seconds{{{filters}}}'
+        self.query_data = QueryData.raw_query(query, params).json()
         return super().save(**kwargs)
 
 

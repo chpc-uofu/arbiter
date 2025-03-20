@@ -6,7 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 
-from arbiter3.arbiter.models import BasePolicy, Limits, QueryData, CPU_QUOTA, MEMORY_MAX
+from arbiter3.arbiter.models import BasePolicy, Limits, QueryData, QueryParameters, CPU_QUOTA, MEMORY_MAX
 from arbiter3.arbiter.utils import usec_to_cores, bytes_to_gib, cores_to_usec, gib_to_bytes
 
 from .nav import navbar
@@ -28,6 +28,8 @@ class BasePolicyListView(LoginRequiredMixin, ListView):
 class BasePolicyForm(forms.ModelForm):
     cpu = forms.FloatField(label="CPU Cores", required=False)
     mem = forms.FloatField(label="Memory in GiB", required=False)
+    user_whitelist = forms.CharField(
+        label="User Whitelist", required=False, initial="arbiter|nobody")
 
     class Meta:
         model = BasePolicy
@@ -46,6 +48,11 @@ class BasePolicyForm(forms.ModelForm):
         if disabled:
             for field in self.fields.values():
                 field.widget.attrs['disabled'] = True
+        
+        if query_data := self.instance.query_data:
+            params = query_data.get("params")
+            if params != None:
+                self.fields['user_whitelist'].initial =  params.get("user_whitelist", "")
 
     def clean_cpu(self):
         if cpu := self.cleaned_data["cpu"]:
@@ -71,8 +78,15 @@ class BasePolicyForm(forms.ModelForm):
         if mem_limit := self.cleaned_data['mem']:
             limits[MEMORY_MAX] = mem_limit
         policy.penalty_constraints = {'tiers': [limits]}
-        policy.query_data = QueryData.raw_query(
-            f'systemd_unit_cpu_usage_ns{{instance=~"{policy.domain}"}}').json()
+
+        filters = f'instance=~"{self.cleaned_data["domain"]}"'
+        params = None
+
+        if whitelist := self.cleaned_data['user_whitelist']:
+            filters += f', user!~"{whitelist}"'
+            params = QueryParameters(0, 0, user_whitelist=self.cleaned_data["user_whitelist"])
+        
+        policy.query_data = QueryData.raw_query(f'systemd_unit_cpu_usage_ns{{{filters}}}', params).json()
         policy.save()
 
 
