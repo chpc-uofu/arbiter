@@ -31,7 +31,7 @@ class Command(BaseCommand):
                     policies = Policy.objects.all()
 
                 evaluate(policies)
-                #sleep(cycle_time)
+                sleep(cycle_time)
                 if cycle_time == 0:
                     break
             except OperationalError:
