@@ -142,7 +142,7 @@ scrape_configs:
     # recommended but optional, strip port from instance
     relabel_configs:
       - source_labels: [__address__]
-        target_label: __address__
+        target_label: instance
         regex: '^(.*):[0-9]+$'
         replacement: '${1}'
 ```
