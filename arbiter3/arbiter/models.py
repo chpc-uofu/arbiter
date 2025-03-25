@@ -61,7 +61,7 @@ class QueryData:
         lookback = int(lookback.total_seconds())
 
         if params.user_whitelist:
-            notlike_filters['user'] = params.user_whitelist
+            notlike_filters['username'] = params.user_whitelist
 
         if params.proc_whitelist:
             notlike_filters['proc'] = params.proc_whitelist
@@ -72,7 +72,7 @@ class QueryData:
                 "username", "instance", "cgroup"
             )
         else:
-            cpu_query = increase(Q('cgroup_warden_cpu_usage_seconds').like(**like_filters).over(f'{lookback}s')) / lookback > params.cpu_threshold
+            cpu_query = increase(Q('cgroup_warden_cpu_usage_seconds').like(**like_filters).not_like(**notlike_filters).over(f'{lookback}s')) / lookback > params.cpu_threshold
 
         granularity = 30
 
@@ -85,7 +85,7 @@ class QueryData:
             mem_range = f'{lookback}s:1s'
 
         mem_query = sum_over_time(
-            Q('cgroup_warden_memory_usage_bytes').like(**like_filters).over(mem_range)
+            Q('cgroup_warden_memory_usage_bytes').like(**like_filters).not_like(**notlike_filters).over(mem_range)
             ) / datapoints > params.mem_threshold
 
         if params.mem_threshold and params.cpu_threshold:
@@ -169,7 +169,7 @@ class BasePolicy(Policy):
         if stored_params := self.query_data.get("params"):
             whitelist = stored_params.get("user_whitelist", "")
             if whitelist:
-                filters += f', user!~"{whitelist}"'
+                filters += f', username!~"{whitelist}"'
             params = QueryParameters(0, 0, user_whitelist=whitelist)
         
         query = f'cgroup_warden_cpu_usage_seconds{{{filters}}}'
