@@ -1023,7 +1023,7 @@ def test_deactivate_reactivate_base_policy(base_soft_policy, target1):
 #         tier/limits accordingly)                     #
 ########################################################
 @pytest.mark.django_db(transaction=True)
-def test_repeeat_violation_scales_penalty_tier(short_low_tiered_policy, target1):
+def test_repeat_violation_scales_penalty_tier(short_low_tiered_policy, target1):
     # start bad behavior
     runtime = create_violation(target1, short_low_tiered_policy)
     time.sleep(runtime)
