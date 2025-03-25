@@ -86,7 +86,7 @@ class BasePolicyForm(forms.ModelForm):
             filters += f', user!~"{whitelist}"'
             params = QueryParameters(0, 0, user_whitelist=self.cleaned_data["user_whitelist"])
         
-        policy.query_data = QueryData.raw_query(f'systemd_unit_cpu_usage_ns{{{filters}}}', params).json()
+        policy.query_data = QueryData.raw_query(f'cgroup_warden_cpu_usage_seconds{{{filters}}}', params).json()
         policy.save()
 
 

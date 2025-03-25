@@ -32,7 +32,6 @@ class QueryData:
     params: QueryParameters | None
 
     def json(self):
-        print(f"e:{self.params}")
         json_params = self.params.json() if self.params else None
         return {"query": self.query, "params": json_params}
 
