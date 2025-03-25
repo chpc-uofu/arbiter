@@ -942,8 +942,124 @@ def test_usage_procwhitelist_policy(low_harsh_procwhitelist_policy, short_low_cp
 #              limits accordingly)                     #
 ########################################################
 
+@pytest.mark.django_db(transaction=True)
+def test_deactivate_reactivate_usage_policy(short_low_harsh_policy, target1):
+    # start bad behavior
+    runtime = create_violation(target1, short_low_harsh_policy)
+    time.sleep(runtime)
+
+    # eval and make sure db target was created
+    evaluate([short_low_harsh_policy])
+    db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None  # here
+
+    # make sure correct limits were applied
+    should_be = short_low_harsh_policy.penalty_constraints['tiers'][0]
+    assert db_target1.limits == should_be
+
+    #deactive and re-evaluate
+    short_low_harsh_policy.active = False
+    short_low_harsh_policy.save()
+    evaluate([short_low_harsh_policy])
+
+    # ensure limits were removed
+    db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None
+    assert len(db_target1.limits) == 0
+
+    #reactive and re-evaluate
+    short_low_harsh_policy.active = True
+    short_low_harsh_policy.save()
+    evaluate([short_low_harsh_policy])
+
+    # make sure violation went back into effect
+    db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None  # here
+    should_be = short_low_harsh_policy.penalty_constraints['tiers'][0]
+    assert db_target1.limits == should_be
+
+
+@pytest.mark.django_db(transaction=True)
+def test_deactivate_reactivate_base_policy(base_soft_policy, target1):
+    # start bad behavior
+    runtime = create_violation(target1, base_soft_policy)
+    time.sleep(runtime)
+
+    # eval and make sure db target was created
+    evaluate([base_soft_policy])
+    db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None  # here
+
+    # make sure correct limits were applied
+    should_be = base_soft_policy.penalty_constraints['tiers'][0]
+    assert db_target1.limits == should_be
+
+    #deactive and re-evaluate
+    base_soft_policy.active = False
+    base_soft_policy.save()
+    evaluate([base_soft_policy])
+
+    # ensure limits were removed
+    db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None
+    assert len(db_target1.limits) == 0
+
+    #reactive and re-evaluate
+    base_soft_policy.active = True
+    base_soft_policy.save()
+    evaluate([base_soft_policy])
+
+    # make sure violation went back into effect
+    db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None  # here
+    should_be = base_soft_policy.penalty_constraints['tiers'][0]
+    assert db_target1.limits == should_be
+
+
+
 ########################################################
 #               Tiered Policy Tests                    #
 # (repeated violations should upgrade the penalty's    #
 #         tier/limits accordingly)                     #
 ########################################################
+@pytest.mark.django_db(transaction=True)
+def test_repeeat_violation_scales_penalty_tier(short_low_tiered_policy, target1):
+    # start bad behavior
+    runtime = create_violation(target1, short_low_tiered_policy)
+    time.sleep(runtime)
+
+    # eval and make sure first violation applied then grab it
+    evaluate([short_low_tiered_policy])
+    
+    #ensure it is the tier 0 limits
+    db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None  
+    should_be = short_low_tiered_policy.penalty_constraints['tiers'][0]
+    assert db_target1.limits == should_be
+    
+    target_policy_violations = Violation.objects.filter(target=db_target1, policy=short_low_tiered_policy)
+    
+    first_violation = target_policy_violations.first()
+    assert first_violation != None
+
+    # now continue bad behavior and see if new violation was made
+    runtime = create_violation(target1, short_low_tiered_policy)
+    time.sleep(short_low_tiered_policy.penalty_duration.total_seconds())
+    evaluate([short_low_tiered_policy])
+
+    # make sure a new violation was added for target with that policy
+    db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None  
+    should_be = short_low_tiered_policy.penalty_constraints['tiers'][1]
+    assert db_target1.limits == should_be
+
+    second_violation = target_policy_violations.filter(timestamp__gt=first_violation.timestamp).first()
+    assert second_violation != None
+    assert second_violation.offense_count == 2
+
+    time.sleep(
+        max(
+            runtime - short_low_tiered_policy.penalty_duration.total_seconds(),
+            1,
+        )
+    )

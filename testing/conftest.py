@@ -135,6 +135,16 @@ def medium_penalty(db, medium_limit_cpu, medium_limit_mem):
 def soft_penalty(db, soft_limit_cpu, soft_limit_mem):
     return {'tiers': [soft_limit_cpu | soft_limit_mem]}
 
+@pytest.fixture
+def tiered_penalty(db, soft_limit_cpu, soft_limit_mem, medium_limit_cpu, medium_limit_mem, harsh_limit_cpu, harsh_limit_mem):
+    return {
+        'tiers': [
+            soft_limit_cpu | soft_limit_mem, 
+            medium_limit_cpu | medium_limit_mem, 
+            harsh_limit_cpu | harsh_limit_mem, 
+            ]
+        }
+
 
 @pytest.fixture
 def unset_penalty(db, unset_limit_cpu, unset_limit_mem):
@@ -276,7 +286,7 @@ def short_low_unset_policy(db, unset_penalty):
     )
 
 @pytest.fixture
-def short_low_tiered_policy(db, harsh_penalty):
+def short_low_tiered_policy(db, tiered_penalty):
     params = QueryParameters(
         cpu_threshold=CPU_LOW_THRESHOLD, mem_threshold=MEM_LOW_THRESHOLD
     )
@@ -285,10 +295,10 @@ def short_low_tiered_policy(db, harsh_penalty):
         name="short window, low threshold, tiered penalty",
         domain=".*",
         description="description",
-        penalty_constraints=harsh_penalty,
+        penalty_constraints=tiered_penalty,
         query_data=query.json(),
         lookback=SHORT_WINDOW,
-        repeated_offense_lookback=timedelta(seconds=0),
+        repeated_offense_lookback=timedelta(seconds=60),
         repeated_offense_scalar=0.0,
         penalty_duration=timedelta(seconds=5),
         grace_period=timedelta(seconds=0),
