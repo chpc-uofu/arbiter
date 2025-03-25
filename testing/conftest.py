@@ -370,10 +370,10 @@ def long_lookback_with_grace_policy(db, unset_penalty):
 @pytest.fixture
 def base_soft_policy(db, soft_penalty):
     params = None
-    query = QueryData.raw_query('cgroup_warden_cpu_usage_seconds{}', params).json()
+    query = QueryData.raw_query('cgroup_warden_cpu_usage_seconds{}', params)
 
     return BasePolicy.objects.create(
-        name="short window, low threshold, soft penalty_constraints",
+        name="base policy soft penalty_constraints",
         domain=".*",
         description="description",
         penalty_constraints=soft_penalty,
@@ -383,10 +383,10 @@ def base_soft_policy(db, soft_penalty):
 @pytest.fixture
 def base_medium_policy(db, medium_penalty):
     params = None
-    query = QueryData.raw_query('cgroup_warden_cpu_usage_seconds{}', params).json()
+    query = QueryData.raw_query('cgroup_warden_cpu_usage_seconds{}', params)
 
     return BasePolicy.objects.create(
-        name="short window, low threshold, soft penalty_constraints",
+        name="base policy medium penalty_constraints",
         domain=".*",
         description="description",
         penalty_constraints=medium_penalty,
@@ -400,10 +400,10 @@ def base_medium_policy(db, medium_penalty):
 @pytest.fixture
 def base_userwhitelist_policy(db, soft_penalty):
     params = None
-    query = QueryData.raw_query('cgroup_warden_cpu_usage_seconds{}', params).json()
+    query = QueryData.raw_query('cgroup_warden_cpu_usage_seconds{}', params)
 
     return BasePolicy.objects.create(
-        name="base policy soft penalty_constraints",
+        name="base policy soft penalty_constraints user whitelist",
         domain=".*",
         description="description",
         penalty_constraints=soft_penalty,
@@ -416,6 +416,7 @@ def low_harsh_userwhitelist_policy(db, harsh_penalty):
         cpu_threshold=CPU_LOW_THRESHOLD, mem_threshold=MEM_LOW_THRESHOLD
     )
     query = QueryData.build_query(SHORT_WINDOW, DOMAIN, params)
+
     return Policy.objects.create(
         name="short window, low threshold, harsh penalty, user whitelist",
         domain=".*",
