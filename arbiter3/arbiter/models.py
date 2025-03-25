@@ -55,19 +55,24 @@ class QueryData:
         We do not want to whitelist memory usage, as that cannot be 'taken' back.  
         """
 
-        filters = f'instance=~"{domain}"'
+        like_filters = {'instance':domain}
+        notlike_filters = dict()
 
         lookback = int(lookback.total_seconds())
 
         if params.user_whitelist:
-            filters += f', user!~"{params.user_whitelist}"'
+            notlike_filters['user'] = params.user_whitelist
 
         if params.proc_whitelist:
-            cpu_query = sum_by(increase(Q('cgroup_warden_proc_cpu_usage_seconds').like(instance=domain).not_like(
-                proc=params.proc_whitelist).over(f'{lookback}s')) / lookback > params.cpu_threshold, "username", "instance", "cgroup")
+            notlike_filters['proc'] = params.proc_whitelist
+            cpu_query = sum_by(
+                increase(
+                    Q('cgroup_warden_proc_cpu_usage_seconds').like(**like_filters).not_like(**notlike_filters).over(f'{lookback}s')
+                ) / lookback > params.cpu_threshold, 
+                "username", "instance", "cgroup"
+            )
         else:
-            cpu_query = increase(Q('cgroup_warden_cpu_usage_seconds').like(
-                instance=domain).over(f'{lookback}s')) / lookback > params.cpu_threshold
+            cpu_query = increase(Q('cgroup_warden_cpu_usage_seconds').like(**like_filters).over(f'{lookback}s')) / lookback > params.cpu_threshold
 
         granularity = 30
 
@@ -79,8 +84,9 @@ class QueryData:
             datapoints = lookback
             mem_range = f'{lookback}s:1s'
 
-        mem_query = sum_over_time(Q('cgroup_warden_memory_usage_bytes').like(
-            instance=domain).over(mem_range)) / datapoints > params.mem_threshold
+        mem_query = sum_over_time(
+            Q('cgroup_warden_memory_usage_bytes').like(**like_filters).over(mem_range)
+            ) / datapoints > params.mem_threshold
 
         if params.mem_threshold and params.cpu_threshold:
             query = cpu_query.lor(mem_query)
