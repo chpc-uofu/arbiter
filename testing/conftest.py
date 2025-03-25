@@ -216,6 +216,24 @@ def short_low_soft_policy(db, soft_penalty):
         grace_period=timedelta(seconds=0),
     )
 
+@pytest.fixture
+def short_low_cpu_policy(db, soft_penalty):
+    params = QueryParameters(
+        cpu_threshold=CPU_LOW_THRESHOLD, mem_threshold=None
+    )
+    query = QueryData.build_query(SHORT_WINDOW, DOMAIN, params)
+    return Policy.objects.create(
+        name="short window, low only cpu threshold, soft penalty_constraints",
+        domain=".*",
+        description="description",
+        penalty_constraints=soft_penalty,
+        query_data=query.json(),
+        lookback=SHORT_WINDOW,
+        repeated_offense_scalar=0.0,
+        penalty_duration=timedelta(seconds=10),
+        repeated_offense_lookback=timedelta(seconds=0),
+        grace_period=timedelta(seconds=0),
+    )
 
 @pytest.fixture
 def short_mid_soft_policy(db, soft_penalty):
@@ -399,21 +417,24 @@ def base_medium_policy(db, medium_penalty):
 #----------------------------------
 @pytest.fixture
 def base_userwhitelist_policy(db, soft_penalty):
-    params = None
+    params = QueryParameters(0, 0,  user_whitelist='user-1001')
     query = QueryData.raw_query('cgroup_warden_cpu_usage_seconds{}', params)
 
-    return BasePolicy.objects.create(
+    pol = BasePolicy(
         name="base policy soft penalty_constraints user whitelist",
         domain=".*",
         description="description",
         penalty_constraints=soft_penalty,
         query_data=query.json(),
     )
+    pol.save()
+
+    return pol
 
 @pytest.fixture
 def low_harsh_userwhitelist_policy(db, harsh_penalty):
     params = QueryParameters(
-        cpu_threshold=CPU_LOW_THRESHOLD, mem_threshold=MEM_LOW_THRESHOLD
+        cpu_threshold=CPU_LOW_THRESHOLD, mem_threshold=MEM_LOW_THRESHOLD, user_whitelist='user-1001'
     )
     query = QueryData.build_query(SHORT_WINDOW, DOMAIN, params)
 
@@ -433,7 +454,7 @@ def low_harsh_userwhitelist_policy(db, harsh_penalty):
 @pytest.fixture
 def low_harsh_procwhitelist_policy(db, harsh_penalty):
     params = QueryParameters(
-        cpu_threshold=CPU_LOW_THRESHOLD, mem_threshold=MEM_LOW_THRESHOLD
+        cpu_threshold=CPU_LOW_THRESHOLD, mem_threshold=MEM_LOW_THRESHOLD, proc_whitelist='stress-ng-cpu'
     )
     query = QueryData.build_query(SHORT_WINDOW, DOMAIN, params)
 
