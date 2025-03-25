@@ -93,6 +93,10 @@ def launch_ssh_process(target: Target, command: str, password: str):
 
 
 def create_violating_command(policy: Policy) -> str:
+    #base policy just be logged in for 5 sec
+    if policy.is_base_policy:
+        return "sleep 5"
+    
     command = "stress-ng"
     cpu = policy.query_data.get("params", {}).get("cpu_threshold", None)
     if cpu:
@@ -118,10 +122,13 @@ def get_violations(target: Target):
     return violations
 
 
-def create_violation(target, policy):
+def create_violation(target, policy: Policy):
     password = "password"
     comm = create_violating_command(policy)
-    window = int(policy.lookback.total_seconds())
+    if policy.is_base_policy:
+        window = 5
+    else:
+        window = int(policy.lookback.total_seconds())
     user = target.unit.split(".")[0]
     p = multiprocessing.Process(
         target=launch_ssh_process, args=(target, comm, password))
@@ -130,4 +137,7 @@ def create_violation(target, policy):
 
 
 def duration(policy):
-    return int(policy.penalty_duration.total_seconds()) + 1
+    if policy.is_base_policy:
+        return 6
+    else:
+        return int(policy.penalty_duration.total_seconds()) + 1

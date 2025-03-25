@@ -664,4 +664,135 @@ def test_lookback_and_grace(long_lookback_with_grace_policy, target1):
     assert second_violation.offense_count == 2
 
 
-# TODO: test unit whitelist and process whitelist
+
+####################################################
+#               Base Policy Tests                  #
+# (Base policy violation should be triggered on    #
+#  login and harshest violation should still rule) #
+####################################################
+@pytest.mark.django_db(transaction=True)
+def test_base_policy(base_soft_policy, target1):
+    # start simple login
+    runtime = create_violation(target1, base_soft_policy)
+    time.sleep(runtime)
+
+    # eval and make sure db target was created
+    evaluate([base_soft_policy])
+    db_target1 = Target.objects.filter(
+        unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None 
+
+    #get the violation and make sure there is no expiration
+    viol = Violation.objects.filter(target=db_target1, policy=base_soft_policy).first()
+    assert viol != None
+    assert viol.expiration == None #doesnt expire
+    assert viol.is_base_status 
+
+    # make sure correct limits were applied
+    should_be = base_soft_policy.penalty_constraints['tiers'][0]
+    assert db_target1.limits == should_be
+
+    # now wait after login has ended and make sure limits are still present after new evaluate
+    time.sleep(duration(base_soft_policy))
+    evaluate([base_soft_policy])
+    db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None
+    assert db_target1.limits == should_be
+
+
+@pytest.mark.django_db(transaction=True)
+def test_base_overlap_policy(base_soft_policy, base_medium_policy, target1):
+    # start simple login
+    runtime = create_violation(target1, base_soft_policy)
+    time.sleep(runtime)
+
+    # eval and make sure db target was created
+    evaluate([base_soft_policy, base_medium_policy])
+    db_target1 = Target.objects.filter(
+        unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None 
+
+    #get the violation and make sure there is no expiration
+    soft_viol = Violation.objects.filter(target=db_target1, policy=base_soft_policy).first()
+    med_viol = Violation.objects.filter(target=db_target1, policy=base_medium_policy).first()
+    assert soft_viol != None
+    assert med_viol != None
+    assert soft_viol.expiration == None #doesnt expire
+    assert med_viol.expiration == None #doesnt expire
+    assert soft_viol.is_base_status 
+    assert med_viol.is_base_status 
+
+    # make sure correct limits(harsher) were applied
+    should_be = base_medium_policy.penalty_constraints['tiers'][0]
+    assert db_target1.limits == should_be
+
+    # now wait after login has ended and make sure limits are still present after new evaluate
+    time.sleep(duration(base_soft_policy))
+    evaluate([base_soft_policy, base_medium_policy])
+    db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None
+    assert db_target1.limits == should_be
+
+
+@pytest.mark.django_db(transaction=True)
+def test_base_overlap_usage_policy(base_soft_policy, short_low_medium_policy, target1):
+    # start simple login
+    runtime = create_violation(target1, short_low_medium_policy)
+    time.sleep(runtime)
+
+    # eval and make sure db target was created
+    evaluate([base_soft_policy, short_low_medium_policy])
+    db_target1 = Target.objects.filter(
+        unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None 
+
+    #get the violation and make sure there is no expiration
+    base_viol = Violation.objects.filter(target=db_target1, policy=base_soft_policy).first()
+    assert base_viol != None
+    assert base_viol.expiration == None #doesnt expire
+    assert base_viol.is_base_status 
+
+    # make sure correct limits(harsher) were applied
+    should_be = short_low_medium_policy.penalty_constraints['tiers'][0]
+    assert db_target1.limits == should_be
+
+    # now wait after login and ensure limits unset to the base status 
+    time.sleep(duration(short_low_medium_policy))
+    evaluate([base_soft_policy, short_low_medium_policy])
+    db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
+    should_be = base_soft_policy.penalty_constraints['tiers'][0]
+    assert db_target1 != None
+    assert db_target1.limits == should_be
+
+
+@pytest.mark.django_db(transaction=True)
+def test_base_override_usage_policy(base_medium_policy, short_low_soft_policy, target1):
+    """
+    When a base policy is harsher than a usage policy violation, the base should win
+    """
+    # start simple login
+    runtime = create_violation(target1, short_low_soft_policy)
+    time.sleep(runtime)
+
+    # eval and make sure db target was created
+    evaluate([base_medium_policy, short_low_soft_policy])
+    db_target1 = Target.objects.filter(
+        unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None 
+
+    #get the violation and make sure there is no expiration
+    base_viol = Violation.objects.filter(target=db_target1, policy=base_medium_policy).first()
+    assert base_viol != None
+    assert base_viol.expiration == None #doesnt expire
+    assert base_viol.is_base_status 
+
+    # make sure correct limits(harsher) were applied
+    should_be = base_medium_policy.penalty_constraints['tiers'][0]
+    assert db_target1.limits == should_be
+
+    # now wait after login and ensure limits unset to the base status 
+    time.sleep(duration(short_low_soft_policy))
+    evaluate([base_medium_policy, short_low_soft_policy])
+    db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None
+    assert db_target1.limits == should_be
