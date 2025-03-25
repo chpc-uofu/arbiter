@@ -2,7 +2,7 @@ import pytest
 
 from datetime import timedelta
 
-from arbiter3.arbiter.models import Target, Policy, QueryParameters, QueryData, CPU_QUOTA, MEMORY_MAX, UNSET_LIMIT
+from arbiter3.arbiter.models import Target, Policy, BasePolicy, QueryParameters, QueryData, CPU_QUOTA, MEMORY_MAX, UNSET_LIMIT
 from arbiter3.arbiter.utils import BYTES_PER_GIB
 
 from testing.util import unset_limits
@@ -154,6 +154,9 @@ SHORT_WINDOW = timedelta(seconds=10)
 SHORT_WINDOW_SEC = 10
 
 
+#----------------------------------
+#      Usage policy fixtures
+#----------------------------------
 @pytest.fixture
 def short_low_harsh_policy(db, harsh_penalty):
     params = QueryParameters(
@@ -254,7 +257,29 @@ def short_low_unset_policy(db, unset_penalty):
         grace_period=timedelta(seconds=0),
     )
 
+@pytest.fixture
+def short_low_tiered_policy(db, harsh_penalty):
+    params = QueryParameters(
+        cpu_threshold=CPU_LOW_THRESHOLD, mem_threshold=MEM_LOW_THRESHOLD
+    )
+    query = QueryData.build_query(SHORT_WINDOW, DOMAIN, params)
+    return Policy.objects.create(
+        name="short window, low threshold, tiered penalty",
+        domain=".*",
+        description="description",
+        penalty_constraints=harsh_penalty,
+        query_data=query.json(),
+        lookback=SHORT_WINDOW,
+        repeated_offense_lookback=timedelta(seconds=0),
+        repeated_offense_scalar=0.0,
+        penalty_duration=timedelta(seconds=5),
+        grace_period=timedelta(seconds=0),
+    )
 
+
+#----------------------------------
+#  Grace+Lookback policy fixtures
+#----------------------------------
 @pytest.fixture
 def grace_no_lookback_policy(db, unset_penalty):
     params = QueryParameters(
@@ -336,4 +361,90 @@ def long_lookback_with_grace_policy(db, unset_penalty):
         repeated_offense_scalar=1.0,
         penalty_duration=timedelta(seconds=10),
         grace_period=timedelta(seconds=SHORT_WINDOW_SEC // 2),
+    )
+
+#----------------------------------
+#      Base policy fixtures
+#----------------------------------
+
+@pytest.fixture
+def base_soft_policy(db, soft_penalty):
+    params = None
+    query = QueryData.raw_query('cgroup_warden_cpu_usage_seconds{}', params).json()
+
+    return BasePolicy.objects.create(
+        name="short window, low threshold, soft penalty_constraints",
+        domain=".*",
+        description="description",
+        penalty_constraints=soft_penalty,
+        query_data=query.json(),
+    )
+
+@pytest.fixture
+def base_medium_policy(db, medium_penalty):
+    params = None
+    query = QueryData.raw_query('cgroup_warden_cpu_usage_seconds{}', params).json()
+
+    return BasePolicy.objects.create(
+        name="short window, low threshold, soft penalty_constraints",
+        domain=".*",
+        description="description",
+        penalty_constraints=medium_penalty,
+        query_data=query.json(),
+    )
+
+
+#----------------------------------
+#    Whitelist policy fixtures
+#----------------------------------
+@pytest.fixture
+def base_userwhitelist_policy(db, soft_penalty):
+    params = None
+    query = QueryData.raw_query('cgroup_warden_cpu_usage_seconds{}', params).json()
+
+    return BasePolicy.objects.create(
+        name="base policy soft penalty_constraints",
+        domain=".*",
+        description="description",
+        penalty_constraints=soft_penalty,
+        query_data=query.json(),
+    )
+
+@pytest.fixture
+def low_harsh_userwhitelist_policy(db, harsh_penalty):
+    params = QueryParameters(
+        cpu_threshold=CPU_LOW_THRESHOLD, mem_threshold=MEM_LOW_THRESHOLD
+    )
+    query = QueryData.build_query(SHORT_WINDOW, DOMAIN, params)
+    return Policy.objects.create(
+        name="short window, low threshold, harsh penalty, user whitelist",
+        domain=".*",
+        description="description",
+        penalty_constraints=harsh_penalty,
+        query_data=query.json(),
+        lookback=SHORT_WINDOW,
+        repeated_offense_lookback=timedelta(seconds=0),
+        repeated_offense_scalar=0.0,
+        penalty_duration=timedelta(seconds=5),
+        grace_period=timedelta(seconds=0),
+    )
+
+@pytest.fixture
+def low_harsh_procwhitelist_policy(db, harsh_penalty):
+    params = QueryParameters(
+        cpu_threshold=CPU_LOW_THRESHOLD, mem_threshold=MEM_LOW_THRESHOLD
+    )
+    query = QueryData.build_query(SHORT_WINDOW, DOMAIN, params)
+
+    return Policy.objects.create(
+        name="short window, low threshold, harsh penalty, proc whitelist",
+        domain=".*",
+        description="description",
+        penalty_constraints=harsh_penalty,
+        query_data=query.json(),
+        lookback=SHORT_WINDOW,
+        repeated_offense_lookback=timedelta(seconds=0),
+        repeated_offense_scalar=0.0,
+        penalty_duration=timedelta(seconds=5),
+        grace_period=timedelta(seconds=0),
     )
