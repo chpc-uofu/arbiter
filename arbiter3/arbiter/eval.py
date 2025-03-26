@@ -67,7 +67,7 @@ def refresh_limit(limit_query: str, limit_name: str) -> list[Target]:
 
         expected = target.limits.get(limit_name, -1) 
         if expected != value:
-            logger.warning(f"targets limits to not match actual: expected {expected}, actual: {value}")
+            logger.warning(f"{target.username}@{target.host} {limit_name} is set to an unexpected value: expected {expected}, actual: {value}")
             target.limits[limit_name] = value
             target.save()
 
