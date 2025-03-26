@@ -36,7 +36,8 @@ class Command(BaseCommand):
                 seconds_since_last_refresh += cycle_time
                 if seconds_since_last_refresh >= refresh_time:
                     seconds_since_last_refresh = 0
-                    refresh_limits()
+                    for policy in policies:
+                        refresh_limits(policy)
                 
                 evaluate(policies)
                 sleep(cycle_time)

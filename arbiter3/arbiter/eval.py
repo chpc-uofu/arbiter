@@ -25,17 +25,18 @@ from arbiter3.arbiter.conf import (
 
 logger = logging.getLogger(__name__)
 
-def refresh_limits():
-    refresh_limits_cpu()
-    refresh_limits_mem()
+def refresh_limits(policy: Policy):
+    if policy.active:
+        refresh_limits_cpu(policy.domain)
+        refresh_limits_mem(policy.domain)
     
 
-def refresh_limits_cpu():
-    return refresh_limit(limit_query="cgroup_warden_cpu_quota", limit_name="CPUQuotaPerSecUSec")
+def refresh_limits_cpu(domain):
+    return refresh_limit(limit_query=f"cgroup_warden_cpu_quota{{instance=~{domain}}}", limit_name="CPUQuotaPerSecUSec")
 
 
-def refresh_limits_mem():
-    return refresh_limit(limit_query="cgroup_warden_memory_max", limit_name="MemoryMax")
+def refresh_limits_mem(domain):
+    return refresh_limit(limit_query=f"cgroup_warden_memory_max{{instance=~{domain}}}", limit_name="MemoryMax")
 
 
 def refresh_limit(limit_query: str, limit_name: str) -> list[Target]:
