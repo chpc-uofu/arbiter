@@ -8,7 +8,6 @@ from django.urls import reverse_lazy
 
 from arbiter3.arbiter.conf import ARBITER_USER_LOOKUP
 from arbiter3.arbiter.models import Violation
-from django.utils.module_loading import import_string
 from .nav import navbar
 
 try:
@@ -22,12 +21,17 @@ except ImportError:
 class ViolationListView(LoginRequiredMixin, ListView):
     model = Violation
     login_url = reverse_lazy("login")
+    paginate_by = 50
+    ordering = ["-timestamp"]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["navbar"] = navbar(self.request)
         context["title"] = "Violations"
         return context
+    
+    def get_queryset(self):
+        return super().get_queryset().filter(is_base_status=False, policy__active=True)
 
 
 @login_required(login_url=reverse_lazy("login"))

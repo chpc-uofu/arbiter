@@ -1,4 +1,10 @@
 {% extends "arbiter/base.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{block.super}}
+    <link rel="stylesheet" href="{% static 'css/list-view.css' %}">
+{% endblock %}
 
 {% block page-title %}
     Violations
@@ -11,19 +17,42 @@
             Violation
         </th>
         <th>
-            Expiration
+            Offense Number
+        </th>
+        <th>
+            Timestamp
         </th>
     </thead>
     <tbody>
         {% for violation in object_list %}
             <tr>
                 <td><a href="{% url 'arbiter:change-violation' violation.id%}">{{violation}}</a></td>
-                <td>{{violation.expiration}}</td>
+                <td>{{violation.offense_count}}</td>
+                <td>{{violation.timestamp}}</td>
             </tr>
         {% endfor %}
     </tbody>
 </table>
-
+<br>
+{% if is_paginated %}
+    {% if page_obj.has_previous %}
+        <a href='?page=1'>&laquo;</a>
+        <a href='?page={{ page_obj.previous_page_number }}'>&lsaquo;</a>
+    {% endif %}
+    {% for page_num in page_obj.paginator.page_range %}
+        {% if page_num <= page_obj.number|add:3  and page_num >= page_obj.number|add:-3 %}
+            {% if page_num == page_obj.number %}
+                <a class="current-page" href='?page={{ page_num }}'>{{ page_num }}</a>
+            {% else %}
+                <a href='?page={{ page_num }}'>{{ page_num }}</a>
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+    {% if page_obj.has_next %}
+        <a href='?page={{ page_obj.next_page_number }}'>&rsaquo;</a>
+        <a href='?page={{ page_obj.paginator.num_pages }}'>&raquo;</a>
+    {% endif %}
+{% endif %} 
 
 {% endblock content %}
 

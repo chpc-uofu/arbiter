@@ -254,8 +254,8 @@ def evaluate(policies=None):
     violations = query_violations(policies)
     Violation.objects.bulk_create(violations, ignore_conflicts=True)
 
-    unexpired = Violation.objects.filter(
-        Q(expiration__gt=timezone.now()) | Q(expiration__isnull=True))
+
+    unexpired = Violation.objects.filter(Q(expiration__gt=timezone.now()) | Q(expiration__isnull=True), policy__active=True)
     unexpired = unexpired.prefetch_related("policy")
 
     targets = Target.objects.all()

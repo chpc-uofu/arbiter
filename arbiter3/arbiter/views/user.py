@@ -40,8 +40,8 @@ def get_user_breakdown(request, username):
         return redirect("arbiter:user-lookup")
 
     
-    active_violations = Violation.objects.filter(target__username=username).exclude(expiration__lt = timezone.now())
-    recent_violations = Violation.objects.filter(target__username=username, expiration__isnull=False).order_by("-timestamp")[:10]
+    active_violations = Violation.objects.filter(target__username=username, policy__active=True).exclude(expiration__lt = timezone.now())
+    recent_violations = Violation.objects.filter(target__username=username, is_base_status=False, policy__active=True).order_by("-timestamp")[:10]
 
     context = {"navbar": navbar(request),"title": "User Breakdown", "username":username, "targets": targets, "active_violations": active_violations, "recent_violations": recent_violations}
 

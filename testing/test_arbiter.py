@@ -664,4 +664,402 @@ def test_lookback_and_grace(long_lookback_with_grace_policy, target1):
     assert second_violation.offense_count == 2
 
 
-# TODO: test unit whitelist and process whitelist
+
+####################################################
+#               Base Policy Tests                  #
+# (Base policy violation should be triggered on    #
+#  login and harshest violation should still rule) #
+####################################################
+@pytest.mark.django_db(transaction=True)
+def test_base_policy(base_soft_policy, target1):
+    # start simple login
+    runtime = create_violation(target1, base_soft_policy)
+    time.sleep(runtime)
+
+    # eval and make sure db target was created
+    evaluate([base_soft_policy])
+    db_target1 = Target.objects.filter(
+        unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None 
+
+    #get the violation and make sure there is no expiration
+    viol = Violation.objects.filter(target=db_target1, policy=base_soft_policy).first()
+    assert viol != None
+    assert viol.expiration == None #doesnt expire
+    assert viol.is_base_status 
+
+    # make sure correct limits were applied
+    should_be = base_soft_policy.penalty_constraints['tiers'][0]
+    assert db_target1.limits == should_be
+
+    # now wait after login has ended and make sure limits are still present after new evaluate
+    time.sleep(duration(base_soft_policy))
+    evaluate([base_soft_policy])
+    db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None
+    assert db_target1.limits == should_be
+
+
+@pytest.mark.django_db(transaction=True)
+def test_base_overlap_policy(base_soft_policy, base_medium_policy, target1):
+    # start simple login
+    runtime = create_violation(target1, base_soft_policy)
+    time.sleep(runtime)
+
+    # eval and make sure db target was created
+    evaluate([base_soft_policy, base_medium_policy])
+    db_target1 = Target.objects.filter(
+        unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None 
+
+    #get the violation and make sure there is no expiration
+    soft_viol = Violation.objects.filter(target=db_target1, policy=base_soft_policy).first()
+    med_viol = Violation.objects.filter(target=db_target1, policy=base_medium_policy).first()
+    assert soft_viol != None
+    assert med_viol != None
+    assert soft_viol.expiration == None #doesnt expire
+    assert med_viol.expiration == None #doesnt expire
+    assert soft_viol.is_base_status 
+    assert med_viol.is_base_status 
+
+    # make sure correct limits(harsher) were applied
+    should_be = base_medium_policy.penalty_constraints['tiers'][0]
+    assert db_target1.limits == should_be
+
+    # now wait after login has ended and make sure limits are still present after new evaluate
+    time.sleep(duration(base_soft_policy))
+    evaluate([base_soft_policy, base_medium_policy])
+    db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None
+    assert db_target1.limits == should_be
+
+
+@pytest.mark.django_db(transaction=True)
+def test_base_overlap_usage_policy(base_soft_policy, short_low_medium_policy, target1):
+    # start bad behavior
+    runtime = create_violation(target1, short_low_medium_policy)
+    time.sleep(runtime)
+
+    # eval and make sure db target was created
+    evaluate([base_soft_policy, short_low_medium_policy])
+    db_target1 = Target.objects.filter(
+        unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None 
+
+    #get the violation and make sure there is no expiration
+    base_viol = Violation.objects.filter(target=db_target1, policy=base_soft_policy).first()
+    assert base_viol != None
+    assert base_viol.expiration == None #doesnt expire
+    assert base_viol.is_base_status 
+
+    # make sure correct limits(harsher) were applied
+    should_be = short_low_medium_policy.penalty_constraints['tiers'][0]
+    assert db_target1.limits == should_be
+
+    # now wait after login and ensure limits unset to the base status 
+    time.sleep(duration(short_low_medium_policy))
+    evaluate([base_soft_policy, short_low_medium_policy])
+    db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
+    should_be = base_soft_policy.penalty_constraints['tiers'][0]
+    assert db_target1 != None
+    assert db_target1.limits == should_be
+
+
+@pytest.mark.django_db(transaction=True)
+def test_base_override_usage_policy(base_medium_policy, short_low_soft_policy, target1):
+    """
+    When a base policy is harsher than a usage policy violation, the base should win
+    """
+    # start bad behavior
+    runtime = create_violation(target1, short_low_soft_policy)
+    time.sleep(runtime)
+
+    # eval and make sure db target was created
+    evaluate([base_medium_policy, short_low_soft_policy])
+    db_target1 = Target.objects.filter(
+        unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None 
+
+    #get the violation and make sure there is no expiration
+    base_viol = Violation.objects.filter(target=db_target1, policy=base_medium_policy).first()
+    assert base_viol != None
+    assert base_viol.expiration == None #doesnt expire
+    assert base_viol.is_base_status 
+
+    # make sure correct limits(harsher) were applied
+    should_be = base_medium_policy.penalty_constraints['tiers'][0]
+    assert db_target1.limits == should_be
+
+    # now wait after login and ensure limits unset to the base status 
+    time.sleep(duration(short_low_soft_policy))
+    evaluate([base_medium_policy, short_low_soft_policy])
+    db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None
+    assert db_target1.limits == should_be
+
+
+@pytest.mark.django_db(transaction=True)
+def test_base_overlap_policy(base_soft_policy, base_medium_policy, target1):
+    # start simple login
+    runtime = create_violation(target1, base_soft_policy)
+    time.sleep(runtime)
+
+    # eval and make sure db target was created
+    evaluate([base_soft_policy, base_medium_policy])
+    db_target1 = Target.objects.filter(
+        unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None 
+
+    #get the violation and make sure there is no expiration
+    soft_viol = Violation.objects.filter(target=db_target1, policy=base_soft_policy).first()
+    med_viol = Violation.objects.filter(target=db_target1, policy=base_medium_policy).first()
+    assert soft_viol != None
+    assert med_viol != None
+    assert soft_viol.expiration == None #doesnt expire
+    assert med_viol.expiration == None #doesnt expire
+    assert soft_viol.is_base_status 
+    assert med_viol.is_base_status 
+
+    # make sure correct limits(harsher) were applied
+    should_be = base_medium_policy.penalty_constraints['tiers'][0]
+    assert db_target1.limits == should_be
+
+    # now wait after login has ended and make sure limits are still present after new evaluate
+    time.sleep(duration(base_soft_policy))
+    evaluate([base_soft_policy, base_medium_policy])
+    db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None
+    assert db_target1.limits == should_be
+
+
+########################################################
+#               Whitelist Policy Tests                 #
+# (Base/usage policy should exclude users on whitelist #
+#  and usage should not trigger on whitelisted procs)  #
+########################################################
+@pytest.mark.django_db(transaction=True)
+def test_base_whitelist_policy(base_userwhitelist_policy, target1, target2):
+    # start simple login
+    runtime = create_violation(target1, base_userwhitelist_policy)
+    runtime = create_violation(target2, base_userwhitelist_policy)
+    time.sleep(runtime)
+
+    # eval and make sure db target was created
+    evaluate([base_userwhitelist_policy])
+    db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
+    db_target2 = Target.objects.filter(unit=target2.unit, host=target2.host).first()
+    assert db_target1 != None 
+    assert db_target2 != None 
+
+    # make sure target1 was excluded but target2 was not
+    target1_viol = Violation.objects.filter(target=db_target1, policy=base_userwhitelist_policy).first()
+    target2_viol = Violation.objects.filter(target=db_target2, policy=base_userwhitelist_policy).first()
+    assert target1_viol == None
+    assert target2_viol != None
+
+    # make sure correct limits were applied
+    should_be = base_userwhitelist_policy.penalty_constraints['tiers'][0]
+    assert len(db_target1.limits) == 0
+    assert db_target2.limits == should_be
+
+
+@pytest.mark.django_db(transaction=True)
+def test_usage_userwhitelist_policy(low_harsh_userwhitelist_policy, target1, target2):
+    """
+    here the policy ignores target1's username
+    """
+    # start bad behavior
+    runtime = create_violation(target1, low_harsh_userwhitelist_policy)
+    runtime = create_violation(target2, low_harsh_userwhitelist_policy)
+    time.sleep(runtime)
+
+    # eval and make sure db target was created
+    evaluate([low_harsh_userwhitelist_policy])
+    db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
+    db_target2 = Target.objects.filter(unit=target2.unit, host=target2.host).first()
+    assert db_target1 != None 
+    assert db_target2 != None 
+
+    # make sure target1 was excluded but target2 was not
+    target1_viol = Violation.objects.filter(target=db_target1, policy=low_harsh_userwhitelist_policy).first()
+    target2_viol = Violation.objects.filter(target=db_target2, policy=low_harsh_userwhitelist_policy).first()
+    assert target1_viol == None
+    assert target2_viol != None
+
+    # make sure correct limits were applied
+    should_be = low_harsh_userwhitelist_policy.penalty_constraints['tiers'][0]
+    assert len(db_target1.limits) == 0
+    assert db_target2.limits == should_be
+
+     # now wait out violation and make sure limits were removed
+    time.sleep(duration(low_harsh_userwhitelist_policy))
+    evaluate([low_harsh_userwhitelist_policy])
+    db_target2 = Target.objects.filter(unit=target2.unit, host=target2.host).first()
+    assert db_target2 != None
+
+    # make sure target has no limits applied
+    assert len(db_target2.limits) == 0
+
+
+@pytest.mark.django_db(transaction=True)
+def test_usage_procwhitelist_policy(low_harsh_procwhitelist_policy, short_low_cpu_policy, target1):
+    """
+    here the policy ignores the proc stress-ng-cpu
+    """
+    # start bad behavior
+    runtime = create_violation(target1, short_low_cpu_policy)
+    time.sleep(runtime)
+
+    # eval and make sure db target was created
+    evaluate([low_harsh_procwhitelist_policy])
+    db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None 
+
+    # make sure cpu usage did not trigger violation
+    cpu_viol = Violation.objects.filter(target=db_target1, policy=low_harsh_procwhitelist_policy).first()
+    assert cpu_viol == None
+
+    # make no limits were applied
+    assert len(db_target1.limits) == 0
+
+    # now make violation using memory
+    runtime = create_violation(target1, low_harsh_procwhitelist_policy)
+    time.sleep(runtime)
+    evaluate([low_harsh_procwhitelist_policy])
+    db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None
+
+    # make sure memory process actually caused violation 
+    mem_viol = Violation.objects.filter(target=db_target1, policy=low_harsh_procwhitelist_policy).first()
+    assert mem_viol != None
+
+    should_be = low_harsh_procwhitelist_policy.penalty_constraints['tiers'][0]
+    assert db_target1.limits == should_be
+
+########################################################
+#               Deactive Policy Tests                  #
+# (deactivating/reactivating policies should update    #
+#              limits accordingly)                     #
+########################################################
+
+@pytest.mark.django_db(transaction=True)
+def test_deactivate_reactivate_usage_policy(short_low_harsh_policy, target1):
+    # start bad behavior
+    runtime = create_violation(target1, short_low_harsh_policy)
+    time.sleep(runtime)
+
+    # eval and make sure db target was created
+    evaluate([short_low_harsh_policy])
+    db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None  # here
+
+    # make sure correct limits were applied
+    should_be = short_low_harsh_policy.penalty_constraints['tiers'][0]
+    assert db_target1.limits == should_be
+
+    #deactive and re-evaluate
+    short_low_harsh_policy.active = False
+    short_low_harsh_policy.save()
+    evaluate([short_low_harsh_policy])
+
+    # ensure limits were removed
+    db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None
+    assert len(db_target1.limits) == 0
+
+    #reactive and re-evaluate
+    short_low_harsh_policy.active = True
+    short_low_harsh_policy.save()
+    evaluate([short_low_harsh_policy])
+
+    # make sure violation went back into effect
+    db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None  # here
+    should_be = short_low_harsh_policy.penalty_constraints['tiers'][0]
+    assert db_target1.limits == should_be
+
+
+@pytest.mark.django_db(transaction=True)
+def test_deactivate_reactivate_base_policy(base_soft_policy, target1):
+    # start bad behavior
+    runtime = create_violation(target1, base_soft_policy)
+    time.sleep(runtime)
+
+    # eval and make sure db target was created
+    evaluate([base_soft_policy])
+    db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None  # here
+
+    # make sure correct limits were applied
+    should_be = base_soft_policy.penalty_constraints['tiers'][0]
+    assert db_target1.limits == should_be
+
+    #deactive and re-evaluate
+    base_soft_policy.active = False
+    base_soft_policy.save()
+    evaluate([base_soft_policy])
+
+    # ensure limits were removed
+    db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None
+    assert len(db_target1.limits) == 0
+
+    #reactive and re-evaluate
+    base_soft_policy.active = True
+    base_soft_policy.save()
+    evaluate([base_soft_policy])
+
+    # make sure violation went back into effect
+    db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None  # here
+    should_be = base_soft_policy.penalty_constraints['tiers'][0]
+    assert db_target1.limits == should_be
+
+
+
+########################################################
+#               Tiered Policy Tests                    #
+# (repeated violations should upgrade the penalty's    #
+#         tier/limits accordingly)                     #
+########################################################
+@pytest.mark.django_db(transaction=True)
+def test_repeat_violation_scales_penalty_tier(short_low_tiered_policy, target1):
+    # start bad behavior
+    runtime = create_violation(target1, short_low_tiered_policy)
+    time.sleep(runtime)
+
+    # eval and make sure first violation applied then grab it
+    evaluate([short_low_tiered_policy])
+    
+    #ensure it is the tier 0 limits
+    db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None  
+    should_be = short_low_tiered_policy.penalty_constraints['tiers'][0]
+    assert db_target1.limits == should_be
+    
+    target_policy_violations = Violation.objects.filter(target=db_target1, policy=short_low_tiered_policy)
+    
+    first_violation = target_policy_violations.first()
+    assert first_violation != None
+
+    # now continue bad behavior and see if new violation was made
+    runtime = create_violation(target1, short_low_tiered_policy)
+    time.sleep(short_low_tiered_policy.penalty_duration.total_seconds())
+    evaluate([short_low_tiered_policy])
+
+    # make sure a new violation was added for target with that policy
+    db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None  
+    should_be = short_low_tiered_policy.penalty_constraints['tiers'][1]
+    assert db_target1.limits == should_be
+
+    second_violation = target_policy_violations.filter(timestamp__gt=first_violation.timestamp).first()
+    assert second_violation != None
+    assert second_violation.offense_count == 2
+
+    time.sleep(
+        max(
+            runtime - short_low_tiered_policy.penalty_duration.total_seconds(),
+            1,
+        )
+    )
