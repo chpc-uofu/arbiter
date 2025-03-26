@@ -32,11 +32,11 @@ def refresh_limits(policy: Policy):
     
 
 def refresh_limits_cpu(domain):
-    return refresh_limit(limit_query=f"cgroup_warden_cpu_quota{{instance=~{domain}}}", limit_name="CPUQuotaPerSecUSec")
+    return refresh_limit(limit_query=f'cgroup_warden_cpu_quota{{instance=~"{domain}"}}', limit_name="CPUQuotaPerSecUSec")
 
 
 def refresh_limits_mem(domain):
-    return refresh_limit(limit_query=f"cgroup_warden_memory_max{{instance=~{domain}}}", limit_name="MemoryMax")
+    return refresh_limit(limit_query=f'cgroup_warden_memory_max{{instance=~"{domain}"}}', limit_name="MemoryMax")
 
 
 def refresh_limit(limit_query: str, limit_name: str) -> list[Target]:
