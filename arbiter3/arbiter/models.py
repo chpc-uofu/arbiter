@@ -6,7 +6,7 @@ from django.utils import timezone
 
 from arbiter3.arbiter.utils import get_uid, split_port
 from arbiter3.arbiter.query import Q, increase, sum_by, sum_over_time
-from arbiter3.arbiter.conf import WARDEN_PORT, PROMETHEUS_CONNECTION, WARDEN_JOB
+from arbiter3.arbiter.conf import WARDEN_PORT, PROMETHEUS_CONNECTION, WARDEN_JOB, ARBITER_PSS_MEMORY
 
 
 Limits = dict[str, any]
@@ -69,7 +69,7 @@ class QueryData:
                 increase(
                     Q('cgroup_warden_proc_cpu_usage_seconds').like(**like_filters).not_like(**notlike_filters).over(f'{lookback}s')
                 ) / lookback > params.cpu_threshold, 
-                "username", "instance", "cgroup"
+                "username", "instance", "cgroup", "job"
             )
         else:
             cpu_query = increase(Q('cgroup_warden_cpu_usage_seconds').like(**like_filters).not_like(**notlike_filters).over(f'{lookback}s')) / lookback > params.cpu_threshold
@@ -84,9 +84,14 @@ class QueryData:
             datapoints = lookback
             mem_range = f'{lookback}s:1s'
 
-        mem_query = sum_over_time(
-            Q('cgroup_warden_memory_usage_bytes').like(**like_filters).not_like(**notlike_filters).over(mem_range)
-            ) / datapoints > params.mem_threshold
+        mem_metric = 'cgroup_warden_proc_memory_usage_bytes' if ARBITER_PSS_MEMORY else 'cgroup_warden_proc_memory_usage_bytes'
+
+        mem_query = sum_by(
+            sum_over_time(
+                Q(mem_metric).like(**like_filters).not_like(**notlike_filters).over(mem_range)
+            ) / datapoints, 
+            "username", "instance", "cgroup", "job"
+        ) > params.mem_threshold
 
         if params.mem_threshold and params.cpu_threshold:
             query = cpu_query.lor(mem_query)
