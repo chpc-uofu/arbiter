@@ -40,7 +40,7 @@ def convert_to_local_timezone(utctime):
 def send_email(recipients: list[str], figures: dict[str, Figure], context: dict[str,str]) -> str:
     subject = subject_template.render(**context)
     body = body_template.render(figures=figures, **context)
-    message = EmailMultiAlternatives(subject, body, ARBITER_FROM_EMAIL, recipients)
+    message = EmailMultiAlternatives(subject, body, ARBITER_FROM_EMAIL, recipients, bcc=ARBITER_ADMIN_EMAILS)
 
     for name, figure in figures.items():
         fig_bytes = figure.to_image(format="png", width=600, height=350, scale=2)
@@ -56,12 +56,12 @@ def send_email(recipients: list[str], figures: dict[str, Figure], context: dict[
 def send_violation_email(violation: Violation | None) -> str:
     username, realname, email = user_lookup(violation.target.username)
 
-    recipients = list(ARBITER_ADMIN_EMAILS)
+    recipients = []
     if ARBITER_NOTIFY_USERS and email:
         recipients.append(email)
 
-    if not recipients:
-        return f'Could not send email: no recipients specified'
+    if not recipients and ARBITER_NOTIFY_USERS:
+        logger.warning(f"Could not find email for {violation.target.username}")
 
     try:
         cpu = plots.violation_cpu_usage_figure(violation)
