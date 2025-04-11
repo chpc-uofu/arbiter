@@ -51,14 +51,6 @@ except ValueError:
     raise ImproperlyConfigured("setting ARBITER_LOG_LEVEL must be set to either 'debug', 'info', 'warning', or 'critical'")
 
 
-try:
-    ARBITER_PSS_MEMORY = settings.ARBITER_PSS_MEMORY
-    assert isinstance(ARBITER_PERMISSIVE_MODE, bool)
-except AttributeError:
-    ARBITER_PSS_MEMORY = False
-except AssertionError:
-    raise ImproperlyConfigured("setting ARBITER_PSS_MEMORY is a boolean")
-
 
 ########## EMAIL SETTINGS ##########
 

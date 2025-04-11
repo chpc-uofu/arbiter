@@ -16,10 +16,6 @@ ARBITER_PERMISSIVE_MODE = True
 # arbiter logging level, debug, info, warning, or critical    
 ARBITER_LOG_LEVEL = 'debug'
 
-# arbiter will use PSS (Proportional Set Size) memory instead of RSS (Resident Set Size)
-# in practice, this means shared memory between multiple user's will be distributed proportionally
-ARBITER_PSS_MEMORY = True
-
 # ============================================================
 #                         Prometheus
 # ============================================================
