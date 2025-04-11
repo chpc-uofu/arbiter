@@ -48,32 +48,12 @@ def usage_graph(query: str, start: datetime, end: datetime, step: str, color_by:
                 stackgroup='one',
                 name=a.metric[color_by] 
             ),
-        )
-
-    return fig
-
-    """
-    if not result:
-        raise QueryError(
-            f"Query returned no results: {query}. Try increasing step size.")
-
-    start, end = time_aligned_and_local(start, end, step)
-    df = MetricRangeDataFrame(result)
-    df.index = df.index.tz_localize("UTC").tz_convert(get_current_timezone())
-    sort_by = ["value", color_by] if color_by == "proc" else ["value"]
-    df = df.sort_values(by=sort_by)
-
-    graph = px.area(df, y="value", line_shape="hv", color=color_by)
-    graph.update_layout(xaxis_title="")
-
-    for i in range(len(graph['data'])):
-        graph['data'][i]['line']['width'] = 0
+        ) 
 
     if threshold:
-        graph.add_hline(threshold, line={"dash": "dot", "color": "grey"})
+        fig.add_hline(threshold, line={"dash": "dot", "color": "grey"})
 
-    return graph
-    """
+    return fig
 
 
 def cpu_usage_figure(host: str, start: datetime, end: datetime, step="30s", username: str = None, threshold: float = None) -> Figure | None:
