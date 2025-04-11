@@ -292,6 +292,6 @@ class Event(models.Model):
 class ArbUser(User):
     class Meta:
         permissions = [
-            ("view_dashboard","can see usage on dashboard and execute commands"),
-            ("setting","can see usage on dashboard and execute commands"),
+            ("view_dashboard","can see user usage/violations on dashboard"),
+            ("execute_command","execute commands"),
         ]
