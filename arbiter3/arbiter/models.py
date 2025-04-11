@@ -3,10 +3,11 @@ from dataclasses import dataclass, asdict
 
 from django.db import models
 from django.utils import timezone
+from django.contrib.auth.models import User
 
 from arbiter3.arbiter.utils import get_uid, split_port
 from arbiter3.arbiter.query import Q, increase, sum_by, sum_over_time
-from arbiter3.arbiter.conf import WARDEN_PORT, PROMETHEUS_CONNECTION, WARDEN_JOB, ARBITER_PSS_MEMORY
+from arbiter3.arbiter.conf import WARDEN_PORT, PROMETHEUS_CONNECTION, WARDEN_JOB
 
 
 Limits = dict[str, any]
@@ -21,6 +22,7 @@ class QueryParameters:
     mem_threshold: int   # bytes
     proc_whitelist: str | None = None  # prom matcher regex
     user_whitelist: str | None = None  # prom matcher regex
+    use_pss_metric : bool = False
 
     def json(self):
         return asdict(self)
@@ -30,14 +32,31 @@ class QueryParameters:
 class QueryData:
     query: str
     params: QueryParameters | None
+    is_raw_query : bool = False
 
     def json(self):
         json_params = self.params.json() if self.params else None
-        return {"query": self.query, "params": json_params}
+
+        return {"query": self.query, "params": json_params, "is_raw_query": self.is_raw_query}
 
     @staticmethod
     def raw_query(query: str, params = None) -> "QueryData":
-        return QueryData(query=query, params=params)
+        return QueryData(query=query, params=params, is_raw_query=True)
+    
+    @staticmethod
+    def base_query(base_policy) -> "QueryData":
+        filters = f'instance=~"{base_policy.domain}"'
+        params = None
+        
+        if stored_params := base_policy.query_data.get("params"):
+            whitelist = stored_params.get("user_whitelist", "")
+            if whitelist:
+                filters += f', username!~"{whitelist}"'
+            params = QueryParameters(0, 0, user_whitelist=whitelist)
+        
+        query = f'cgroup_warden_cpu_usage_seconds{{{filters}}}'
+
+        return QueryData(query=query, params=params, is_raw_query=True)
 
     @staticmethod
     def build_query(lookback: timedelta, domain: str, params: QueryParameters) -> "QueryData":
@@ -84,7 +103,7 @@ class QueryData:
             datapoints = lookback
             mem_range = f'{lookback}s:1s'
 
-        mem_metric = 'cgroup_warden_proc_memory_usage_bytes' if ARBITER_PSS_MEMORY else 'cgroup_warden_proc_memory_usage_bytes'
+        mem_metric = 'cgroup_warden_proc_memory_pss_bytes' if params.use_pss_metric else 'cgroup_warden_proc_memory_usage_bytes'
 
         mem_query = sum_by(
             sum_over_time(
@@ -102,7 +121,7 @@ class QueryData:
         else:
             query = None
 
-        return QueryData(query=str(query), params=params)
+        return QueryData(query=str(query), params=params, is_raw_query=False)
 
 
 class Policy(models.Model):
@@ -167,18 +186,7 @@ class BasePolicy(Policy):
     def save(self, **kwargs):
         self.is_base_policy = True
         
-        filters = f'instance=~"{self.domain}"'
-        params = None
-
-        
-        if stored_params := self.query_data.get("params"):
-            whitelist = stored_params.get("user_whitelist", "")
-            if whitelist:
-                filters += f', username!~"{whitelist}"'
-            params = QueryParameters(0, 0, user_whitelist=whitelist)
-        
-        query = f'cgroup_warden_cpu_usage_seconds{{{filters}}}'
-        self.query_data = QueryData.raw_query(query, params).json()
+        self.query_data = QueryData.base_query(self).json()
         return super().save(**kwargs)
 
 
@@ -279,4 +287,11 @@ class Event(models.Model):
 
     type = models.CharField(max_length=255, choices=EventTypes.choices)
     timestamp = models.DateTimeField(auto_now=True)
-    data = models.JSONField()
+    data = models.JSONField()   
+    
+class ArbUser(User):
+    class Meta:
+        permissions = [
+            ("view_dashboard","can see usage on dashboard and execute commands"),
+            ("setting","can see usage on dashboard and execute commands"),
+        ]
