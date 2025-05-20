@@ -88,11 +88,12 @@ async def set_property(target: Target, session: aiohttp.ClientSession, name: str
         auth_header = {"Authorization": "Bearer " + WARDEN_BEARER}
     else:
         auth_header = None
+
     try:
         async with session.post(
             url=endpoint,
             json=payload,
-            timeout=5,
+            timeout=10, # might need larger timeout, when MemMax is set systemd tries to swap excess memory to disk which takes forever
             headers=auth_header,
             ssl=WARDEN_VERIFY_SSL,
         ) as response:
