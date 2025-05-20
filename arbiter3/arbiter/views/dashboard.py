@@ -13,6 +13,7 @@ from arbiter3.arbiter.conf import PROMETHEUS_CONNECTION, WARDEN_JOB
 from arbiter3.arbiter.utils import split_port, cores_to_usec, gib_to_bytes
 from arbiter3.arbiter.models import Violation, Event, Target, CPU_QUOTA, MEMORY_MAX
 from arbiter3.arbiter.eval import set_property
+from arbiter3.arbiter.prop import CPU_QUOTA, MEMORY_MAX
 
 from .nav import navbar
 
@@ -77,9 +78,9 @@ def apply(request):
         except ValueError:
             return message_http(f'Invalid value {value}', 'error')
 
-        if prop == "CPUQuotaPerSecUSec":
+        if prop == CPU_QUOTA:
             v = cores_to_usec(v) if v != -1 else v
-        elif prop == "MemoryMax":
+        elif prop == MEMORY_MAX:
             v = gib_to_bytes(v) if v != -1 else v
         else:
             return message_http(f'Invalid property "{prop}"', 'error')

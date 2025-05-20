@@ -10,8 +10,9 @@ from django.utils import timezone
 from prometheus_api_client import PrometheusApiClientException
 
 from arbiter3.arbiter.utils import split_port, get_uid
-from arbiter3.arbiter.models import Target, Violation, Policy, Limits, Event, UNSET_LIMIT, CPU_QUOTA, MEMORY_MAX
+from arbiter3.arbiter.models import Target, Violation, Policy, Limits, Event, UNSET_LIMIT
 from arbiter3.arbiter.email import send_violation_email
+from arbiter3.arbiter.prop import CPU_QUOTA, MEMORY_MAX, MEMORY_SWAP_MAX
 from arbiter3.arbiter.conf import (
     PROMETHEUS_CONNECTION,
     WARDEN_JOB,
@@ -32,11 +33,11 @@ def refresh_limits(policy: Policy):
     
 
 def refresh_limits_cpu(domain):
-    return refresh_limit(limit_query=f'cgroup_warden_cpu_quota{{instance=~"{domain}"}}', limit_name="CPUQuotaPerSecUSec")
+    return refresh_limit(limit_query=f'cgroup_warden_cpu_quota{{instance=~"{domain}"}}', limit_name=CPU_QUOTA)
 
 
 def refresh_limits_mem(domain):
-    return refresh_limit(limit_query=f'cgroup_warden_memory_max{{instance=~"{domain}"}}', limit_name="MemoryMax")
+    return refresh_limit(limit_query=f'cgroup_warden_memory_max{{instance=~"{domain}"}}', limit_name=MEMORY_MAX)
 
 
 def refresh_limit(limit_query: str, limit_name: str) -> list[Target]:
@@ -174,7 +175,11 @@ def query_violations(policies: list[Policy]) -> list[Violation]:
 
 async def apply_limits(limits: Limits, target: Target, session: aiohttp.ClientSession) -> tuple[Target, Limits]:
     applied: Limits = {}
+
     for name, value in limits.items():
+        if name == MEMORY_MAX:
+            status, message = await set_property(target, session, MEMORY_SWAP_MAX, value/1024)
+            
         status, message = await set_property(target, session, name, value)
         if status == http.HTTPStatus.OK:
             logger.info(

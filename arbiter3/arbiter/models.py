@@ -7,12 +7,11 @@ from django.utils import timezone
 from arbiter3.arbiter.utils import get_uid, split_port
 from arbiter3.arbiter.query import Q, increase, sum_by, sum_over_time
 from arbiter3.arbiter.conf import WARDEN_PORT, PROMETHEUS_CONNECTION, WARDEN_JOB
-
+from arbiter3.arbiter.prop import CPU_QUOTA, MEMORY_MAX
 
 Limits = dict[str, any]
 UNSET_LIMIT = -1
-CPU_QUOTA = "CPUQuotaPerSecUSec"
-MEMORY_MAX = "MemoryMax"
+
 
 
 @dataclass
