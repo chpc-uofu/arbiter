@@ -143,7 +143,7 @@ class Policy(models.Model):
 
     @property
     def affected_hosts(self):
-        up_query = f"up{{job=~'{WARDEN_JOB}', instance=~'{self.domain}'}}"
+        up_query = f"up{{job=~'{WARDEN_JOB}', instance=~'{self.domain}'}} > 0"
         result = PROMETHEUS_CONNECTION.query(up_query)
         return [split_port(r.metric["instance"]) for r in result]
 

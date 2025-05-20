@@ -174,14 +174,11 @@ def query_violations(policies: list[Policy]) -> list[Violation]:
     return violations
 
 
-async def apply_limits(limits: Limits, target: Target, session: aiohttp.ClientSession) -> tuple[Target, Limits]:
-    applied: Limits = {}
-
-    for name, value in limits.items():
+async def _apply_and_verify_limit(target, session, name, value):
         status, message = await set_property(target, session, name, value)
         if status == http.HTTPStatus.OK:
             try:
-                response = json.loads(message)
+                response: dict = json.loads(message)
                 if warning := response.get("warning"):
                     logger.warning(f"recieved warning from {target.host}: {warning}")
                 
@@ -191,10 +188,24 @@ async def apply_limits(limits: Limits, target: Target, session: aiohttp.ClientSe
                 logger.warning("failed to decode json from response, possibly older warden version")
 
             logger.info(f"successfully applied limit {name} = {value} to {target}")
-            applied[name] = value
+            return value, True
         else:
-            logger.warning(
-                f"could not apply {name} = {value} to {target}: {message}")
+            logger.warning(f"could not apply {name} = {value} to {target}: {message}")
+            return None, False
+
+
+async def apply_limits(limits: Limits, target: Target, session: aiohttp.ClientSession) -> tuple[Target, Limits]:
+    applied: Limits = {}
+    for name, value in limits.items():
+
+        # set swap before setting max, this will either prevent a mass swap to disk or mitigate it in v1
+        if name == MEMORY_MAX:
+            await _apply_and_verify_limit(target, session, MEMORY_SWAP_MAX, value)
+
+        applied_limit, successful = await _apply_and_verify_limit(target, session, name, value)
+
+        if successful:
+            applied[name] = applied_limit
 
     return target, applied
 
@@ -275,8 +286,7 @@ def evaluate(policies=None):
     applicable_limits = {target: [] for target in targets}
     for v in unexpired:
         for host, port in v.policy.affected_hosts:
-            target, _ = targets.update_or_create(
-                host=host, username=v.target.username, defaults=dict(port=port, unit=v.target.unit))
+            target, _ = targets.update_or_create(host=host, username=v.target.username, defaults=dict(port=port, unit=v.target.unit))
 
             if target not in applicable_limits:
                 applicable_limits[target] = []
