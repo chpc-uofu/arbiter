@@ -11,9 +11,9 @@ from django.contrib.auth.decorators import permission_required
 
 from arbiter3.arbiter.conf import PROMETHEUS_CONNECTION, WARDEN_JOB
 from arbiter3.arbiter.utils import split_port, cores_to_usec, gib_to_bytes
-from arbiter3.arbiter.models import Violation, Event, Target, CPU_QUOTA, MEMORY_MAX
+from arbiter3.arbiter.models import Violation, Event, Target
 from arbiter3.arbiter.eval import set_property
-from arbiter3.arbiter.prop import CPU_QUOTA, MEMORY_MAX
+from arbiter3.arbiter.prop import CPU_QUOTA, MEMORY_MAX, MEMORY_SWAP_MAX
 
 from .nav import navbar
 
@@ -37,7 +37,8 @@ def view_dashboard(request):
     last_eval = Event.objects.order_by("timestamp").last()
 
     prop_list = {"CPU Quota (cores)": CPU_QUOTA,
-                 "Memory Quota (GiB)": MEMORY_MAX}
+                 "Memory Quota (GiB)": MEMORY_MAX,
+                 "Memory Swap Quota (GiB)" : MEMORY_SWAP_MAX}
 
     context = dict(
         title="Dashboard",
@@ -80,7 +81,7 @@ def apply(request):
 
         if prop == CPU_QUOTA:
             v = cores_to_usec(v) if v != -1 else v
-        elif prop == MEMORY_MAX:
+        elif prop == MEMORY_MAX or prop == MEMORY_SWAP_MAX:
             v = gib_to_bytes(v) if v != -1 else v
         else:
             return message_http(f'Invalid property "{prop}"', 'error')
