@@ -177,9 +177,6 @@ async def apply_limits(limits: Limits, target: Target, session: aiohttp.ClientSe
     applied: Limits = {}
 
     for name, value in limits.items():
-        if name == MEMORY_MAX:
-            status, message = await set_property(target, session, MEMORY_SWAP_MAX, value/1024)
-            
         status, message = await set_property(target, session, name, value)
         if status == http.HTTPStatus.OK:
             logger.info(
