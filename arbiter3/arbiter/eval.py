@@ -3,6 +3,7 @@ import asyncio
 import aiohttp
 import logging
 import re
+import json
 
 from django.db.models import Q
 from django.utils import timezone
@@ -179,8 +180,17 @@ async def apply_limits(limits: Limits, target: Target, session: aiohttp.ClientSe
     for name, value in limits.items():
         status, message = await set_property(target, session, name, value)
         if status == http.HTTPStatus.OK:
-            logger.info(
-                f"successfully applied limit {name} = {value} to {target}")
+            try:
+                response = json.loads(message)
+                if warning := response.get("warning"):
+                    logger.warning(f"recieved warning from {target.host}: {warning}")
+                
+                if newLimit := response.get("property", {}).get("value"):
+                    value = newLimit
+            except json.JSONDecodeError:
+                logger.warning("failed to decode json from response, possibly older warden version")
+
+            logger.info(f"successfully applied limit {name} = {value} to {target}")
             applied[name] = value
         else:
             logger.warning(
