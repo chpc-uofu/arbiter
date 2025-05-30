@@ -198,12 +198,6 @@ async def _apply_and_verify_limit(target, session, name, value):
 async def apply_limits(limits: Limits, target: Target, session: aiohttp.ClientSession) -> tuple[Target, Limits]:
     applied: Limits = {} 
 
-    # set swap before setting max, this will either prevent a mass swap to disk or mitigate it in v1
-    if MEMORY_SWAP_MAX in limits:
-        applied_limit, successful = await _apply_and_verify_limit(target, session, MEMORY_SWAP_MAX, limits[MEMORY_SWAP_MAX])
-        if successful:
-            applied[MEMORY_SWAP_MAX] = applied_limit
-
     for name, value in limits.items():
         if name == MEMORY_SWAP_MAX:
             continue
@@ -211,6 +205,10 @@ async def apply_limits(limits: Limits, target: Target, session: aiohttp.ClientSe
         applied_limit, successful = await _apply_and_verify_limit(target, session, name, value)
 
         if successful:
+
+            if name == MEMORY_MAX:
+                applied[MEMORY_SWAP_MAX] = applied_limit
+
             applied[name] = applied_limit
 
     return target, applied
