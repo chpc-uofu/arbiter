@@ -199,16 +199,9 @@ async def apply_limits(limits: Limits, target: Target, session: aiohttp.ClientSe
     applied: Limits = {} 
 
     for name, value in limits.items():
-        if name == MEMORY_SWAP_MAX:
-            continue
-
         applied_limit, successful = await _apply_and_verify_limit(target, session, name, value)
 
         if successful:
-
-            if name == MEMORY_MAX:
-                applied[MEMORY_SWAP_MAX] = applied_limit
-
             applied[name] = applied_limit
 
     return target, applied
@@ -228,9 +221,6 @@ def reduce_limits(limits_list: list[Limits]) -> Limits:
 
 def resolve_limits(target: Target, limits: Limits) -> Limits:
     resolved = {name: value for name, value in limits.items()}
-
-    if MEMORY_MAX in resolved:
-        resolved[MEMORY_SWAP_MAX] = resolved[MEMORY_MAX]
 
     for name, value in target.limits.items():
         if name not in limits:

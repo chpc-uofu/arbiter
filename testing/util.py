@@ -74,16 +74,13 @@ def get_metrics(target: Target):
 
 def assert_expected_limits(applied, tier):
     expected = tier
-
-    if MEMORY_MAX in expected:
-        expected[MEMORY_SWAP_MAX] = expected[MEMORY_MAX]
     
     for name in (expected.keys() | applied.keys()):
         assert name in applied
         assert name in expected
 
         if name == MEMORY_MAX or name == MEMORY_SWAP_MAX:
-            continue
+            assert applied[name] >= expected[name]
         else:
             assert applied[name] == expected[name]
 
