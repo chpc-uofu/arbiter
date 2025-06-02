@@ -77,7 +77,7 @@ class UsagePolicyForm(forms.ModelForm):
         label="Query CPU Threshold", required=False)
     mem_threshold = forms.FloatField(
         label="Query Memory Threshold", required=False)
-    use_pss = forms.BooleanField(label="Use PSS memory", help_text="Use PSS (proprtional shared size) for memory usage evaluation. If disabled, uses RSS (default)")
+    use_pss = forms.BooleanField(label="Use PSS memory", required=False, help_text="Use PSS (proprtional shared size) for memory usage evaluation. If disabled, uses RSS (default)")
 
     class Meta:
         model = UsagePolicy

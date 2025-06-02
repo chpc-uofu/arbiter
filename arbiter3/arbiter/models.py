@@ -127,26 +127,21 @@ class Policy(models.Model):
     class Meta:
         verbose_name_plural = "Policies"
 
-    is_base_policy = models.BooleanField(
-        default=False, null=False, editable=False)
+    is_base_policy = models.BooleanField(default=False, null=False, editable=False)
 
     name = models.CharField(max_length=255, unique=True)
     domain = models.CharField(max_length=1024)
     lookback = models.DurationField(default=timedelta(minutes=15))
     description = models.TextField(max_length=1024, blank=True)
     penalty_constraints: Limits = models.JSONField(null=False)
-    penalty_duration = models.DurationField(
-        null=True, default=timedelta(minutes=15))
+    penalty_duration = models.DurationField(null=True, default=timedelta(minutes=15))
 
     repeated_offense_scalar = models.FloatField(null=True, default=1.0)
-    repeated_offense_lookback = models.DurationField(
-        null=True, default=timedelta(hours=3))
-    grace_period = models.DurationField(
-        null=True, default=timedelta(minutes=5))
+    repeated_offense_lookback = models.DurationField(null=True, default=timedelta(hours=3))
+    grace_period = models.DurationField(null=True, default=timedelta(minutes=5))
 
     query_data = models.JSONField()
-    active = models.BooleanField(
-        default=True, help_text="Whether or not this policy gets evaluated")
+    active = models.BooleanField(default=True, help_text="Whether or not this policy gets evaluated")
 
     def __str__(self):
         return f'{self.name}'
