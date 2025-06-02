@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 
 from arbiter3.arbiter.models import BasePolicy, Limits, QueryData, QueryParameters, CPU_QUOTA, MEMORY_MAX
 from arbiter3.arbiter.utils import usec_to_cores, bytes_to_gib, cores_to_usec, gib_to_bytes
+from arbiter3.arbiter.prop import CPU_QUOTA, MEMORY_MAX
 
 from .nav import navbar
 
@@ -40,9 +41,9 @@ class BasePolicyForm(forms.ModelForm):
 
         if constraints := self.instance.penalty_constraints:
             for name, value in constraints['tiers'][0].items():
-                if name == "CPUQuotaPerSecUSec":
+                if name == CPU_QUOTA:
                     self.fields['cpu'].initial = usec_to_cores(value)
-                if name == "MemoryMax":
+                if name == MEMORY_MAX:
                     self.fields['mem'].initial = bytes_to_gib(value)
 
         if disabled:

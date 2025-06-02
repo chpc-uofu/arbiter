@@ -3,6 +3,7 @@ import asyncio
 import aiohttp
 import logging
 import re
+import json
 
 from django.db.models import Q
 from django.utils import timezone
@@ -10,8 +11,9 @@ from django.utils import timezone
 from prometheus_api_client import PrometheusApiClientException
 
 from arbiter3.arbiter.utils import split_port, get_uid
-from arbiter3.arbiter.models import Target, Violation, Policy, Limits, Event, UNSET_LIMIT, CPU_QUOTA, MEMORY_MAX
+from arbiter3.arbiter.models import Target, Violation, Policy, Limits, Event, UNSET_LIMIT
 from arbiter3.arbiter.email import send_violation_email
+from arbiter3.arbiter.prop import CPU_QUOTA, MEMORY_MAX, MEMORY_SWAP_MAX
 from arbiter3.arbiter.conf import (
     PROMETHEUS_CONNECTION,
     WARDEN_JOB,
@@ -32,11 +34,11 @@ def refresh_limits(policy: Policy):
     
 
 def refresh_limits_cpu(domain):
-    return refresh_limit(limit_query=f'cgroup_warden_cpu_quota{{instance=~"{domain}"}}', limit_name="CPUQuotaPerSecUSec")
+    return refresh_limit(limit_query=f'cgroup_warden_cpu_quota{{instance=~"{domain}"}}', limit_name=CPU_QUOTA)
 
 
 def refresh_limits_mem(domain):
-    return refresh_limit(limit_query=f'cgroup_warden_memory_max{{instance=~"{domain}"}}', limit_name="MemoryMax")
+    return refresh_limit(limit_query=f'cgroup_warden_memory_max{{instance=~"{domain}"}}', limit_name=MEMORY_MAX)
 
 
 def refresh_limit(limit_query: str, limit_name: str) -> list[Target]:
@@ -86,11 +88,12 @@ async def set_property(target: Target, session: aiohttp.ClientSession, name: str
         auth_header = {"Authorization": "Bearer " + WARDEN_BEARER}
     else:
         auth_header = None
+
     try:
         async with session.post(
             url=endpoint,
             json=payload,
-            timeout=5,
+            timeout=10, # might need larger timeout, when MemMax is set systemd tries to swap excess memory to disk which takes forever
             headers=auth_header,
             ssl=WARDEN_VERIFY_SSL,
         ) as response:
@@ -172,17 +175,34 @@ def query_violations(policies: list[Policy]) -> list[Violation]:
     return violations
 
 
-async def apply_limits(limits: Limits, target: Target, session: aiohttp.ClientSession) -> tuple[Target, Limits]:
-    applied: Limits = {}
-    for name, value in limits.items():
+async def _apply_and_verify_limit(target, session, name, value):
         status, message = await set_property(target, session, name, value)
         if status == http.HTTPStatus.OK:
-            logger.info(
-                f"successfully applied limit {name} = {value} to {target}")
-            applied[name] = value
+            try:
+                response: dict = json.loads(message)
+                if warning := response.get("warning"):
+                    logger.warning(f"recieved warning from {target.host}: {warning}")
+                
+                if newLimit := response.get("property", {}).get("value"):
+                    value = newLimit
+            except json.JSONDecodeError:
+                logger.warning("failed to decode json from response, possibly older warden version")
+
+            logger.info(f"successfully applied limit {name} = {value} to {target}")
+            return value, True
         else:
-            logger.warning(
-                f"could not apply {name} = {value} to {target}: {message}")
+            logger.warning(f"could not apply {name} = {value} to {target}: {message}")
+            return None, False
+
+
+async def apply_limits(limits: Limits, target: Target, session: aiohttp.ClientSession) -> tuple[Target, Limits]:
+    applied: Limits = {} 
+
+    for name, value in limits.items():
+        applied_limit, successful = await _apply_and_verify_limit(target, session, name, value)
+
+        if successful:
+            applied[name] = applied_limit
 
     return target, applied
 
@@ -263,8 +283,7 @@ def evaluate(policies=None):
     applicable_limits = {target: [] for target in targets}
     for v in unexpired:
         for host, port in v.policy.affected_hosts:
-            target, _ = targets.update_or_create(
-                host=host, username=v.target.username, defaults=dict(port=port, unit=v.target.unit))
+            target, _ = targets.update_or_create(host=host, username=v.target.username, defaults=dict(port=port, unit=v.target.unit))
 
             if target not in applicable_limits:
                 applicable_limits[target] = []
