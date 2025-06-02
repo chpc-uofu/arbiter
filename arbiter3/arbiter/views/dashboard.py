@@ -38,7 +38,8 @@ def view_dashboard(request):
 
     prop_list = {"CPU Quota (cores)": CPU_QUOTA,
                  "Memory Quota (GiB)": MEMORY_MAX,
-                 "Memory Swap Quota (GiB)" : MEMORY_SWAP_MAX}
+                 #"Memory Swap Quota (GiB)" : MEMORY_SWAP_MAX
+                 }
 
     context = dict(
         title="Dashboard",
