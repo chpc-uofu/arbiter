@@ -175,7 +175,7 @@ def query_violations(policies: list[Policy]) -> list[Violation]:
     return violations
 
 
-async def _apply_and_verify_limit(target, session, name, value):
+async def _apply_and_verify_limit(target: Target, session : aiohttp.ClientSession, name : str, value: any):
         status, message = await set_property(target, session, name, value)
         if status == http.HTTPStatus.OK:
             try:
@@ -185,6 +185,9 @@ async def _apply_and_verify_limit(target, session, name, value):
                 
                 if newLimit := response.get("property", {}).get("value"):
                     value = newLimit
+                else:
+                    logger.warning(f"malformed response : {response}")
+                    return None, False
             except json.JSONDecodeError:
                 logger.warning("failed to decode json from response, possibly older warden version")
 
