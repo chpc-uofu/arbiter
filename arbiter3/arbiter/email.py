@@ -15,6 +15,8 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils import timezone
 
+from arbiter3.arbiter.prop import CPU_QUOTA, MEMORY_MAX
+
 logger = logging.getLogger(__name__)
 user_lookup = ARBITER_USER_LOOKUP
 jinja_env = Environment(loader=FileSystemLoader(ARBITER_EMAIL_TEMPLATE_DIR))
@@ -25,9 +27,9 @@ subject_template = jinja_env.get_template('email_subject.html')
 def format_limits(limits: dict[str, int]) -> dict[str, str]:
     results = {}
     for limit, value in limits.items():
-        if limit == "CPUQuotaPerSecUSec":
+        if limit == CPU_QUOTA:
             results['CPU'] = usec_to_cores(value)
-        if limit == "MemoryMax":
+        if limit == MEMORY_MAX:
             results['Memory'] = bytes_to_gib(value)
     
     return results

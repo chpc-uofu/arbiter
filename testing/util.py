@@ -8,6 +8,7 @@ import re
 from arbiter3.arbiter.models import Target, Policy, Violation
 from arbiter3.arbiter.conf import WARDEN_USE_TLS, WARDEN_PORT, WARDEN_BEARER, WARDEN_VERIFY_SSL
 from arbiter3.arbiter.utils import bytes_to_gib
+from arbiter3.arbiter.prop import MEMORY_MAX, MEMORY_SWAP_MAX
 
 
 RE_PROM_METRIC = re.compile(r"(?P<metric>.*){(?P<labels>.*)} (?P<value>.*)")
@@ -70,6 +71,18 @@ def get_metrics(target: Target):
     response = requests.get(url=endpoint, verify=WARDEN_VERIFY_SSL)
     return response
 
+
+def assert_expected_limits(applied, tier):
+    expected = tier
+    
+    for name in (expected.keys() | applied.keys()):
+        assert name in applied
+        assert name in expected
+
+        if name == MEMORY_MAX or name == MEMORY_SWAP_MAX:
+            assert applied[name] >= expected[name]
+        else:
+            assert applied[name] == expected[name]
 
 def unset_limits(target: Target):
     set_property_sync(target, "CPUAccounting", True)

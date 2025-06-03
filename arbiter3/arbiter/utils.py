@@ -1,6 +1,7 @@
 import re
 import logging
 from pwd import getpwnam
+from arbiter3.arbiter.prop import CPU_QUOTA, MEMORY_MAX
 
 
 USEC_PER_SEC = 1000**2
@@ -103,14 +104,17 @@ def bytes_to_gib(byts: int) -> float:
 
 
 def to_readable_limits(limits: dict) -> dict:
-    cpu_quota = limits.pop("CPUQuotaPerSecUSec", None)
-    memory_max = limits.pop("MemoryMax", None)
+    readable_limits = limits.copy()
+
+    cpu_quota = readable_limits.pop(CPU_QUOTA, None)
+    memory_max = readable_limits.pop(MEMORY_MAX, None)
 
     if cpu_quota:
-        limits["CPU-Quota (Cores)"] = usec_to_cores(cpu_quota)
+        readable_limits["CPU-Quota (Cores)"] = f"{usec_to_cores(cpu_quota):.2f}"
 
     if memory_max:
-        limits["Memory-Max (Gib)"] = bytes_to_gib(memory_max)
+        readable_limits["Memory-Max (Gib)"] = f"{bytes_to_gib(memory_max):.2f}"
+    
+    return readable_limits
 
-    return limits
 
