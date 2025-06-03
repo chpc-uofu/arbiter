@@ -1064,3 +1064,62 @@ def test_repeat_violation_scales_penalty_tier(short_low_tiered_policy, target1):
             1,
         )
     )
+
+########################################################
+#               Memory Policy Tests                    #
+# (violations should be triggered by usage over        #
+#     threshold in both rss and pss metrics)           #
+########################################################
+
+@pytest.mark.django_db(transaction=True)
+def test_memory_rss_policy(rss_memory_policy, target1):
+    # start bad behavior
+    runtime = create_violation(target1, rss_memory_policy)
+    time.sleep(runtime)
+
+    # eval and make sure db target was created
+    evaluate([rss_memory_policy])
+    db_target1 = Target.objects.filter(
+        unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None  # here
+
+    # make sure correct limits were applied
+    should_be = rss_memory_policy.penalty_constraints['tiers'][0]
+    
+    assert_expected_limits(db_target1.limits, should_be)
+
+    # now wait out violation and make sure limits were removed
+    time.sleep(duration(rss_memory_policy))
+    evaluate([rss_memory_policy])
+    db_target1 = Target.objects.filter(
+        unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None
+
+    # make sure target has no limits applied
+    assert len(db_target1.limits) == 0
+
+@pytest.mark.django_db(transaction=True)
+def test_memory_pss_policy(pss_memory_policy, target1):
+    # start bad behavior
+    runtime = create_violation(target1, pss_memory_policy)
+    time.sleep(runtime)
+
+    # eval and make sure db target was created
+    evaluate([pss_memory_policy])
+    db_target1 = Target.objects.filter(
+        unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None  # here
+
+    # make sure correct limits were applied
+    should_be = pss_memory_policy.penalty_constraints['tiers'][0]
+    
+    assert_expected_limits(db_target1.limits, should_be)
+
+    # now wait out violation and make sure limits were removed
+    time.sleep(duration(pss_memory_policy))
+    evaluate([pss_memory_policy])
+    db_target1 = Target.objects.filter(unit=target1.unit, host=target1.host).first()
+    assert db_target1 != None
+
+    # make sure target has no limits applied
+    assert len(db_target1.limits) == 0

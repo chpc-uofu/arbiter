@@ -480,3 +480,42 @@ def low_harsh_procwhitelist_policy(db, harsh_penalty):
         penalty_duration=timedelta(seconds=5),
         grace_period=timedelta(seconds=0),
     )
+
+
+@pytest.fixture
+def pss_memory_policy(db, soft_penalty):
+    params = QueryParameters(
+        cpu_threshold=None, mem_threshold=MEM_LOW_THRESHOLD, use_pss_metric=True
+    )
+    query = QueryData.build_query(SHORT_WINDOW, DOMAIN, params)
+    return Policy.objects.create(
+        name="pss memory policy, soft penalty_constraints",
+        domain=".*",
+        description="description",
+        penalty_constraints=soft_penalty,
+        query_data=query.json(),
+        lookback=SHORT_WINDOW,
+        repeated_offense_scalar=0.0,
+        penalty_duration=timedelta(seconds=10),
+        repeated_offense_lookback=timedelta(seconds=0),
+        grace_period=timedelta(seconds=0),
+    )
+
+@pytest.fixture
+def rss_memory_policy(db, soft_penalty):
+    params = QueryParameters(
+        cpu_threshold=None, mem_threshold=MEM_LOW_THRESHOLD, use_pss_metric=False
+    )
+    query = QueryData.build_query(SHORT_WINDOW, DOMAIN, params)
+    return Policy.objects.create(
+        name="rss memory policy soft penalty_constraints",
+        domain=".*",
+        description="description",
+        penalty_constraints=soft_penalty,
+        query_data=query.json(),
+        lookback=SHORT_WINDOW,
+        repeated_offense_scalar=0.0,
+        penalty_duration=timedelta(seconds=10),
+        repeated_offense_lookback=timedelta(seconds=0),
+        grace_period=timedelta(seconds=0),
+    )

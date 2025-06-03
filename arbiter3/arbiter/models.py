@@ -3,6 +3,7 @@ from dataclasses import dataclass, asdict
 
 from django.db import models
 from django.utils import timezone
+from django.contrib.auth.models import User
 
 from arbiter3.arbiter.utils import get_uid, split_port
 from arbiter3.arbiter.query import Q, increase, sum_by, sum_over_time
@@ -20,6 +21,7 @@ class QueryParameters:
     mem_threshold: int   # bytes
     proc_whitelist: str | None = None  # prom matcher regex
     user_whitelist: str | None = None  # prom matcher regex
+    use_pss_metric : bool = False
 
     def json(self):
         return asdict(self)
@@ -29,14 +31,31 @@ class QueryParameters:
 class QueryData:
     query: str
     params: QueryParameters | None
+    is_raw_query : bool = False
 
     def json(self):
         json_params = self.params.json() if self.params else None
-        return {"query": self.query, "params": json_params}
+
+        return {"query": self.query, "params": json_params, "is_raw_query": self.is_raw_query}
 
     @staticmethod
     def raw_query(query: str, params = None) -> "QueryData":
-        return QueryData(query=query, params=params)
+        return QueryData(query=query, params=params, is_raw_query=True)
+    
+    @staticmethod
+    def base_query(base_policy) -> "QueryData":
+        filters = f'instance=~"{base_policy.domain}"'
+        params = None
+        
+        if stored_params := base_policy.query_data.get("params"):
+            whitelist = stored_params.get("user_whitelist", "")
+            if whitelist:
+                filters += f', username!~"{whitelist}"'
+            params = QueryParameters(0, 0, user_whitelist=whitelist)
+        
+        query = f'cgroup_warden_cpu_usage_seconds{{{filters}}}'
+
+        return QueryData(query=query, params=params, is_raw_query=True)
 
     @staticmethod
     def build_query(lookback: timedelta, domain: str, params: QueryParameters) -> "QueryData":
@@ -68,7 +87,7 @@ class QueryData:
                 increase(
                     Q('cgroup_warden_proc_cpu_usage_seconds').like(**like_filters).not_like(**notlike_filters).over(f'{lookback}s')
                 ) / lookback > params.cpu_threshold, 
-                "username", "instance", "cgroup"
+                "username", "instance", "cgroup", "job"
             )
         else:
             cpu_query = increase(Q('cgroup_warden_cpu_usage_seconds').like(**like_filters).not_like(**notlike_filters).over(f'{lookback}s')) / lookback > params.cpu_threshold
@@ -83,9 +102,14 @@ class QueryData:
             datapoints = lookback
             mem_range = f'{lookback}s:1s'
 
-        mem_query = sum_over_time(
-            Q('cgroup_warden_memory_usage_bytes').like(**like_filters).not_like(**notlike_filters).over(mem_range)
-            ) / datapoints > params.mem_threshold
+        mem_metric = 'cgroup_warden_proc_memory_pss_bytes' if params.use_pss_metric else 'cgroup_warden_proc_memory_usage_bytes'
+
+        mem_query = sum_by(
+            sum_over_time(
+                Q(mem_metric).like(**like_filters).not_like(**notlike_filters).over(mem_range)
+            ) / datapoints, 
+            "username", "instance", "cgroup", "job"
+        ) > params.mem_threshold
 
         if params.mem_threshold and params.cpu_threshold:
             query = cpu_query.lor(mem_query)
@@ -96,33 +120,28 @@ class QueryData:
         else:
             query = None
 
-        return QueryData(query=str(query), params=params)
+        return QueryData(query=str(query), params=params, is_raw_query=False)
 
 
 class Policy(models.Model):
     class Meta:
         verbose_name_plural = "Policies"
 
-    is_base_policy = models.BooleanField(
-        default=False, null=False, editable=False)
+    is_base_policy = models.BooleanField(default=False, null=False, editable=False)
 
     name = models.CharField(max_length=255, unique=True)
     domain = models.CharField(max_length=1024)
     lookback = models.DurationField(default=timedelta(minutes=15))
     description = models.TextField(max_length=1024, blank=True)
     penalty_constraints: Limits = models.JSONField(null=False)
-    penalty_duration = models.DurationField(
-        null=True, default=timedelta(minutes=15))
+    penalty_duration = models.DurationField(null=True, default=timedelta(minutes=15))
 
     repeated_offense_scalar = models.FloatField(null=True, default=1.0)
-    repeated_offense_lookback = models.DurationField(
-        null=True, default=timedelta(hours=3))
-    grace_period = models.DurationField(
-        null=True, default=timedelta(minutes=5))
+    repeated_offense_lookback = models.DurationField(null=True, default=timedelta(hours=3))
+    grace_period = models.DurationField(null=True, default=timedelta(minutes=5))
 
     query_data = models.JSONField()
-    active = models.BooleanField(
-        default=True, help_text="Whether or not this policy gets evaluated")
+    active = models.BooleanField(default=True, help_text="Whether or not this policy gets evaluated")
 
     def __str__(self):
         return f'{self.name}'
@@ -161,18 +180,7 @@ class BasePolicy(Policy):
     def save(self, **kwargs):
         self.is_base_policy = True
         
-        filters = f'instance=~"{self.domain}"'
-        params = None
-
-        
-        if stored_params := self.query_data.get("params"):
-            whitelist = stored_params.get("user_whitelist", "")
-            if whitelist:
-                filters += f', username!~"{whitelist}"'
-            params = QueryParameters(0, 0, user_whitelist=whitelist)
-        
-        query = f'cgroup_warden_cpu_usage_seconds{{{filters}}}'
-        self.query_data = QueryData.raw_query(query, params).json()
+        self.query_data = QueryData.base_query(self).json()
         return super().save(**kwargs)
 
 
@@ -273,4 +281,11 @@ class Event(models.Model):
 
     type = models.CharField(max_length=255, choices=EventTypes.choices)
     timestamp = models.DateTimeField(auto_now=True)
-    data = models.JSONField()
+    data = models.JSONField()   
+    
+class ArbUser(User):
+    class Meta:
+        permissions = [
+            ("view_dashboard","can see user usage/violations on dashboard"),
+            ("execute_command","execute commands"),
+        ]

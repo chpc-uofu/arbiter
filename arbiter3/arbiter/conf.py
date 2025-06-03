@@ -50,6 +50,8 @@ except AssertionError:
 except ValueError:
     raise ImproperlyConfigured("setting ARBITER_LOG_LEVEL must be set to either 'debug', 'info', 'warning', or 'critical'")
 
+
+
 ########## EMAIL SETTINGS ##########
 
 try:
