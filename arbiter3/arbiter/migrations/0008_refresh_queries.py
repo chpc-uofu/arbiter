@@ -33,7 +33,7 @@ def refresh_policy_queries(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("arbiter", "0006_arbuser"),
+        ("arbiter", "0007_policy_watcher_mode"),
     ]
 
     operations = [

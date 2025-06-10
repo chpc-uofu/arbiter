@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("arbiter", "0007_refresh_queries"),
+        ("arbiter", "0006_arbuser"),
     ]
 
     operations = [
