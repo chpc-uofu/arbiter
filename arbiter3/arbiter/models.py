@@ -142,6 +142,7 @@ class Policy(models.Model):
 
     query_data = models.JSONField()
     active = models.BooleanField(default=True, help_text="Whether or not this policy gets evaluated")
+    watcher_mode = models.BooleanField(default=False, help_text="If set, the policy will only report/email violations and not enforce limits")
 
     def __str__(self):
         return f'{self.name}'
@@ -263,6 +264,11 @@ class Violation(models.Model):
 
         penalty_tier = min(self.offense_count-1, len(tiers)-1)
         return tiers[penalty_tier]
+    
+    @property
+    def penalty_tier(self) -> int: 
+        tiers = self.policy.penalty_constraints['tiers']
+        return min(self.offense_count-1, len(tiers)-1)
 
     @property
     def expired(self) -> bool:

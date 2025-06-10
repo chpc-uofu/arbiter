@@ -1,6 +1,6 @@
 from django.urls import path, include
 from django.contrib import admin
-from arbiter3.arbiter.views import base_policy, graphs, usage_policy, violation, dashboard, index, user
+from arbiter3.arbiter.views import base_policy, graphs, usage_policy, violation, dashboard, index, user, metrics
 
 app_name = "arbiter"
 
@@ -42,5 +42,5 @@ urlpatterns = [
     path("graphs/proc/memory/<int:violation_id>",
          graphs.violation_memory_usage, name="violation-proc-memory-graph"),
 
-    path("metrics", graphs.violation_metrics_scrape, name="violation_metric_scrape"),
+    path("metrics", metrics.violation_metrics_scrape, name="violation_metric_scrape"),
 ]

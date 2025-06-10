@@ -291,7 +291,8 @@ def evaluate(policies=None):
             if target not in applicable_limits:
                 applicable_limits[target] = []
 
-            applicable_limits[target].append(v.limits)
+            if not v.policy.watcher_mode:
+                applicable_limits[target].append(v.limits)
 
     create_event_for_eval(violations)
 
