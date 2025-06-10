@@ -82,7 +82,7 @@ class UsagePolicyForm(forms.ModelForm):
     class Meta:
         model = UsagePolicy
         fields = ["name", "domain", "description", "penalty_duration", "repeated_offense_scalar",
-                  "grace_period", "repeated_offense_lookback", "lookback", "active", "use_pss", "penalty_constraints"]
+                  "grace_period", "repeated_offense_lookback", "lookback", "active", "watcher_mode",  "use_pss", "penalty_constraints"]
         widgets = {'grace_period': forms.TimeInput(), "repeated_offense_lookback": forms.TimeInput(
         ), "penalty_constraints": TieredPenaltyWidget}
 
