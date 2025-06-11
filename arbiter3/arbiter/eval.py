@@ -13,7 +13,7 @@ from prometheus_api_client import PrometheusApiClientException
 from arbiter3.arbiter.utils import split_port, get_uid
 from arbiter3.arbiter.models import Target, Violation, Policy, Limits, Event, UNSET_LIMIT
 from arbiter3.arbiter.email import send_violation_email
-from arbiter3.arbiter.prop import CPU_QUOTA, MEMORY_MAX, MEMORY_SWAP_MAX
+from arbiter3.arbiter.prop import CPU_QUOTA, MEMORY_MAX
 from arbiter3.arbiter.conf import (
     PROMETHEUS_CONNECTION,
     WARDEN_JOB,
@@ -28,7 +28,7 @@ from arbiter3.arbiter.conf import (
 logger = logging.getLogger(__name__)
 
 def refresh_limits(policy: Policy):
-    if policy.active:
+    if policy.active and not policy.watcher_mode:
         refresh_limits_cpu(policy.domain)
         refresh_limits_mem(policy.domain)
     
