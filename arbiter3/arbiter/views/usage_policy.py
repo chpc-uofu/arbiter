@@ -44,10 +44,10 @@ class TieredPenaltyWidget(forms.Widget):
             tier = ConstraintTier()
 
             if mem_max := tier_limits.get(MEMORY_MAX):
-                tier.memory_gib = bytes_to_gib(mem_max)
+                tier.memory_gib = round(bytes_to_gib(mem_max), 2)
 
             if cpu_quota := tier_limits.get(CPU_QUOTA):
-                tier.cpu_cores = usec_to_cores(cpu_quota)
+                tier.cpu_cores = round(usec_to_cores(cpu_quota), 2)
 
             view_constraints.append(tier)
 
@@ -94,8 +94,7 @@ class UsagePolicyForm(forms.ModelForm):
             if cpu_threshold := query_data["params"]["cpu_threshold"]:
                 self.fields['cpu_threshold'].initial = cpu_threshold
             if mem_threshold := query_data["params"]["mem_threshold"]:
-                self.fields['mem_threshold'].initial = bytes_to_gib(
-                    mem_threshold)
+                self.fields['mem_threshold'].initial = round(bytes_to_gib(mem_threshold), 2)
             if use_pss := query_data["params"].get("use_pss_metric"):
                 self.fields['use_pss'].initial = use_pss
             self.fields['proc_whitelist'].initial = query_data["params"]["proc_whitelist"]

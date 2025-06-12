@@ -28,9 +28,9 @@ def format_limits(limits: dict[str, int]) -> dict[str, str]:
     results = {}
     for limit, value in limits.items():
         if limit == CPU_QUOTA:
-            results['CPU'] = usec_to_cores(value)
+            results['CPU'] = round(usec_to_cores(value), 2)
         if limit == MEMORY_MAX:
-            results['Memory'] = bytes_to_gib(value)
+            results['Memory'] = round(bytes_to_gib(value), 2)
     
     return results
 
