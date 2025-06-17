@@ -86,11 +86,13 @@ def mem_usage_figure(host: str, start: datetime, end: datetime, step="30s", user
     if username:
         query = f'cgroup_warden_proc_memory_usage_bytes{{instance="{host}", username="{username}"}} / {BYTES_PER_GIB}'
         color_by = "proc"
+        unreported_query = f'(sum(cgroup_warden_memory_usage_bytes{{username="{username}", instance="{host}"}}) - sum(cgroup_warden_proc_cpu_usage_seconds{{username="{username}", instance="{host}"}})) / {BYTES_PER_GIB} > 0'
     else:
         query = f'cgroup_warden_memory_usage_bytes{{instance="{host}"}} / {BYTES_PER_GIB}'
         color_by = "username"
+        unreported_query = None
 
-    figure = usage_graph(query, start, end, step, color_by, threshold)
+    figure = usage_graph(query, start, end, step, color_by, threshold, unreported_query)
     title = f"Memory usage for {username} on {host}" if username else f"Memory usage on {host}"
     figure.update_layout(title=title, yaxis_title="GiB")
     return figure
