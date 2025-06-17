@@ -33,13 +33,15 @@ def usage_graph(query: str, start: datetime, end: datetime, step: str, color_by:
     if color_by == 'proc':
         if unreported_query:
             try:
-                unrpeorted_matrix = PROMETHEUS_CONNECTION.query_range(query=unreported_query, start=start.timestamp(), end=end.timestamp(), step=step)
+                unreported_matrix = PROMETHEUS_CONNECTION.query_range(query=unreported_query, start=start.timestamp(), end=end.timestamp(), step=step)
             except Exception as e:
                 raise QueryError(f'Could not run unreported query: {e}')
             
-            if unrpeorted_matrix:
-                matrices.extend(unrpeorted_matrix)
+            #extend process list to include unreported usage
+            if unreported_matrix:
+                matrices.extend(unreported_matrix)
 
+        # show top 7 procs (if statement is to ensure unreported goes to 'other' label)
         matrices = combine_last_matrices(matrices, 7 if len(matrices) > 7 else len(matrices) - 1)
 
     fig = Figure()
@@ -84,9 +86,9 @@ def cpu_usage_figure(host: str, start: datetime, end: datetime, step="30s", user
 
 def mem_usage_figure(host: str, start: datetime, end: datetime, step="30s", username: str = None, threshold: int = None) -> Figure | None:
     if username:
-        query = f'cgroup_warden_proc_memory_usage_bytes{{instance="{host}", username="{username}"}} / {BYTES_PER_GIB}'
+        query = f'cgroup_warden_proc_memory_pss_bytes{{instance="{host}", username="{username}"}} / {BYTES_PER_GIB}'
         color_by = "proc"
-        unreported_query = f'(sum(cgroup_warden_memory_usage_bytes{{username="{username}", instance="{host}"}}) - sum(cgroup_warden_proc_cpu_usage_seconds{{username="{username}", instance="{host}"}})) / {BYTES_PER_GIB} > 0'
+        unreported_query = f'(sum(cgroup_warden_memory_usage_bytes{{username="{username}", instance="{host}"}}) - sum(cgroup_warden_proc_memory_pss_bytes{{username="{username}", instance="{host}"}})) / {BYTES_PER_GIB} > 0'
     else:
         query = f'cgroup_warden_memory_usage_bytes{{instance="{host}"}} / {BYTES_PER_GIB}'
         color_by = "username"

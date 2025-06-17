@@ -19,7 +19,7 @@ def refresh_policy_queries(apps, schema_editor):
                 mem_threshold=query_params.get("mem_threshold", None),
                 user_whitelist=query_params.get("user_whitelist", None),
                 proc_whitelist=query_params.get("proc_whitelist", None),
-                use_pss_metric=query_params.get("use_pss", False),
+                use_pss_metric=query_params.get("use_pss", True),
             )
 
             policy.query_data = QueryData.build_query(
