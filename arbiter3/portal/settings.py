@@ -10,9 +10,6 @@ from arbiter3.portal.base import *
 # arbiter will ignore all accounts with a uid less than this number
 ARBITER_MIN_UID = 1000
 
-# arbiter will not set resource limits if enabled
-ARBITER_PERMISSIVE_MODE = True
-    
 # arbiter logging level, debug, info, warning, or critical    
 ARBITER_LOG_LEVEL = 'debug'
 
@@ -50,6 +47,11 @@ WARDEN_USE_TLS = True
 # arbiter will use bearer token auth to communicate with the cgroup-wardens if given, e.g.
 # WARDEN_BEARER = 'super-secret-auth-token'
 WARDEN_BEARER = None
+
+#If enabled, the cgroup-warden will not write out persistant drop-in files for limits in /etc/systemd, 
+# and will instead write these files to /run. This means that when enabled, upon reboot all limits will be reset. 
+# Arbiter will account for this and sync limits, requiring no action.
+WARDEN_RUNTIME = False
 
 # ============================================================
 #                           Email

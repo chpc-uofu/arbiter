@@ -38,7 +38,7 @@ class ViolationListView(LoginRequiredMixin, ListView):
 def change_violation(request, violation_id):
     violation = Violation.objects.filter(pk=violation_id).first()
     username, realname, email = user_lookup(violation.target.username)
-    can_change = request.user.has_perm("arbiter.change_violation")
+    can_change = request.user.has_perm("arbiter.arbiter_administrator")
 
     if not violation:
         messages.error(request, "Violation not found.")

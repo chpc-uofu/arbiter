@@ -4,23 +4,28 @@ form{
 }
 
 form div, .form-row {
-    display: flex;
-    flex-direction: row;
-    /* display: grid;
-    grid-template-columns: 1fr 4fr; */
+    display: grid;
+    grid-template-rows: 30% 70%;
+    grid-template-columns: 1fr 4fr;
+    /* flex-direction: row; */
     border-bottom: 1px solid var(--darker-bg);
     padding: 10px;
 }
 
-form div input, .field-value{
-    /* grid-column: 2; */
+form div input, .field-value {
+    margin-top: auto;
+    margin-bottom: auto;
     width: fit-content;
+    height: fit-content;
+    grid-row: 1 / 3;   
+    grid-column: 2;
 }
 
 form div label, .form-row label{
     display: block;
-    /* grid-column: 1; */
-    width: 20%;
+    /* width: 20%; */
+    grid-row: 1;
+    grid-column: 1;
 }
 
 form div div, .form-submit-box{
@@ -28,9 +33,13 @@ form div div, .form-submit-box{
     display: flex;
     flex-direction: row;
 }
+
 .helptext{
+    padding-top: 10%;
     color: var(--lighter-text-color);
     font-size: smaller;
-    justify-self: flex-end;
+    /* justify-self: flex-end; */
+    grid-row: 1 / 3;
+    grid-column: 1;
 }
 

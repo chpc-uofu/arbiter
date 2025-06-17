@@ -19,14 +19,6 @@ except AttributeError:
 except AssertionError:
     raise ImproperlyConfigured("setting ARBITER_MIN_UID is an integer")
 
-try:
-    ARBITER_PERMISSIVE_MODE = settings.ARBITER_PERMISSIVE_MODE
-    assert isinstance(ARBITER_PERMISSIVE_MODE, bool)
-except AttributeError:
-    raise ImproperlyConfigured("setting ARBITER_PERMISSIVE_MODE is required")
-except AssertionError:
-    raise ImproperlyConfigured("setting ARBITER_PERMISSIVE_MODE is a boolean")
-
 
 try:
     ARBITER_LOG_LEVEL = settings.ARBITER_LOG_LEVEL

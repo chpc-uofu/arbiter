@@ -102,7 +102,10 @@ class QueryData:
             datapoints = lookback
             mem_range = f'{lookback}s:1s'
 
-        mem_metric = 'cgroup_warden_proc_memory_pss_bytes' if params.use_pss_metric else 'cgroup_warden_proc_memory_usage_bytes'
+        if params.proc_whitelist:
+            mem_metric = 'cgroup_warden_proc_memory_pss_bytes' #if params.use_pss_metric else 'cgroup_warden_proc_memory_usage_bytes'
+        else:
+            mem_metric = 'cgroup_warden_memory_usage_bytes'
 
         mem_query = sum_by(
             sum_over_time(
@@ -126,19 +129,37 @@ class QueryData:
 class Policy(models.Model):
     class Meta:
         verbose_name_plural = "Policies"
+        permissions = [
+            ("arbiter_view", "Arbiter Viewer"),
+            ("arbiter_administrator", "Arbiter Administrator"),
+        ]
 
     is_base_policy = models.BooleanField(default=False, null=False, editable=False)
 
-    name = models.CharField(max_length=255, unique=True)
-    domain = models.CharField(max_length=1024)
-    lookback = models.DurationField(default=timedelta(minutes=15))
-    description = models.TextField(max_length=1024, blank=True)
-    penalty_constraints: Limits = models.JSONField(null=False)
-    penalty_duration = models.DurationField(null=True, default=timedelta(minutes=15))
+    name = models.CharField(max_length=255, unique=True, help_text="Name of the policy")
+    domain = models.CharField(max_length=1024, help_text="regex for the hostname/instance where this policy is in affect")
+    lookback = models.DurationField(
+        default=timedelta(minutes=15), 
+        help_text="How far back arbiter evaluates user's usage (e.g. if a user's average usage is above the threshold(s) for this amount of time, they will be in violation)"
+        )
+    
+    description = models.TextField(max_length=1024, blank=True, help_text="optional description for the purpose/overview of this policy")
+    penalty_constraints: Limits = models.JSONField(null=False, help_text="The limits that will be applied at each tier of penalty . Repeated violation ups the penalty tier.")
+    penalty_duration = models.DurationField(null=True, default=timedelta(minutes=15), help_text="how long a user will be in penalty status upon violation (can scale depending on other settings)")
 
-    repeated_offense_scalar = models.FloatField(null=True, default=1.0)
-    repeated_offense_lookback = models.DurationField(null=True, default=timedelta(hours=3))
-    grace_period = models.DurationField(null=True, default=timedelta(minutes=5))
+    repeated_offense_scalar = models.FloatField(
+        null=True, 
+        default=1.0, 
+        help_text="How much a penalty's duration scales each repeated violation (e.g. if set to 1.0 the duration will double the second repeat violation and triple for the third repeat violation)"
+        )
+    
+    repeated_offense_lookback = models.DurationField(
+        null=True, 
+        default=timedelta(hours=3),
+        help_text="How far back arbiter looks at violation history (e.g. if set to 3 hours and the current violator has 2 violations in the past 3 hours, the user will be in tier 2 penalty status and with a proportionally scaled duration )"
+        )
+    
+    grace_period = models.DurationField(null=True, default=timedelta(minutes=5), help_text="for how long after leaving penalty status the user is unable to violate this policy for")
 
     query_data = models.JSONField()
     active = models.BooleanField(default=True, help_text="Whether or not this policy gets evaluated")
@@ -289,9 +310,9 @@ class Event(models.Model):
     timestamp = models.DateTimeField(auto_now=True)
     data = models.JSONField()   
     
-class ArbUser(User):
-    class Meta:
-        permissions = [
-            ("view_dashboard","can see user usage/violations on dashboard"),
-            ("execute_command","execute commands"),
-        ]
+# class ArbUser(User):
+#     class Meta:
+#         permissions = [
+#             ("view_dashboard","can see user usage/violations on dashboard"),
+#             ("execute_command","execute commands"),
+#         ]
