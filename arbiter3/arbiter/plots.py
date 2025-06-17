@@ -18,7 +18,7 @@ class QueryError(Exception):
     pass
 
 
-def usage_graph(query: str, start: datetime, end: datetime, step: str, color_by: str, threshold: float | int | None) -> Figure:
+def usage_graph(query: str, start: datetime, end: datetime, step: str, color_by: str, threshold: float | int | None, unreported_query: str = None) -> Figure:
 
     try:
         matrices = PROMETHEUS_CONNECTION.query_range(query=query, start=start.timestamp(), end=end.timestamp(), step=step)
@@ -31,7 +31,16 @@ def usage_graph(query: str, start: datetime, end: datetime, step: str, color_by:
     matrices = sort_matrices_by_avg(matrices)
 
     if color_by == 'proc':
-        matrices = combine_last_matrices(matrices, 7)
+        if unreported_query:
+            try:
+                unrpeorted_matrix = PROMETHEUS_CONNECTION.query_range(query=unreported_query, start=start.timestamp(), end=end.timestamp(), step=step)
+            except Exception as e:
+                raise QueryError(f'Could not run unreported query: {e}')
+            
+            if unrpeorted_matrix:
+                matrices.extend(unrpeorted_matrix)
+
+        matrices = combine_last_matrices(matrices, 7 if len(matrices) > 7 else len(matrices) - 1)
 
     fig = Figure()
     for a in reversed(matrices):
@@ -60,11 +69,14 @@ def cpu_usage_figure(host: str, start: datetime, end: datetime, step="30s", user
     if username:
         query = f'rate(cgroup_warden_proc_cpu_usage_seconds{{instance="{host}", username="{username}"}}[{step}])'
         color_by = "proc"
+        unreported_query = f'sum(rate(cgroup_warden_cpu_usage_seconds{{username="{username}", instance="{host}"}}[{step}])) - sum(rate(cgroup_warden_proc_cpu_usage_seconds{{username="{username}", instance="{host}"}}[{step}])) > 0'
     else:
         query = f'rate(cgroup_warden_cpu_usage_seconds{{instance="{host}"}}[{step}])'
         color_by = "username"
+        unreported_query = None
+    
 
-    figure = usage_graph(query, start, end, step, color_by, threshold)
+    figure = usage_graph(query, start, end, step, color_by, threshold, unreported_query)
     title = f"CPU usage for {username} on {host}" if username else f"CPU usage on {host}"
     figure.update_layout(title=title, yaxis_title="Cores")
     return figure

@@ -126,6 +126,7 @@ def combine_last_matrices(matrices: list[Matrix], n: int) -> list[Matrix]:
     for m in combine:
         for ts, v in m.values:
             other_sums[ts] += float(v)
+    
     if sum(other_sums.values()) == 0:
         return keep
     other_values = [Series(ts, v) for ts, v in other_sums.items()]
