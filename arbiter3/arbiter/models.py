@@ -102,7 +102,10 @@ class QueryData:
             datapoints = lookback
             mem_range = f'{lookback}s:1s'
 
-        mem_metric = 'cgroup_warden_proc_memory_pss_bytes' if params.use_pss_metric else 'cgroup_warden_proc_memory_usage_bytes'
+        if params.proc_whitelist:
+            mem_metric = 'cgroup_warden_proc_memory_pss_bytes' if params.use_pss_metric else 'cgroup_warden_proc_memory_usage_bytes'
+        else:
+            mem_metric = 'cgroup_warden_memory_usage_bytes'
 
         mem_query = sum_by(
             sum_over_time(

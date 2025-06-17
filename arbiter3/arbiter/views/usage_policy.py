@@ -77,26 +77,26 @@ class UsagePolicyForm(forms.ModelForm):
         label="Query CPU Threshold", required=False)
     mem_threshold = forms.FloatField(
         label="Query Memory Threshold", required=False)
-    use_pss = forms.BooleanField(label="Use PSS memory", required=False, help_text="Use PSS (proprtional shared size) for memory usage evaluation. If disabled, uses RSS (default)")
+    #use_pss = forms.BooleanField(label="Use PSS memory", required=False, help_text="Use PSS (proprtional shared size) for memory usage evaluation. If disabled, uses RSS (default)")
 
     class Meta:
         model = UsagePolicy
         fields = ["name", "domain", "description", "penalty_duration", "repeated_offense_scalar",
-                  "grace_period", "repeated_offense_lookback", "lookback", "active", "watcher_mode",  "use_pss", "penalty_constraints"]
+                  "grace_period", "repeated_offense_lookback", "lookback", "active", "watcher_mode", "penalty_constraints"]
         widgets = {'grace_period': forms.TimeInput(), "repeated_offense_lookback": forms.TimeInput(
         ), "penalty_constraints": TieredPenaltyWidget}
 
     def __init__(self, *args, disabled=False, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['use_pss'].initial = False
+        # self.fields['use_pss'].initial = False
 
         if query_data := self.instance.query_data:
             if cpu_threshold := query_data["params"]["cpu_threshold"]:
                 self.fields['cpu_threshold'].initial = cpu_threshold
             if mem_threshold := query_data["params"]["mem_threshold"]:
                 self.fields['mem_threshold'].initial = round(bytes_to_gib(mem_threshold), 2)
-            if use_pss := query_data["params"].get("use_pss_metric"):
-                self.fields['use_pss'].initial = use_pss
+            # if use_pss := query_data["params"].get("use_pss_metric"):
+            #     self.fields['use_pss'].initial = use_pss
             self.fields['proc_whitelist'].initial = query_data["params"]["proc_whitelist"]
             self.fields['user_whitelist'].initial = query_data["params"]["user_whitelist"]
 
@@ -160,7 +160,7 @@ class UsagePolicyForm(forms.ModelForm):
             mem_threshold=self.cleaned_data["mem_threshold"],
             user_whitelist=self.cleaned_data["user_whitelist"],
             proc_whitelist=self.cleaned_data["proc_whitelist"],
-            use_pss_metric=self.cleaned_data["use_pss"],
+            use_pss_metric=True,
         )
 
         policy.query_data = QueryData.build_query(
