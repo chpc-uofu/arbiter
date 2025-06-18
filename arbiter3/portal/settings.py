@@ -1,3 +1,4 @@
+from arbiter3.arbiter.utils import default_user_lookup
 from arbiter3.portal.base import *
 
 # For configuration details see:
@@ -12,8 +13,8 @@ ARBITER_MIN_UID = 1000
 
 # arbiter will not set resource limits if enabled
 ARBITER_PERMISSIVE_MODE = True
-    
-# arbiter logging level, debug, info, warning, or critical    
+
+# arbiter logging level, debug, info, warning, or critical
 ARBITER_LOG_LEVEL = 'debug'
 
 # ============================================================
@@ -75,7 +76,6 @@ def user_lookup(username):
 """
 
 # user lookup function. Can be defined inline, like above example.
-from arbiter3.arbiter.utils import default_user_lookup
 ARBITER_USER_LOOKUP = default_user_lookup
 
 # arbiter will send all violation emails to these addresses, e.g.
@@ -111,7 +111,7 @@ EMAIL_HOST_PASSWORD = None
 # django settings for running. To inherit default django settings, set variable
 # to the same value, e.g.
 #
-# DEBUG = DEBUG 
+# DEBUG = DEBUG
 #
 # See https://docs.djangoproject.com/en/5.1/topics/settings/ for more information
 
@@ -130,3 +130,30 @@ SECRET_KEY = 'changeme'
 ALLOWED_HOSTS = ['localhost']
 
 TIME_ZONE = 'America/Denver'
+
+# ============================================================
+#                          Django OIDC (optional)
+# ============================================================
+# django settings for using OIDC. The example settings can be adjusted for your OIDC instance e.g. keycloak
+#
+# INSTALLED_APPS += [
+#    'mozilla_django_oidc',
+# ]
+
+# AUTHENTICATION_BACKENDS = [
+#    'arbiter3.arbiter.auth_backend.OIDCBackend',
+#    'django.contrib.auth.backends.ModelBackend',
+# ]
+
+# LOGIN_URL = '/oidc/authenticate/'
+# LOGIN_REDIRECT_URL = '/'
+# LOGOUT_REDIRECT_URL = 'http://my.keycloak.com/realms/master/protocol/openid-connect/logout'
+
+# OIDC_RP_CLIENT_ID = 'test'
+# OIDC_RP_CLIENT_SECRET = 'secret-key'
+# OIDC_OP_AUTHORIZATION_ENDPOINT = 'http://my.keycloak.com/realms/master/protocol/openid-connect/auth'
+# OIDC_OP_TOKEN_ENDPOINT = 'http://my.keycloak.com/realms/master/protocol/openid-connect/token'
+# OIDC_OP_USER_ENDPOINT = 'http://my.keycloak.com/realms/master/protocol/openid-connect/userinfo'
+# OIDC_CREATE_USER = True
+# OIDC_RP_SIGN_ALGO = 'RS256'
+# OIDC_OP_JWKS_ENDPOINT = 'http://my.keycloak.com/realms/master/protocol/openid-connect/certs'
