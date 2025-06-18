@@ -84,6 +84,31 @@ DATABASES = {
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'changeme'
 
-ALLOWED_HOSTS =  ['127.0.0.1', 'localhost', 'host.docker.internal']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'host.docker.internal']
 
 TIME_ZONE = 'America/Denver'
+
+# ============================================================
+#                          Django OIDC (optional)
+# ============================================================
+INSTALLED_APPS += [
+    'mozilla_django_oidc',
+]
+
+AUTHENTICATION_BACKENDS = [
+    'arbiter3.portal.oidc_backend.OIDCBackend',
+    'django.contrib.auth.backends.ModelBackend',  # optional
+]
+
+LOGIN_URL = '/oidc/authenticate/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = 'http://keycloak:8080/realms/master/protocol/openid-connect/logout'
+
+OIDC_RP_CLIENT_ID = 'test'
+OIDC_RP_CLIENT_SECRET = 'DxBcevRlJlHYHUA7uZFkSsCqHvQ3D6Am'
+OIDC_OP_AUTHORIZATION_ENDPOINT = 'http://keycloak:8080/realms/master/protocol/openid-connect/auth'
+OIDC_OP_TOKEN_ENDPOINT = 'http://keycloak:8080/realms/master/protocol/openid-connect/token'
+OIDC_OP_USER_ENDPOINT = 'http://keycloak:8080/realms/master/protocol/openid-connect/userinfo'
+OIDC_CREATE_USER = True
+OIDC_RP_SIGN_ALGO = 'RS256'
+OIDC_OP_JWKS_ENDPOINT = 'http://keycloak:8080/realms/master/protocol/openid-connect/certs'

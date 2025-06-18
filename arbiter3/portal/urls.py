@@ -18,11 +18,22 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from django.shortcuts import redirect
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("accounts/", include("django.contrib.auth.urls")),
 ]
+
+if 'mozilla_django_oidc' in settings.INSTALLED_APPS:
+    OIDC_PATHS = (
+        path("accounts/login/", lambda request: redirect("/oidc/authenticate/")),
+        path("accounts/", include("django.contrib.auth.urls")),
+        path("oidc/", include("mozilla_django_oidc.urls")),
+    )
+
+    urlpatterns.extend(OIDC_PATHS)
+else:
+    urlpatterns.append(path("accounts/", include("django.contrib.auth.urls"))),
 
 if 'arbiter3.arbiter' in settings.INSTALLED_APPS:
     urlpatterns.append(path('', include('arbiter3.arbiter.urls')))
