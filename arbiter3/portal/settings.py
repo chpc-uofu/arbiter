@@ -136,9 +136,7 @@ TIME_ZONE = 'America/Denver'
 # ============================================================
 # django settings for using OIDC. The example settings can be adjusted for your OIDC instance e.g. keycloak
 #
-# INSTALLED_APPS += [
-#    'mozilla_django_oidc',
-# ]
+# See https://mozilla-django-oidc.readthedocs.io/en/stable/settings.html for more information
 
 # AUTHENTICATION_BACKENDS = [
 #    'arbiter3.arbiter.auth_backend.OIDCBackend',

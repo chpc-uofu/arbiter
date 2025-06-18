@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "django.contrib.humanize",
 
     'arbiter3.arbiter',
+    'mozilla_django_oidc',
 ]
 
 MIDDLEWARE = [
@@ -60,7 +61,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "arbiter3.portal.wsgi.application"
-
 
 
 # Password validation
@@ -99,7 +99,7 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = (
-  os.path.join(BASE_DIR / "portal", 'static'),
+    os.path.join(BASE_DIR / "portal", 'static'),
 )
 
 # Default primary key field type
