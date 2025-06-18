@@ -1,3 +1,4 @@
+from arbiter3.arbiter.promclient import PrometheusSession
 from django.conf import settings
 import logging
 
@@ -48,8 +49,8 @@ except AttributeError:
 except AssertionError:
     raise ImproperlyConfigured("setting ARBITER_LOG_LEVEL is a string")
 except ValueError:
-    raise ImproperlyConfigured("setting ARBITER_LOG_LEVEL must be set to either 'debug', 'info', 'warning', or 'critical'")
-
+    raise ImproperlyConfigured(
+        "setting ARBITER_LOG_LEVEL must be set to either 'debug', 'info', 'warning', or 'critical'")
 
 
 ########## EMAIL SETTINGS ##########
@@ -104,7 +105,8 @@ try:
 except AttributeError:
     raise ImproperlyConfigured("setting EMAIL_HOST_PASSWORD is required")
 except AssertionError:
-    raise ImproperlyConfigured("setting EMAIL_HOST_PASSWORD is a string or None")
+    raise ImproperlyConfigured(
+        "setting EMAIL_HOST_PASSWORD is a string or None")
 
 try:
     ARBITER_ADMIN_EMAILS = settings.ARBITER_ADMIN_EMAILS
@@ -114,9 +116,10 @@ try:
 except AttributeError:
     raise ImproperlyConfigured("setting ARBITER_ADMIN_EMAILS is required")
 except AssertionError:
-    raise ImproperlyConfigured("setting ARBITER_ADMIN_EMAILS is a list of strings")
+    raise ImproperlyConfigured(
+        "setting ARBITER_ADMIN_EMAILS is a list of strings")
 
-try: 
+try:
     ARBITER_FROM_EMAIL = settings.ARBITER_FROM_EMAIL
     if ARBITER_FROM_EMAIL is not None:
         assert isinstance(ARBITER_FROM_EMAIL, str)
@@ -125,7 +128,7 @@ except AttributeError:
 except AssertionError:
     raise ImproperlyConfigured("setting ARBITER_FROM_EMAIL is a string")
 
-try: 
+try:
     ARBITER_EMAIL_TEMPLATE_DIR = settings.ARBITER_EMAIL_TEMPLATE_DIR
     if ARBITER_EMAIL_TEMPLATE_DIR is None:
         from arbiter3.arbiter.templates import arbiter
@@ -133,22 +136,28 @@ try:
     else:
         assert isinstance(ARBITER_EMAIL_TEMPLATE_DIR, str)
 except AttributeError:
-    raise ImproperlyConfigured("setting ARBITER_EMAIL_TEMPLATE_DIR is required")
+    raise ImproperlyConfigured(
+        "setting ARBITER_EMAIL_TEMPLATE_DIR is required")
 except AssertionError:
-    raise ImproperlyConfigured("setting ARBITER_EMAIL_TEMPLATE_DIR is a string")
+    raise ImproperlyConfigured(
+        "setting ARBITER_EMAIL_TEMPLATE_DIR is a string")
 
 
 if ARBITER_ADMIN_EMAILS and EMAIL_HOST is None:
-    raise ImproperlyConfigured("setting EMAIL_HOST is required if ARBITER_ADMIN_EMAILS is not empty")
+    raise ImproperlyConfigured(
+        "setting EMAIL_HOST is required if ARBITER_ADMIN_EMAILS is not empty")
 
 if ARBITER_ADMIN_EMAILS and ARBITER_FROM_EMAIL is None:
-    raise ImproperlyConfigured("setting ARBITER_FROM_EMAIL is required if ARBITER_ADMIN_EMAILS is not empty")
+    raise ImproperlyConfigured(
+        "setting ARBITER_FROM_EMAIL is required if ARBITER_ADMIN_EMAILS is not empty")
 
 if ARBITER_NOTIFY_USERS and EMAIL_HOST is None:
-    raise ImproperlyConfigured("setting EMAIL_HOST is required if ARBITER_NOTIFY_USERS=True")
+    raise ImproperlyConfigured(
+        "setting EMAIL_HOST is required if ARBITER_NOTIFY_USERS=True")
 
 if ARBITER_NOTIFY_USERS and ARBITER_FROM_EMAIL is None:
-    raise ImproperlyConfigured("setting ARBITER_FROM_EMAIL is required if ARBITER_NOTIFY_USERS=True")
+    raise ImproperlyConfigured(
+        "setting ARBITER_FROM_EMAIL is required if ARBITER_NOTIFY_USERS=True")
 
 
 ########## PROMETHEUS SETTINGS ##########
@@ -176,7 +185,8 @@ try:
 except AttributeError:
     raise ImproperlyConfigured("setting PROMETHEUS_USERNAME is required")
 except AttributeError:
-    raise ImproperlyConfigured("setting PROMETHEUS_USERNAME is a string or None")
+    raise ImproperlyConfigured(
+        "setting PROMETHEUS_USERNAME is a string or None")
 
 try:
     PROMETHEUS_PASSWORD = settings.PROMETHEUS_PASSWORD
@@ -185,10 +195,11 @@ try:
 except AttributeError:
     raise ImproperlyConfigured("setting PROMETHEUS_PASSWORD is required")
 except AssertionError:
-    raise ImproperlyConfigured("setting PROMETHEUS_PASSWORD is a string or None")
+    raise ImproperlyConfigured(
+        "setting PROMETHEUS_PASSWORD is a string or None")
 
-from arbiter3.arbiter.promclient import PrometheusSession
-PROMETHEUS_CONNECTION = PrometheusSession(base_url=PROMETHEUS_URL, username=PROMETHEUS_USERNAME, password=PROMETHEUS_PASSWORD, verify=PROMETHEUS_VERIFY_SSL)
+PROMETHEUS_CONNECTION = PrometheusSession(
+    base_url=PROMETHEUS_URL, username=PROMETHEUS_USERNAME, password=PROMETHEUS_PASSWORD, verify=PROMETHEUS_VERIFY_SSL)
 
 ########## WARDEN SETTINGS ##########
 
@@ -235,8 +246,15 @@ except AssertionError:
 
 try:
     WARDEN_RUNTIME = settings.WARDEN_RUNTIME
-    assert isinstance(WARDEN_RUNTIME, bool) 
+    assert isinstance(WARDEN_RUNTIME, bool)
 except AttributeError:
     raise ImproperlyConfigured("setting WARDEN_RUNTIME is required")
 except AssertionError:
     raise ImproperlyConfigured("setting WARDEN_RUNTIME is a bool")
+
+try:
+    AUTHENTICATION_BACKENDS = settings.AUTHENTICATION_BACKENDS
+    if 'arbiter3.portal.oidc_backend.OIDCBackend' == AUTHENTICATION_BACKENDS[0]:
+        LOGIN_URL = '/oidc/authenticate'
+except Exception as e:
+    pass

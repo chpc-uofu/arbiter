@@ -98,8 +98,6 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',  # optional
 ]
 
-LOGIN_URL = '/oidc/authenticate/'
-LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = 'http://keycloak:8080/realms/master/protocol/openid-connect/logout'
 
 OIDC_RP_CLIENT_ID = 'test'

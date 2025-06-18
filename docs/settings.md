@@ -66,6 +66,33 @@ The following are Django specific settings. See [here](https://docs.djangoprojec
 
 `TIME_ZONE` **(string)** : Time zone used when displaying time.
 
+## OIDC (optional)
+
+The following are OIDC specific settings. See [here](https://mozilla-django-oidc.readthedocs.io/en/stable/settings.html) for details on all of the following.
+
+`AUTHENTICATION_BACKENDS` **(list[string])** : Ordered list of activated backends -> value for OIDC `['arbiter3.portal.oidc_backend.OIDCBackend',]`.
+
+`LOGOUT_REDIRECT_URL` **(string)** : Where the logout button redirects to.
+
+`OIDC_RP_CLIENT_ID` **(string)** : The OIDC client id.
+
+`OIDC_RP_CLIENT_SECRET` **(string)** : The OIDC client secret.
+
+`OIDC_OP_AUTHORIZATION_ENDPOINT` **(string)** : The authorization endpoint of your OIDC provider.
+
+`OIDC_OP_TOKEN_ENDPOINT` **(string)** : The token endpoint of your OIDC provider.
+
+`OIDC_OP_USER_ENDPOINT` **(string)** : The user endpoint of your OIDC provider.
+
+`OIDC_CREATE_USER` **(string)** : If a user based on the retrieved claim should be created.
+
+`OIDC_RP_SIGN_ALGO` **(string)** : The sign algorithm of your OIDC provider.
+
+`OIDC_OP_JWKS_ENDPOINT` **(string)** : The jwks endpoint of your OIDC provider.
+
+
+
+
 
 # Verifying Settings
 ## Settings File

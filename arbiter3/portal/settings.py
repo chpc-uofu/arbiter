@@ -143,8 +143,6 @@ TIME_ZONE = 'America/Denver'
 #    'django.contrib.auth.backends.ModelBackend',
 # ]
 
-# LOGIN_URL = '/oidc/authenticate/'
-# LOGIN_REDIRECT_URL = '/'
 # LOGOUT_REDIRECT_URL = 'http://my.keycloak.com/realms/master/protocol/openid-connect/logout'
 
 # OIDC_RP_CLIENT_ID = 'test'
