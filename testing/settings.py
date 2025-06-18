@@ -91,9 +91,7 @@ TIME_ZONE = 'America/Denver'
 # ============================================================
 #                          Django OIDC (optional)
 # ============================================================
-INSTALLED_APPS += [
-    'mozilla_django_oidc',
-]
+
 
 AUTHENTICATION_BACKENDS = [
     'arbiter3.portal.oidc_backend.OIDCBackend',
