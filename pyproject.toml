@@ -22,6 +22,7 @@ plotly = "^5.20.0"
 kaleido = "0.2.1"
 gunicorn = "^23.0.0"
 jinja2 = "^3.1.5"
+mozilla_django_oidc = "^4.0.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest-django = "^4.6.0"
