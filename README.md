@@ -14,6 +14,8 @@ HPC cluster login nodes. A successor of [Arbiter2](https://github.com/chpc-uofu/
 
 - [Installation](docs/installation.md)
 
+- [Development](docs/development.md)
+
 - [Configuration](docs/configuration.md)
 
 - [Settings](docs/settings.md)

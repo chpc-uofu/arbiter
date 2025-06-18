@@ -13,7 +13,8 @@ We use [devcontainers](https://containers.dev/) for our development environment.
 The docker configuration files given make 3 containers:
 1. A base container with Python3 and develop/test on
 2. A container that runs a [Prometheus](https://prometheus.io) server as a service which is forwarded to port 9090 on the host machine. The Prometheus web GUI is available at `localhost:9090`. This is the Prometheus server Arbiter will talk to to collect user metrics by default.
-3. A container for a Grafana server if you would like to use it for testing (it is not required  for Arbiter to run)
+3. A container for a Grafana server if you would like to use it for testing (it is not required for Arbiter to run)
+4. A container for a Keycloak server if you would like to use it for OIDC testing (it is not required for Arbiter to run)
 
 ## Running Arbiter
 Arbiter has two main components, the web server and the evaluation loop.
@@ -22,6 +23,33 @@ Arbiter has two main components, the web server and the evaluation loop.
 3. Once in, you can configure the policies you want Arbiter to use and enforce and where.
 4. Once all the configuration is set up, you can use the Dashboard page on the Admin to see user usage, and run the Arbiter evaluation loop (only one loop) or set limits on user/hosts with a `cgroup-warden`.
 5. Now that everything is set up, you can start up the evaluation loop to run forever, by using `python3 arbiter.py evaluate` with along with how long you want to wait between each loop using the `--seconds`, `--minutes`, and `--hours` arguments. If no furation arguments are provided, the loop runs once and exits. Additionally, you can specifiy only certain Policies to evaluate if you want using `--policies` and a list of Policy names.
+
+## Using OIDC
+
+To test OIDC open the Keycloak admin view at `localhost:8080` and create a client:
+
+1. Click `Clients`
+2. Click `Create client` with following settings:
+- `Client type`: `OpenID Connect`
+- `Client ID`: `test` (or something else)
+- `Client authentication`: `on`
+- `Authorization`: `on`
+3. Click `Save`
+4. Open created client
+5. Open tab `Credentials`
+6. Copy `Client Secret` and set it in `settings.py
+
+Since everything runs in a container, arbiter will open the URL `http://keycloak:8080` in your browser during login. The fastest approach to make it work, is to create a entry in your `/etc/hosts` like `127.0.0.1 keycloak`
+
+Also make sure to add a (test) email to the admin user:
+
+1. Click `Users`
+2. Click `admin`
+3. Add an email
+4. Click `Save`
+
+Now you can use the login of arbiter via `admin`:`admin`.
+
 
 ## Running cgroup-warden
 The following describes how to get a single `cgroup-warden` up for testing. See [TESTING.md](TESTING.md) for details.
