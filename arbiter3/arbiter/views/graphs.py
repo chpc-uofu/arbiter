@@ -13,7 +13,7 @@ class InvalidRequest(Exception):
 
 
 def create_graph(request, figure_func):
-    if not request.user.has_perm("arbiter.change_dashboard"):
+    if not request.user.has_perm("arbiter.arbiter_view"):
         raise PermissionError(
             "You do not have permission to view usage graphs")
 
@@ -55,7 +55,7 @@ def user_proc_memory_graph(request):
 
 
 def create_graph_violation(request, figure_func, violation_id):
-    if not request.user.has_perm("arbiter.change_dashboard"):
+    if not request.user.has_perm("arbiter.arbiter_view"):
         raise PermissionError(
             "You do not have permission to view usage graphs")
     violation = Violation.objects.get(pk=violation_id)

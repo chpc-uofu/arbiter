@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django import forms
 from django.views.generic.list import ListView
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 
@@ -13,15 +13,16 @@ from arbiter3.arbiter.prop import CPU_QUOTA, MEMORY_MAX
 from .nav import navbar
 
 
-class BasePolicyListView(LoginRequiredMixin, ListView):
+class BasePolicyListView(PermissionRequiredMixin, LoginRequiredMixin, ListView):
     model = BasePolicy
     login_url = reverse_lazy("login")
+    permission_required = "arbiter.arbiter_view"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["navbar"] = navbar(self.request)
         context["can_create"] = self.request.user.has_perm(
-            "arbiter.add_basepolicy")
+            "arbiter.arbiter_administrator")
         context["title"] = "Base Policies"
         return context
 
@@ -99,8 +100,7 @@ class BasePolicyForm(forms.ModelForm):
 
 @login_required(login_url=reverse_lazy("login"))
 def new_base_policy(request):
-
-    can_change = request.user.has_perm("arbiter.add_basepolicy")
+    can_change = request.user.has_perm("arbiter.arbiter_administrator")
 
     if not can_change:
         messages.error(
@@ -125,7 +125,7 @@ def new_base_policy(request):
 def change_base_policy(request, policy_id):
     policy = BasePolicy.objects.filter(pk=policy_id).first()
 
-    can_change = request.user.has_perm("arbiter.change_basepolicy")
+    can_change = request.user.has_perm("arbiter.arbiter_administrator")
 
     if not policy:
         messages.error(request, "Base Policy not found.")

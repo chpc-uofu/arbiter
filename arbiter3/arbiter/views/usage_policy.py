@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django import forms
 from django.views.generic.list import ListView
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse_lazy, reverse
 
@@ -24,6 +24,10 @@ class ConstraintTier:
 class TieredPenaltyWidget(forms.Widget):
     template_name = "arbiter/penalty_widget.html"
 
+    def __init__(self, **kwargs):
+        self.can_change = True
+        super().__init__(**kwargs)
+
     class Media:
         css = {
             "all": []
@@ -32,6 +36,7 @@ class TieredPenaltyWidget(forms.Widget):
 
     def get_context(self, name: str, value, attrs=None):
         context = super().get_context(name, value, attrs)
+        context['can_change'] = self.can_change
         if not value or value == 'null':
             constraints = {'tiers': []}
         else:
@@ -55,15 +60,16 @@ class TieredPenaltyWidget(forms.Widget):
         return context
 
 
-class UsagePolicyListView(LoginRequiredMixin, ListView):
+class UsagePolicyListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     model = UsagePolicy
     login_url = reverse_lazy("login")
+    permission_required = "arbiter.arbiter_view"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["navbar"] = navbar(self.request)
         context["can_create"] = self.request.user.has_perm(
-            "arbiter.add_usagepolicy")
+            "arbiter.arbiter_administrator")
         context["title"] = "Usage Policies"
         return context
 
@@ -107,6 +113,7 @@ class UsagePolicyForm(forms.ModelForm):
     def __init__(self, *args, disabled=False, **kwargs):
         super().__init__(*args, **kwargs)
         # self.fields['use_pss'].initial = False
+        self.fields['penalty_constraints'].widget.can_change = not disabled
 
         if query_data := self.instance.query_data:
             if cpu_threshold := query_data["params"]["cpu_threshold"]:
@@ -192,7 +199,7 @@ class UsagePolicyForm(forms.ModelForm):
 
 @login_required(login_url=reverse_lazy("login"))
 def new_usage_policy(request):
-    can_change = request.user.has_perm("arbiter.add_usagepolicy")
+    can_change = request.user.has_perm("arbiter.arbiter_administrator")
 
     if not can_change:
         messages.error(
@@ -221,7 +228,7 @@ def new_usage_policy(request):
 def change_usage_policy(request, policy_id):
     policy = UsagePolicy.objects.filter(pk=policy_id).first()
 
-    can_change = request.user.has_perm("arbiter.change_usagepolicy")
+    can_change = request.user.has_perm("arbiter.arbiter_administrator")
 
     if not policy:
         messages.error(request, "Usage Policy not found.")

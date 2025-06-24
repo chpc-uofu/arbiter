@@ -24,7 +24,7 @@ def message_http(message: str, status: str = "success"):
     return HttpResponse(f'<li class="{status}">{message}</li>')
 
 
-@permission_required('arbiter.view_dashboard')
+@permission_required('arbiter.arbiter_view')
 def view_dashboard(request):
     agents = []
     try:
@@ -52,9 +52,10 @@ def view_dashboard(request):
 
     return render(request, "arbiter/dashboard.html", context)
 
-
-@permission_required('arbiter.execute_commands')
 def apply(request):
+    can_run = request.user.has_perm("arbiter.arbiter_administrator")
+    if not can_run: 
+        return message_http("You do not have permissions to apply limits", status="error")
 
     async def apply_single_property(target: Target, name, value):
         async with aiohttp.ClientSession() as session:
@@ -98,8 +99,11 @@ def apply(request):
         return message_http(f'Unable to apply property: {message}', 'error')
 
 
-@permission_required('arbiter.execute_commands')
 def clean(request):
+    can_run = request.user.has_perm("arbiter.arbiter_administrator")
+    if not can_run: 
+        return message_http("You do not have permissions to run commands", status="error")
+
     if request.method == "POST":
         if not (before := request.POST.get("before", "").strip()):
             return message_http("Before is required for cleaning.", 'error')
@@ -110,11 +114,16 @@ def clean(request):
         return message_http("Ran clean successfully.")
 
 
-@permission_required('arbiter.execute_commands')
 def evaluate(request):
+    can_run = request.user.has_perm("arbiter.arbiter_administrator")
+    if not can_run: 
+        return message_http("You do not have permissions to run commands", status="error")
+    
     if request.method == "POST":
         try:
             call_command('evaluate')
         except CommandError as e:
             return message_http(f'Could not run clean: {e}', 'error')
     return message_http("Ran evaluate successfully.")
+
+

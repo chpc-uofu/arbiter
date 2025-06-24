@@ -8,7 +8,7 @@ from arbiter3.arbiter.utils import to_readable_limits
 from .nav import navbar
 
 
-@permission_required('arbiter.view_dashboard')
+@permission_required('arbiter.arbiter_view')
 def get_user_lookup(request):
     if request.method == "POST":
         user = request.POST.get("user")
@@ -28,7 +28,7 @@ def get_user_lookup(request):
     return render(request, "arbiter/user_lookup.html", context)
 
 
-@permission_required('arbiter.view_dashboard')
+@permission_required('arbiter.arbiter_view')
 def get_user_breakdown(request, username):
     targets = Target.objects.filter(username=username).values("host", "limits")
 
