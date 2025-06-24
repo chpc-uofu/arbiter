@@ -27,10 +27,16 @@ class BasePolicyListView(LoginRequiredMixin, ListView):
 
 
 class BasePolicyForm(forms.ModelForm):
-    cpu = forms.FloatField(label="CPU Cores", required=False)
-    mem = forms.FloatField(label="Memory in GiB", required=False)
+    cpu = forms.FloatField(label="CPU Limit in Cores", required=False, min_value=0, help_text="Memory limit that will be applied to users in the domain as a base status")
+    mem = forms.FloatField(label="Memory Limit in GiB", required=False, min_value=0, help_text="CPU limit that will be applied to users in the domain as a base status")
+
     user_whitelist = forms.CharField(
-        label="User Whitelist", required=False, initial="arbiter|nobody")
+        label="Query User Whitelist",
+        required=False,
+        initial="arbiter|nobody", 
+        help_text="A regex for usernames which are whitelisted from recieving this base status", 
+        widget=forms.Textarea(attrs={'rows':3})
+        )
 
     class Meta:
         model = BasePolicy
