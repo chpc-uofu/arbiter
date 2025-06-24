@@ -130,8 +130,8 @@ class Policy(models.Model):
     class Meta:
         verbose_name_plural = "Policies"
         permissions = [
-            ("staff", "can see user status/usage/violations, as well as everything else"),
-            ("administrator", "can set limits and evaluate on dashboard and change/create policies"),
+            ("arbiter_readonly", "can see user status/usage/violations, as well as everything else"),
+            ("arbiter_administrator", "can set limits and evaluate on dashboard and change/create policies"),
         ]
 
     is_base_policy = models.BooleanField(default=False, null=False, editable=False)
@@ -159,7 +159,7 @@ class Policy(models.Model):
         help_text="How far back arbiter looks at violation history (e.g. if set to 3 hours and the current violator has 2 violations in the past 3 hours, the user will be in tier 2 penalty status and with a proportionally scaled duration )"
         )
     
-    grace_period = models.DurationField(null=True, default=timedelta(minutes=5), help_text="for how ")
+    grace_period = models.DurationField(null=True, default=timedelta(minutes=5), help_text="for how long after leaving penalty status the user is unable to violate this policy for")
 
     query_data = models.JSONField()
     active = models.BooleanField(default=True, help_text="Whether or not this policy gets evaluated")
