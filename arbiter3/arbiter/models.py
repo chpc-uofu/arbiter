@@ -129,6 +129,10 @@ class QueryData:
 class Policy(models.Model):
     class Meta:
         verbose_name_plural = "Policies"
+        permissions = [
+            ("staff", "can see user status/usage/violations, as well as everything else"),
+            ("administrator", "can set limits and evaluate on dashboard and change/create policies"),
+        ]
 
     is_base_policy = models.BooleanField(default=False, null=False, editable=False)
 
@@ -292,9 +296,9 @@ class Event(models.Model):
     timestamp = models.DateTimeField(auto_now=True)
     data = models.JSONField()   
     
-class ArbUser(User):
-    class Meta:
-        permissions = [
-            ("view_dashboard","can see user usage/violations on dashboard"),
-            ("execute_command","execute commands"),
-        ]
+# class ArbUser(User):
+#     class Meta:
+#         permissions = [
+#             ("view_dashboard","can see user usage/violations on dashboard"),
+#             ("execute_command","execute commands"),
+#         ]
