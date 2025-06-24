@@ -17,7 +17,6 @@ from arbiter3.arbiter.prop import CPU_QUOTA, MEMORY_MAX
 from arbiter3.arbiter.conf import (
     PROMETHEUS_CONNECTION,
     WARDEN_JOB,
-    ARBITER_PERMISSIVE_MODE,
     ARBITER_MIN_UID,
     WARDEN_VERIFY_SSL,
     WARDEN_USE_TLS,
@@ -300,9 +299,6 @@ def evaluate(policies=None):
         if not violation.is_base_status:
             message = send_violation_email(violation)
             logger.info(message)
-
-    if ARBITER_PERMISSIVE_MODE:
-        return
 
     try:
         asyncio.run(reduce_and_apply_limits(applicable_limits))

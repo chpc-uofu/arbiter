@@ -5,9 +5,6 @@ The settings are represented with native Python types.
 ## General
 `ARBITER_MIN_UID` **(int)** : Arbiter will ignore all accounts with a uid less than this number.
 
-`ARBITER_PERMISSIVE_MODE` **(bool)** : If enabled, Arbiter will not set 
-resource limits.
-
 `ARBITER_LOG_LEVEL` **(string)** : The level of messages to log out. Options are `debug`, `info`, `warning`, and `critical`. 
 
 ## Prometheus
