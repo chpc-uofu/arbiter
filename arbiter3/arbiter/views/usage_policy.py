@@ -70,13 +70,31 @@ class UsagePolicyListView(LoginRequiredMixin, ListView):
 
 class UsagePolicyForm(forms.ModelForm):
     proc_whitelist = forms.CharField(
-        label="Query Process Whitelist", required=False)
+        label="Query Process Whitelist", 
+        required=False, 
+        help_text="A regex for processes that will not be counted against user usage", 
+        widget=forms.Textarea(attrs={'rows':6, 'cols':100})
+        )
+    
     user_whitelist = forms.CharField(
-        label="Query User Whitelist", required=False, initial="arbiter|nobody")
+        label="Query User Whitelist",
+        required=False,
+        initial="arbiter|nobody", 
+        help_text="A regex for usernames which are whitelisted from violating this policy", 
+        widget=forms.Textarea(attrs={'rows':3})
+        )
+    
     cpu_threshold = forms.FloatField(
-        label="Query CPU Threshold", required=False)
+        label="Query CPU Threshold", 
+        required=False,
+        help_text="Threshold in core seconds, that when above is considered bad usage"
+        )
+    
     mem_threshold = forms.FloatField(
-        label="Query Memory Threshold", required=False)
+        label="Query Memory Threshold",
+        required=False,
+        help_text="Threshold in GiB, that when above is considered bad usage"
+        )
     #use_pss = forms.BooleanField(label="Use PSS memory", required=False, help_text="Use PSS (proprtional shared size) for memory usage evaluation. If disabled, uses RSS (default)")
 
     class Meta:
