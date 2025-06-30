@@ -103,7 +103,7 @@ class QueryData:
             mem_range = f'{lookback}s:1s'
 
         if params.proc_whitelist:
-            mem_metric = 'cgroup_warden_proc_memory_pss_bytes' if params.use_pss_metric else 'cgroup_warden_proc_memory_usage_bytes'
+            mem_metric = 'cgroup_warden_proc_memory_pss_bytes' #if params.use_pss_metric else 'cgroup_warden_proc_memory_usage_bytes'
         else:
             mem_metric = 'cgroup_warden_memory_usage_bytes'
 
