@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django import forms
 from django.views.generic.list import ListView
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse_lazy, reverse
 
@@ -24,6 +24,10 @@ class ConstraintTier:
 class TieredPenaltyWidget(forms.Widget):
     template_name = "arbiter/penalty_widget.html"
 
+    def __init__(self, **kwargs):
+        self.can_change = True
+        super().__init__(**kwargs)
+
     class Media:
         css = {
             "all": []
@@ -32,6 +36,7 @@ class TieredPenaltyWidget(forms.Widget):
 
     def get_context(self, name: str, value, attrs=None):
         context = super().get_context(name, value, attrs)
+        context['can_change'] = self.can_change
         if not value or value == 'null':
             constraints = {'tiers': []}
         else:
@@ -55,48 +60,68 @@ class TieredPenaltyWidget(forms.Widget):
         return context
 
 
-class UsagePolicyListView(LoginRequiredMixin, ListView):
+class UsagePolicyListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     model = UsagePolicy
     login_url = reverse_lazy("login")
+    permission_required = "arbiter.arbiter_view"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["navbar"] = navbar(self.request)
         context["can_create"] = self.request.user.has_perm(
-            "arbiter.add_usagepolicy")
+            "arbiter.arbiter_administrator")
         context["title"] = "Usage Policies"
         return context
 
 
 class UsagePolicyForm(forms.ModelForm):
     proc_whitelist = forms.CharField(
-        label="Query Process Whitelist", required=False)
+        label="Query Process Whitelist", 
+        required=False, 
+        help_text="A regex for processes that will not be counted against user usage", 
+        widget=forms.Textarea(attrs={'rows':6, 'cols':100})
+        )
+    
     user_whitelist = forms.CharField(
-        label="Query User Whitelist", required=False, initial="arbiter|nobody")
+        label="Query User Whitelist",
+        required=False,
+        initial="arbiter|nobody", 
+        help_text="A regex for usernames which are whitelisted from violating this policy", 
+        widget=forms.Textarea(attrs={'rows':3})
+        )
+    
     cpu_threshold = forms.FloatField(
-        label="Query CPU Threshold", required=False)
+        label="Query CPU Threshold", 
+        required=False,
+        help_text="Threshold in core seconds, that when above is considered bad usage"
+        )
+    
     mem_threshold = forms.FloatField(
-        label="Query Memory Threshold", required=False)
-    use_pss = forms.BooleanField(label="Use PSS memory", required=False, help_text="Use PSS (proprtional shared size) for memory usage evaluation. If disabled, uses RSS (default)")
+        label="Query Memory Threshold",
+        required=False,
+        help_text="Threshold in GiB, that when above is considered bad usage"
+        )
+    #use_pss = forms.BooleanField(label="Use PSS memory", required=False, help_text="Use PSS (proprtional shared size) for memory usage evaluation. If disabled, uses RSS (default)")
 
     class Meta:
         model = UsagePolicy
         fields = ["name", "domain", "description", "penalty_duration", "repeated_offense_scalar",
-                  "grace_period", "repeated_offense_lookback", "lookback", "active", "watcher_mode",  "use_pss", "penalty_constraints"]
+                  "grace_period", "repeated_offense_lookback", "lookback", "active", "watcher_mode", "penalty_constraints"]
         widgets = {'grace_period': forms.TimeInput(), "repeated_offense_lookback": forms.TimeInput(
         ), "penalty_constraints": TieredPenaltyWidget}
 
     def __init__(self, *args, disabled=False, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['use_pss'].initial = False
+        # self.fields['use_pss'].initial = False
+        self.fields['penalty_constraints'].widget.can_change = not disabled
 
         if query_data := self.instance.query_data:
             if cpu_threshold := query_data["params"]["cpu_threshold"]:
                 self.fields['cpu_threshold'].initial = cpu_threshold
             if mem_threshold := query_data["params"]["mem_threshold"]:
                 self.fields['mem_threshold'].initial = round(bytes_to_gib(mem_threshold), 2)
-            if use_pss := query_data["params"].get("use_pss_metric"):
-                self.fields['use_pss'].initial = use_pss
+            # if use_pss := query_data["params"].get("use_pss_metric"):
+            #     self.fields['use_pss'].initial = use_pss
             self.fields['proc_whitelist'].initial = query_data["params"]["proc_whitelist"]
             self.fields['user_whitelist'].initial = query_data["params"]["user_whitelist"]
 
@@ -160,7 +185,7 @@ class UsagePolicyForm(forms.ModelForm):
             mem_threshold=self.cleaned_data["mem_threshold"],
             user_whitelist=self.cleaned_data["user_whitelist"],
             proc_whitelist=self.cleaned_data["proc_whitelist"],
-            use_pss_metric=self.cleaned_data["use_pss"],
+            use_pss_metric=True,
         )
 
         policy.query_data = QueryData.build_query(
@@ -174,7 +199,7 @@ class UsagePolicyForm(forms.ModelForm):
 
 @login_required(login_url=reverse_lazy("login"))
 def new_usage_policy(request):
-    can_change = request.user.has_perm("arbiter.add_usagepolicy")
+    can_change = request.user.has_perm("arbiter.arbiter_administrator")
 
     if not can_change:
         messages.error(
@@ -203,7 +228,7 @@ def new_usage_policy(request):
 def change_usage_policy(request, policy_id):
     policy = UsagePolicy.objects.filter(pk=policy_id).first()
 
-    can_change = request.user.has_perm("arbiter.change_usagepolicy")
+    can_change = request.user.has_perm("arbiter.arbiter_administrator")
 
     if not policy:
         messages.error(request, "Usage Policy not found.")

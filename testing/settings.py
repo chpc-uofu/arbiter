@@ -9,8 +9,6 @@ from arbiter3.portal.base import *
 # ============================================================
 ARBITER_MIN_UID = 1000
 
-ARBITER_PERMISSIVE_MODE = False  # changeme to enable setting limits
-
 ARBITER_LOG_LEVEL = 'debug'
 
 # ============================================================

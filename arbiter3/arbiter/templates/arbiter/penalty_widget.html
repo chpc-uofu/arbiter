@@ -15,25 +15,32 @@
     <table class="penalty-tiers">
         <thead>
             <tr>
-                <th>Tier</th> <th>CPU Quota (Cores)</th><th>Memory Max (Gib)</th> <th>Action</th>
+                <th>Tier</th> <th>CPU Quota (Cores)</th><th>Memory Max (Gib)</th> {% if can_change or can_create %} <th>Action</th> {% endif %}
             </tr>
         </thead>
         <tbody id="tiers-content">
         {% for tier in tiers %}
             <tr>
                 <td class="row-number">{{forloop.counter}}</td>
-                <td contenteditable="true" class="cpu-constraint-cell">{{tier.cpu_cores|default_if_none:""}}</td>
-                <td contenteditable="true"  class="memory-constraint-cell">{{tier.memory_gib|default_if_none:""}}</td>
-                <td ><button class="table-action remove-tier-buttton" >Remove</button></td>
+                <td {% if can_change or can_create %} contenteditable="true" {% endif %} class="cpu-constraint-cell">{{tier.cpu_cores|default_if_none:""}}</td>
+                <td {% if can_change or can_create %} contenteditable="true" {% endif %}  class="memory-constraint-cell">{{tier.memory_gib|default_if_none:""}}</td>
+                {% if can_change or can_create %}
+                    <td ><button type="button" class="table-action remove-tier-buttton" >Remove</button></td>
+                {% endif %}
+                
             </tr>
         {% endfor %}
         </tbody>
-        <tr>
-            <td>New</td>
-            <td><input type="text" id="cpu-quota-input"></td>
-            <td><input type="text" id="memory-max-input"></td>
-            <td><button  class="table-action" id="add-tier-button">Add</button></td>
-        </tr>
+        {% if can_change or can_create %}
+            <tr>
+                <td>New</td>
+                <td><input type="number" min="0" id="cpu-quota-input"></td>
+                <td><input type="number" min="0" id="memory-max-input"></td>
+
+                
+                    <td><button type="button" class="table-action" id="add-tier-button">Add</button></td>
+            </tr>
+        {% endif %}
         
     </table>
     <input type="hidden" name="penalty_constraints" id="penalty-constraints-input" value='{"tiers":[]}'>
