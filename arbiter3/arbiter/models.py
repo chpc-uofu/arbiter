@@ -130,8 +130,8 @@ class Policy(models.Model):
     class Meta:
         verbose_name_plural = "Policies"
         permissions = [
-            ("arbiter_view", "can see user status/usage/violations, as well as everything else"),
-            ("arbiter_administrator", "can set limits and evaluate on dashboard and change/create policies"),
+            ("arbiter_view", "Arbiter Viewer"),
+            ("arbiter_administrator", "Arbiter Administrator"),
         ]
 
     is_base_policy = models.BooleanField(default=False, null=False, editable=False)
