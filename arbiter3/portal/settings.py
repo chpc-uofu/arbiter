@@ -48,6 +48,11 @@ WARDEN_USE_TLS = True
 # WARDEN_BEARER = 'super-secret-auth-token'
 WARDEN_BEARER = None
 
+#If enabled, the cgroup-warden will not write out persistant drop-in files for limits in /etc/systemd, 
+# and will instead write these files to /run. This means that when enabled, upon reboot all limits will be reset. 
+# Arbiter will account for this and sync limits, requiring no action.
+WARDEN_RUNTIME = False
+
 # ============================================================
 #                           Email
 # ============================================================
