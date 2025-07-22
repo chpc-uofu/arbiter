@@ -44,18 +44,18 @@ class QueryData:
     
     @staticmethod
     def base_query(base_policy) -> "QueryData":
-        filters = f'instance=~"{base_policy.domain}"'
+
+        query = Q('cgroup_warden_cpu_usage_seconds').like(instance=base_policy.domain)
         params = None
         
         if stored_params := base_policy.query_data.get("params"):
-            whitelist = stored_params.get("user_whitelist", "")
+            whitelist = stored_params.get("user_whitelist")
+            
             if whitelist:
-                filters += f', username!~"{whitelist}"'
+                query = query.not_like(username=whitelist)
             params = QueryParameters(0, 0, user_whitelist=whitelist)
-        
-        query = f'cgroup_warden_cpu_usage_seconds{{{filters}}}'
 
-        return QueryData(query=query, params=params, is_raw_query=True)
+        return QueryData(query=str(query), params=params, is_raw_query=True)
 
     @staticmethod
     def build_query(lookback: timedelta, domain: str, params: QueryParameters) -> "QueryData":
