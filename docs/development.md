@@ -18,7 +18,7 @@ The docker configuration files given make 3 containers:
 ## Running Arbiter
 Arbiter has two main components, the web server and the evaluation loop.
 1. You can start the webserver with `python3 arbiter.py runserver`
-2. After you have started the webserver, go to `localhost:8000/arbiter` and log in
+2. After you have started the webserver, go to `localhost:8000/` and log in
 3. Once in, you can configure the policies you want Arbiter to use and enforce and where.
 4. Once all the configuration is set up, you can use the Dashboard page on the Admin to see user usage, and run the Arbiter evaluation loop (only one loop) or set limits on user/hosts with a `cgroup-warden`.
 5. Now that everything is set up, you can start up the evaluation loop to run forever, by using `python3 arbiter.py evaluate` with along with how long you want to wait between each loop using the `--seconds`, `--minutes`, and `--hours` arguments. If no furation arguments are provided, the loop runs once and exits. Additionally, you can specifiy only certain Policies to evaluate if you want using `--policies` and a list of Policy names.
