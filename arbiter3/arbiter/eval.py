@@ -45,7 +45,7 @@ def refresh_limit(limit_query: str, limit_name: str) -> list[Target]:
 
     try: 
         response = PROMETHEUS_CONNECTION.query(limit_query)
-    except PrometheusApiClientException as e:
+    except Exception as e:
         logger.error(f"Unable to assert limits set: {e}")
 
     for result in response:
@@ -145,7 +145,7 @@ def query_violations(policies: list[Policy]) -> list[Violation]:
 
         try:
             response = PROMETHEUS_CONNECTION.query(policy.query)
-        except PrometheusApiClientException as e:
+        except Exception as e:
             logger.error(f"Unable to query violations: {e}")
             return violations
 
