@@ -3,7 +3,7 @@ from django import forms
 from django.views.generic.list import ListView
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 from django.urls import reverse_lazy, reverse
 
 import json
