@@ -63,7 +63,7 @@ These represent the CPU and memory limits you want to have applied to users at a
 
 - Active: Whether or not this policy gets evaluated (Will watch for violations).
 
-- Watcher Mode: If set, will not enforce limits, but will still report/email violations
+- Watcher Mode: If set, will not enforce limits, but will still report/email violations. Can be nice for first deploying/testing out arbiter or new policies.
 
 - Penalty Constraints: The actual constraints to apply to a user upon a violation, in CPU cores and memory GiB. The order in which these are added is the order in which these will be applied for repeated violations. Useful for creating 'harsher' violations for repeated offenses. For example, if a user violates the same policy *x* amount of times in the *Repeated Offense Lookback*, they will receive the *x*-th tier of limits or the next highest tier if there are not *x* tiers configured. 
 
