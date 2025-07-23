@@ -2,8 +2,8 @@ from django.shortcuts import render, redirect
 from django.views.generic.list import ListView
 from django.contrib import messages
 from django.utils import timezone
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.contrib.auth.decorators import login_required, permission_required
 from django.urls import reverse_lazy
 
 from arbiter3.arbiter.conf import ARBITER_USER_LOOKUP
@@ -21,6 +21,7 @@ except ImportError:
 class ViolationListView(LoginRequiredMixin, ListView):
     model = Violation
     login_url = reverse_lazy("login")
+    permission_required = "arbiter.arbiter_view"
     paginate_by = 50
     ordering = ["-timestamp"]
 
@@ -35,6 +36,7 @@ class ViolationListView(LoginRequiredMixin, ListView):
 
 
 @login_required(login_url=reverse_lazy("login"))
+@permission_required('arbiter.arbiter_view')
 def change_violation(request, violation_id):
     violation = Violation.objects.filter(pk=violation_id).first()
     username, realname, email = user_lookup(violation.target.username)
