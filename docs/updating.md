@@ -36,17 +36,12 @@ git pull
 source venv/bin/activate
 ```
 
-3. Update Arbiter and its dependencies
-```shell
-pip install .
-```
-
-4. Run migrations
+3. Run migrations
 ```shell
 ./arbiter.py migrate
 ```
 
-5. Restart services
+4. Restart services
 ```shell
 systemctl restart arbiter-web.service
 systemctl restart arbiter-eval.service

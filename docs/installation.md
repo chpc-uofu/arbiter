@@ -1,5 +1,5 @@
 # Installing Arbiter 3
-Arbiter 3 was created for the Rocky 8 and 9 interactive systems at the Center for High Performance Computing, University of Utah. It can run in other environments, provided the interactive systemds are managed by systemd. In general, the software can be installed by
+Arbiter 3 was created for the Rocky 8 and 9 interactive systems at the Center for High Performance Computing, University of Utah. It can run in other environments, provided the interactive systems are managed by systemd. In general, the software can be installed by:
 
 1. Installing the Arbiter Django Application
 2. Installing a Prometheus Instance
@@ -53,6 +53,43 @@ source venv/bin/activate
 pip install .
 ```
 This will install the arbiter modules and its dependencies in `venv/lib/source-packages/`, as well as the setup command `arbiter-init`.
+
+### Option 3: Install inside an existing django application
+
+This method is if you already have some internal django server and want to add arbiter to it as an app. The other two installation methods are recommended for most circumstances.
+
+First pip install arbiter3 in whatever python environment you have set up
+```shell
+pip install arbiter3
+```
+
+from here add `arbiter3.arbiter` to your installed apps in your settings file.
+
+`settings.py`
+```python
+INSTALLED_APPS = [
+  ...
+  "arbiter3.arbiter",
+  ...
+]
+```
+
+then add the urls of arbiter in `urls.py`.
+```python
+urlpatterns = [
+  ...
+  path("arbiter/", include("arbiter3.arbiter.urls")),
+  ...
+]
+```
+
+from here, you need to ensure all arbiter settings are configured in your settings file, we recommend just copying them from the template settings located at `arbiter3/portal/settings.py` then updating their values accordingly.
+
+Lastly migrate the new tables 
+```shell
+./manage.py migrate 
+```
+
 
 ### Initialize Config
 Initialize the default configuration files by running the respective command for your installation method. <u>as the user you wish to run arbiter</u> in your config directory.

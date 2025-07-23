@@ -3,7 +3,7 @@ from django import forms
 from django.views.generic.list import ListView
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 from django.urls import reverse_lazy, reverse
 
 import json
@@ -198,6 +198,7 @@ class UsagePolicyForm(forms.ModelForm):
 
 
 @login_required(login_url=reverse_lazy("login"))
+@permission_required('arbiter.arbiter_view')
 def new_usage_policy(request):
     can_change = request.user.has_perm("arbiter.arbiter_administrator")
 
@@ -225,6 +226,7 @@ def new_usage_policy(request):
 
 
 @login_required(login_url=reverse_lazy("login"))
+@permission_required('arbiter.arbiter_view')
 def change_usage_policy(request, policy_id):
     policy = UsagePolicy.objects.filter(pk=policy_id).first()
 

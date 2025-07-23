@@ -4,7 +4,7 @@ from django import forms
 from django.views.generic.list import ListView
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 
 from arbiter3.arbiter.models import BasePolicy, Limits, QueryData, QueryParameters, CPU_QUOTA, MEMORY_MAX
 from arbiter3.arbiter.utils import usec_to_cores, bytes_to_gib, cores_to_usec, gib_to_bytes
@@ -122,6 +122,7 @@ def new_base_policy(request):
 
 
 @login_required(login_url=reverse_lazy("login"))
+@permission_required('arbiter.arbiter_view')
 def change_base_policy(request, policy_id):
     policy = BasePolicy.objects.filter(pk=policy_id).first()
 
