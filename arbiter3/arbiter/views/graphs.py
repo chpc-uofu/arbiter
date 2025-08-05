@@ -68,7 +68,7 @@ def violation_cpu_usage(request, violation_id):
             request, plots.violation_cpu_usage_figure, violation_id)
     except (PermissionError, Violation.DoesNotExist, plots.QueryError) as e:
         return render(request, "arbiter/graph.html", context=dict(error=e))
-    return render_figure(figure, request)
+    return render_figure(figure, request, include_whitelist_note=True)
 
 
 def violation_memory_usage(request, violation_id):
@@ -77,7 +77,7 @@ def violation_memory_usage(request, violation_id):
             request, plots.violation_mem_usage_figure, violation_id)
     except (PermissionError, Violation.DoesNotExist, plots.QueryError) as e:
         return render(request, "arbiter/graph.html", context=dict(error=e))
-    return render_figure(figure, request)
+    return render_figure(figure, request, include_whitelist_note=True)
 
 
 def make_aware(time: datetime | None) -> datetime | None:
@@ -87,9 +87,10 @@ def make_aware(time: datetime | None) -> datetime | None:
         return timezone.make_aware(timezone.datetime.fromisoformat(time))
 
 
-def render_figure(figure, request):
+def render_figure(figure, request, include_whitelist_note: bool = False):
     context = dict()
     if figure:
+        context['is_proc_graph'] = include_whitelist_note
         context["graph"] = mark_safe(figure.to_html(
             default_width="100%", default_height="400px"))
     else:

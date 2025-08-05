@@ -17,6 +17,10 @@
 </ul>
 
 <div class="graph-box">
-    <div style="min-width: 600px; width: 50%; flex:1;">{{graph}}</div>
-    <div style="min-width: 400px; width: 50%; max-width: 600px; flex:1;">{{pie}}</div>
+    <div style="min-width: 600px; width: 50%; flex:1; max-width: 80%;">{{graph}}</div>
+    {%if is_proc_graph %}
+        <p style="font-size: 12pt;">
+            <i>*Proccesses marked like this are on the whitelist and are not counted against the user when evaluating policies. The process is included in this report to show usage holistically.</i>
+        </p>
+    {% endif %} 
 </div>
