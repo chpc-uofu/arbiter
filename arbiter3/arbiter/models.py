@@ -181,6 +181,10 @@ class Policy(models.Model):
     @property
     def mem_threshold(self):
         return self.query_data.get("params", {}).get("mem_threshold")
+    
+    @property
+    def proc_whitelist(self):
+        return self.query_data.get("params", {}).get("proc_whitelist")
 
     @property
     def affected_hosts(self):
