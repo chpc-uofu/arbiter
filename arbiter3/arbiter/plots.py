@@ -177,10 +177,18 @@ def violation_cpu_usage_figure(violation: Violation, step: str = "1m") -> Figure
     start = violation.timestamp - violation.policy.lookback
     end = violation.timestamp
     step = align_with_prom_limit(start, end, step)
-    threshold = violation.policy.cpu_threshold
 
-    figure = cpu_usage_figure(host, start, end, step, username, threshold)
-    
+
+    figure = cpu_usage_figure(
+        host=host,
+        start=start,
+        end=end, 
+        step=step, 
+        username=username,
+        threshold=violation.policy.cpu_threshold,
+        whitelist=violation.policy.proc_whitelist,
+    )
+
     title = f"CPU usage for {username} on {host}"
     figure.update_layout(title=title, yaxis_title="Cores")
     return figure
@@ -191,10 +199,21 @@ def violation_mem_usage_figure(violation: Violation, step: str = "1m") -> Figure
     host = violation.target.instance
     start = violation.timestamp - violation.policy.lookback
     end = violation.timestamp
-    step = align_with_prom_limit(start, end, step)
+    step = align_with_prom_limit(start, end, step) 
+    
     if threshold := violation.policy.mem_threshold:
         threshold = bytes_to_gib(threshold)
-    figure = mem_usage_figure(host, start, end, step, username, threshold)
+
+    figure = mem_usage_figure(
+        host=host,
+        start=start,
+        end=end, 
+        step=step, 
+        username=username,
+        threshold=threshold,
+        whitelist=violation.policy.proc_whitelist,
+    )
+
     title = f"Memory usage for {username} on {host}"
     figure.update_layout(title=title, yaxis_title="GiB")
     return figure
