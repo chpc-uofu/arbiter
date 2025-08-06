@@ -39,19 +39,21 @@ def create_graph(request, figure_func):
 
 
 def user_proc_cpu_graph(request):
+    is_proc = request.GET.get('username', '') != ''
     try:
         figure = create_graph(request, plots.cpu_usage_figure)
     except (PermissionError, InvalidRequest, plots.QueryError) as e:
         return render(request, "arbiter/graph.html", context=dict(error=e))
-    return render_figure(figure, request)
+    return render_figure(figure, request, include_other_note=is_proc)
 
 
 def user_proc_memory_graph(request):
+    is_proc = request.GET.get('username', '') != ''
     try:
         figure = create_graph(request, plots.mem_usage_figure)
     except (PermissionError, InvalidRequest, plots.QueryError) as e:
         return render(request, "arbiter/graph.html", context=dict(error=e))
-    return render_figure(figure, request)
+    return render_figure(figure, request, include_other_note=is_proc)
 
 
 def create_graph_violation(request, figure_func, violation_id):
@@ -68,7 +70,7 @@ def violation_cpu_usage(request, violation_id):
             request, plots.violation_cpu_usage_figure, violation_id)
     except (PermissionError, Violation.DoesNotExist, plots.QueryError) as e:
         return render(request, "arbiter/graph.html", context=dict(error=e))
-    return render_figure(figure, request, include_whitelist_note=True)
+    return render_figure(figure, request, include_whitelist_note=True,  include_other_note=True)
 
 
 def violation_memory_usage(request, violation_id):
@@ -77,7 +79,7 @@ def violation_memory_usage(request, violation_id):
             request, plots.violation_mem_usage_figure, violation_id)
     except (PermissionError, Violation.DoesNotExist, plots.QueryError) as e:
         return render(request, "arbiter/graph.html", context=dict(error=e))
-    return render_figure(figure, request, include_whitelist_note=True)
+    return render_figure(figure, request, include_whitelist_note=True, include_other_note=True)
 
 
 def make_aware(time: datetime | None) -> datetime | None:
@@ -87,10 +89,11 @@ def make_aware(time: datetime | None) -> datetime | None:
         return timezone.make_aware(timezone.datetime.fromisoformat(time))
 
 
-def render_figure(figure, request, include_whitelist_note: bool = False):
+def render_figure(figure, request, include_whitelist_note: bool = False, include_other_note: bool = False):
     context = dict()
     if figure:
-        context['is_proc_graph'] = include_whitelist_note
+        context['whitelist_note'] = include_whitelist_note
+        context['other_note'] = include_other_note
         context["graph"] = mark_safe(figure.to_html(
             default_width="100%", default_height="400px"))
     else:
