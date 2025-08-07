@@ -1,3 +1,5 @@
+import copy
+
 class Q:
     def __init__(self, selector):
         self._selector = selector
@@ -87,6 +89,9 @@ class Q:
         self._over = f'{over}'
         return self
     
+    def copy(self):
+        return copy.deepcopy(self)
+    
     @classmethod
     def vector(cls, v):
         return cls(f'vector({v})')
@@ -137,6 +142,11 @@ def absent(v):
 
 def avg_over_time(v):
     fn = lambda s: f'avg_over_time({s})'
+    v._functions.append(_Function(fn))
+    return v
+
+def max_over_time(v):
+    fn = lambda s: f'max_over_time({s})'
     v._functions.append(_Function(fn))
     return v
 

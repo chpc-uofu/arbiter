@@ -39,19 +39,21 @@ def create_graph(request, figure_func):
 
 
 def user_proc_cpu_graph(request):
+    is_proc = request.GET.get('username', '') != ''
     try:
         figure = create_graph(request, plots.cpu_usage_figure)
     except (PermissionError, InvalidRequest, plots.QueryError) as e:
         return render(request, "arbiter/graph.html", context=dict(error=e))
-    return render_figure(figure, request)
+    return render_figure(figure, request, include_other_note=is_proc)
 
 
 def user_proc_memory_graph(request):
+    is_proc = request.GET.get('username', '') != ''
     try:
         figure = create_graph(request, plots.mem_usage_figure)
     except (PermissionError, InvalidRequest, plots.QueryError) as e:
         return render(request, "arbiter/graph.html", context=dict(error=e))
-    return render_figure(figure, request)
+    return render_figure(figure, request, include_other_note=is_proc)
 
 
 def create_graph_violation(request, figure_func, violation_id):
@@ -87,9 +89,10 @@ def make_aware(time: datetime | None) -> datetime | None:
         return timezone.make_aware(timezone.datetime.fromisoformat(time))
 
 
-def render_figure(figure, request):
+def render_figure(figure, request, include_other_note: bool = False):
     context = dict()
     if figure:
+        context['other_note'] = include_other_note
         context["graph"] = mark_safe(figure.to_html(
             default_width="100%", default_height="400px"))
     else:

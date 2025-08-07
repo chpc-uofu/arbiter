@@ -46,7 +46,7 @@ def send_test_email(recipients: list[str]) -> str:
 
 
 def send_test_violation_mail(recipients: list[str]) -> str:
-    violation = Violation.objects.last()
+    violation = Violation.objects.filter(expiration__isnull=False).last()
     if not violation:
         return "No violatons found"
 

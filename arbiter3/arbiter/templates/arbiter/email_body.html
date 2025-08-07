@@ -38,3 +38,17 @@
 {% for figure in figures %}
     <img src="cid:{{figure}}"/>
 {% endfor %}
+
+<div style="display: flex; flex-direction: column; gap: 10px;">
+    <div>
+        <i style="font-size: 12pt; opacity: 0.7;">*Processes marked like this are on the whitelist and are not counted against the user when evaluating policies. The process is included in this report to show usage holistically.</i>
+    </div>
+    <div>
+        <i style="font-size: 12pt; opacity: 0.7;"> 
+            **This accounts for the difference between the overall usage and the collected PID usage (which can be less accurate)
+            as well as an aggregate for processes that aren't in the top 7 processes in usage.
+            This may be large if there are a lot of short-lived processes (such as compilers or quick commands) 
+            that account for a significant fraction of the total usage.
+        </i>
+    </div>
+<div>
