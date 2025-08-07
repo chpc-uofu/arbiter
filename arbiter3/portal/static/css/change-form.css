@@ -43,3 +43,12 @@ form div div, .form-submit-box{
     grid-column: 1;
 }
 
+.graph-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0px;
+}
+
+.graph-list div{
+    padding: 5px;
+}

@@ -43,15 +43,25 @@
 
     {% if not violation.policy.is_base_policy %}
         <div class="form-row">
-            <label>CPU Usage:</label> 
-            <div class= "field-value">
-                <div hx-get="{% url 'arbiter:violation-proc-cpu-graph' violation.id%}" hx-trigger="load" hx-target="this" hx-swap="innerHTML" ></div>
-            </div>
-        </div>
-        <div class="form-row">
-            <label>Memory Usage:</label> 
-            <div class= "field-value">
-                <div hx-get="{% url 'arbiter:violation-proc-memory-graph' violation.id%}" hx-trigger="load" hx-target="this" hx-swap="innerHTML" ></div>
+            <label>Recorded Usage:</label> 
+            <div class="field-value">
+                <div class="graph-list">
+                    <div hx-get="{% url 'arbiter:violation-proc-cpu-graph' violation.id%}" hx-trigger="load" hx-target="this" hx-swap="innerHTML" ></div>
+                    <div hx-get="{% url 'arbiter:violation-proc-memory-graph' violation.id%}" hx-trigger="load" hx-target="this" hx-swap="innerHTML" ></div>
+                    <div>
+                        <i class="helptext"  style="padding-top: 0%;">
+                            *Processes marked like this are on the whitelist and are not counted against the user when evaluating policies. 
+                            The process is included in this report to show usage holistically.
+                        </i>
+                    </div>
+                    <div>
+                        <i class="helptext" style="padding-top: 0%;">**This accounts for the difference between the overall usage and the collected PID usage (which can be less accurate)
+                            as well as an aggregate for processes that aren't in the top 7 processes in usage.
+                            This may be large if there are a lot of short-lived processes (such as compilers or quick commands) 
+                            that account for a significant fraction of the total usage.
+                        </i>    
+                    </div>
+                </div>
             </div>
         </div>
     {% endif %}
