@@ -18,4 +18,13 @@
 
 <div class="graph-box">
     <div style="min-width: 600px; width: 50%; flex:1; max-width: 80%;">{{graph}}</div>
+    {% if other_note %}
+        <div>
+            <i class="helptext">**This accounts for the difference between the overall usage and the collected PID usage (which can be less accurate)
+                as well as an aggregate for processes that aren't in the top 7 processes in usage.
+                This may be large if there are a lot of short-lived processes (such as compilers or quick commands) 
+                that account for a significant fraction of the total usage.
+            </i>    
+        </div>
+    {% endif %}
 </div>
