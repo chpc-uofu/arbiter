@@ -115,6 +115,11 @@
     width: 95%;
 }
 
+.apply-box form {
+    display: flex;
+    flex-direction: column;
+}
+
 
 .commands-box {
     border: 1px solid gray;
@@ -227,4 +232,5 @@
 .helptext{
     color: var(--lighter-text-color);
     font-size: smaller;
+    padding-left: 7px;
 }

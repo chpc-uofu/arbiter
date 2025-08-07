@@ -1,9 +1,13 @@
 <style>
 .graph-box{
     display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: space-around;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.graph-box .helptext{
+    max-width: 80%;
 }
 </style>
 
@@ -17,14 +21,13 @@
 </ul>
 
 <div class="graph-box">
-    <div style="min-width: 600px; width: 50%; flex:1; max-width: 80%;">{{graph}}</div>
+    <div style="min-width: 600px; width: 80%; max-width: 80%;">{{graph}}</div>
     {% if other_note %}
-        <div>
-            <i class="helptext">**This accounts for the difference between the overall usage and the collected PID usage (which can be less accurate)
-                as well as an aggregate for processes that aren't in the top 7 processes in usage.
-                This may be large if there are a lot of short-lived processes (such as compilers or quick commands) 
-                that account for a significant fraction of the total usage.
-            </i>    
+        <div class="helptext">
+            **This accounts for the difference between the overall usage and the collected PID usage (which can be less accurate)
+            as well as an aggregate for processes that aren't in the top 7 processes in usage.
+            This may be large if there are a lot of short-lived processes (such as compilers or quick commands) 
+            that account for a significant fraction of the total usage.
         </div>
     {% endif %}
 </div>
