@@ -52,3 +52,7 @@ form div div, .form-submit-box{
 .graph-list div{
     padding: 5px;
 }
+
+.graph-list div .helptext{
+    padding-top: 0%;
+}
