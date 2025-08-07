@@ -41,7 +41,7 @@
 
 .management-box {
     display: grid;
-    grid-template-rows: 1fr 2fr;
+    grid-template-rows: 2fr 5fr;
     grid-template-columns: 1fr 1fr;
     padding: 0px;
     width: 100%;
@@ -124,8 +124,15 @@
     padding: 10px;
     display: flex;
     flex-direction: column;
+    gap: 0px;
+}
+
+.commands-box form {
+    display: flex;
+    flex-direction: column;
     gap: 5px;
 }
+
 
 .commands-box input[type="submit"] {
     width: 50%;
@@ -215,4 +222,9 @@
 #before-input input {
     flex: 1;
     border-radius: 5px;
+}
+
+.helptext{
+    color: var(--lighter-text-color);
+    font-size: smaller;
 }

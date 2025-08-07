@@ -30,6 +30,9 @@
                     <form>
                         {% csrf_token %}
                         <h3>Run Arbiter Evaluation Loop:</h3>
+                        <i class="helptext">
+                            Use to run a single loop of evaluating arbiter's polcies. Useful when testing for one off runs.
+                        </i>
                         <input type="submit" value="Evaluate"
                             hx-post="{% url 'arbiter:evaluate' %}" hx-swap="afterbegin"
                             hx-target=".messagelist">
@@ -38,6 +41,10 @@
                     <form>
                         {% csrf_token %}
                         <h3>Clean Violation History:</h3>
+                        <i class="helptext">
+                            Use to delete violation/event history before the specified time. 
+                            Useful to clean state. Note the next evalutaion loop will fix any limits that are affected by this.
+                        </i>
                         <div id="before-input">
                             <h4>Before:</h4><input type="datetime-local" name="before">
                         </div>
@@ -54,6 +61,11 @@
                     {% csrf_token %}
                     <h3>Apply Property</h3>
                     <hr class="box-divider">
+                    <i class="helptext">
+                        *Note: This limit is seen and often overidden by arbiter's evaluation loop. 
+                        Use to manually change limits that arbiter is not watching (such as whitelisted users) 
+                        or when a policy or the evaluation loop is no longer active.
+                    </i>
                     <div class="apply-options">
                         <h3>Host</h3>
                         <select name="apply-host">
