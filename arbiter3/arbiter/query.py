@@ -22,27 +22,27 @@ class Q:
         return s
     
     def __add__(self, rhs):
-        fn = lambda s, rhs: f'{s} - {rhs}'
+        fn = lambda s, rhs: f'({s} + {rhs})'
         self._functions.append(_Function(fn, rhs))
         return self
 
     def __truediv__(self, rhs):
-        fn = lambda s, rhs: f'{s} / {rhs}'
+        fn = lambda s, rhs: f'({s} / {rhs})'
         self._functions.append(_Function(fn, rhs))
         return self
     
     def __mul__(self, rhs):
-        fn = lambda s, rhs: f'{s} * {rhs}'
+        fn = lambda s, rhs: f'({s} * {rhs})'
         self._functions.append(_Function(fn, rhs))
         return self
 
     def __sub__(self, rhs):
-        fn = lambda s, rhs: f'{s} - {rhs}'
+        fn = lambda s, rhs: f'({s} - {rhs})'
         self._functions.append(_Function(fn, rhs))
         return self
     
     def __gt__(self, rhs):
-        fn = lambda s, rhs: f'{s} > {rhs}'
+        fn = lambda s, rhs: f'({s} > {rhs})'
         self._functions.append(_Function(fn, rhs))
         return self
     
