@@ -158,7 +158,7 @@ def cpu_usage_figure(host: str, start: datetime, end: datetime, step="30s", user
 def mem_usage_figure(host: str, start: datetime, end: datetime, step="30s", username: str = None, threshold: int = None, whitelist: str = None) -> Figure | None:
     if username:
         query = avg_over_time(Q('cgroup_warden_proc_memory_pss_bytes').matches(instance=host, username=username).over(step)) 
-        unreported_query = ((sum_by(avg_over_time(Q('cgroup_warden_memory_usage_bytes').matches(instance=host, username=username).over(step))) - query.copy()) / BYTES_PER_GIB) > 0
+        unreported_query = ((sum_by(avg_over_time(Q('cgroup_warden_memory_usage_bytes').matches(instance=host, username=username).over(step))) - sum_by(query.copy())) / BYTES_PER_GIB) > 0
         query = query / BYTES_PER_GIB
 
         figure = proc_usage_graph(query, start, end, step, threshold, whitelist, unreported_query)
