@@ -28,8 +28,8 @@ class BasePolicyListView(PermissionRequiredMixin, LoginRequiredMixin, ListView):
 
 
 class BasePolicyForm(forms.ModelForm):
-    cpu = forms.FloatField(label="CPU Limit in Cores", required=False, min_value=0, help_text="Memory limit that will be applied to users in the domain as a base status")
-    mem = forms.FloatField(label="Memory Limit in GiB", required=False, min_value=0, help_text="CPU limit that will be applied to users in the domain as a base status")
+    cpu = forms.FloatField(label="CPU Limit in Cores", required=False, min_value=0,  help_text="CPU limit that will be applied to users in the domain as a base status")
+    mem = forms.FloatField(label="Memory Limit in GiB", required=False, min_value=0, help_text="Memory limit that will be applied to users in the domain as a base status")
 
     user_whitelist = forms.CharField(
         label="Query User Whitelist",
