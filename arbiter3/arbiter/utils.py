@@ -117,5 +117,5 @@ def to_readable_limits(limits: dict) -> dict:
     
     return readable_limits
 
-
-
+def regex_help_text(text: str) -> str :
+    return f'<span>{text} See examples <a href="https://github.com/chpc-uofu/arbiter/blob/main/docs/regex.md">here</a></span>'

@@ -10,7 +10,7 @@ import json
 from dataclasses import dataclass
 
 from arbiter3.arbiter.models import UsagePolicy, QueryData, QueryParameters, CPU_QUOTA, MEMORY_MAX
-from arbiter3.arbiter.utils import usec_to_cores, bytes_to_gib, cores_to_usec, gib_to_bytes
+from arbiter3.arbiter.utils import usec_to_cores, bytes_to_gib, cores_to_usec, gib_to_bytes, regex_help_text
 
 from .nav import navbar
 
@@ -73,9 +73,6 @@ class UsagePolicyListView(LoginRequiredMixin, PermissionRequiredMixin, ListView)
         context["title"] = "Usage Policies"
         return context
 
-
-def regex_help_text(text: str) -> str :
-    return f'<span>{text} See examples <a href="https://github.com/chpc-uofu/arbiter/blob/main/docs/regex.md">here</a></span>'
 
 class UsagePolicyForm(forms.ModelForm):
     proc_whitelist = forms.CharField(
