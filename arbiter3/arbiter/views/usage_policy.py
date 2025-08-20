@@ -78,7 +78,7 @@ class UsagePolicyForm(forms.ModelForm):
     proc_whitelist = forms.CharField(
         label="Query Process Whitelist", 
         required=False, 
-        help_text="A regex for processes that will not be counted against user usage", 
+        help_text="<p>A regex for processes that will not be counted against user usage. See examples <a href='https://github.com/chpc-uofu/arbiter/blob/remove-apply/docs/configuration.md#regex'>here</a><p>", 
         widget=forms.Textarea(attrs={'rows':6, 'cols':100})
         )
     
