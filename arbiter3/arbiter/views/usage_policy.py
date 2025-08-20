@@ -74,11 +74,14 @@ class UsagePolicyListView(LoginRequiredMixin, PermissionRequiredMixin, ListView)
         return context
 
 
+def regex_help_text(text: str) -> str :
+    return f'<span>{text} See examples <a href="https://github.com/chpc-uofu/arbiter/blob/main/docs/regex.md">here</a></span>'
+
 class UsagePolicyForm(forms.ModelForm):
     proc_whitelist = forms.CharField(
         label="Query Process Whitelist", 
         required=False, 
-        help_text="<p>A regex for processes that will not be counted against user usage. See examples <a href='https://github.com/chpc-uofu/arbiter/blob/remove-apply/docs/configuration.md#regex'>here</a><p>", 
+        help_text=regex_help_text("A regex for processes that will not be counted against user usage."), 
         widget=forms.Textarea(attrs={'rows':6, 'cols':100})
         )
     
@@ -86,7 +89,7 @@ class UsagePolicyForm(forms.ModelForm):
         label="Query User Whitelist",
         required=False,
         initial="arbiter|nobody", 
-        help_text="A regex for usernames which are whitelisted from violating this policy", 
+        help_text=regex_help_text("A regex for usernames which are whitelisted from violating this policy"), 
         widget=forms.Textarea(attrs={'rows':3})
         )
     
@@ -109,6 +112,10 @@ class UsagePolicyForm(forms.ModelForm):
                   "repeated_offense_lookback", "grace_period", "lookback", "active", "watcher_mode", "penalty_constraints"]
         widgets = {'grace_period': forms.TimeInput(), "repeated_offense_lookback": forms.TimeInput(
         ), "penalty_constraints": TieredPenaltyWidget}
+
+        help_texts = {
+            'domain': regex_help_text("regex for the hostname/instance where this policy is in affect")
+        }
 
     def __init__(self, *args, disabled=False, **kwargs):
         super().__init__(*args, **kwargs)

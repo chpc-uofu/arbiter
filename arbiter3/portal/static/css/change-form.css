@@ -43,6 +43,17 @@ form div div, .form-submit-box{
     grid-column: 1;
 }
 
+.helptext span a {
+    color: var(--lighter-text-color);
+    text-decoration: underline;
+    font-weight: bold;
+}
+
+.helptext span a:hover {
+    color: var(--lighter-text-color);
+    text-decoration: underline;
+}
+
 .graph-list {
     display: flex;
     flex-direction: column;
