@@ -123,7 +123,7 @@ class UsagePolicyForm(forms.ModelForm):
             if cpu_threshold := query_data["params"]["cpu_threshold"]:
                 self.fields['cpu_threshold'].initial = cpu_threshold
             if mem_threshold := query_data["params"]["mem_threshold"]:
-                self.fields['mem_threshold'].initial = round(bytes_to_gib(mem_threshold), 2)
+                self.fields['mem_threshold'].initial = round(bytes_to_gib(mem_threshold), 3)
             # if use_pss := query_data["params"].get("use_pss_metric"):
             #     self.fields['use_pss'].initial = use_pss
             self.fields['proc_whitelist'].initial = query_data["params"]["proc_whitelist"]
@@ -179,6 +179,8 @@ class UsagePolicyForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        if not (cleaned_data["cpu_threshold"] or cleaned_data["mem_threshold"]):
+            raise forms.ValidationError("At least one threshold (CPU or memory) is required.")
 
     def save(self, commit=True):
         policy = super().save(commit=False)
