@@ -59,7 +59,9 @@ These represent the CPU and memory limits you want to have applied to users at a
 
 - Grace Period: How long after a violation of this policy expires is the user immune to triggering another violation on this policy.
 
-- Lookback: How far back arbiter looks at a user's usage to evaluate if the are in violation. FOr example, if set to 10 minutes, arbiter will look at a user's average usage over the last 10 minutes to determine if it is above the configured thresholds which triggers a violation.
+- Lookback: How far back arbiter looks at a user's usage to evaluate if the are in violation. For example, if set to 10 minutes, arbiter will look at a user's average usage over the last 10 minutes to determine if it is above the configured thresholds which triggers a violation.
+
+    > ⚠️ Warning: Lookback should be <u> at least twice as long as your warden's scrape interval on prometheus</u>.
 
 - Active: Whether or not this policy gets evaluated (Will watch for violations).
 

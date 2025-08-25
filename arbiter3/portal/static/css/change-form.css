@@ -37,10 +37,24 @@ form div div, .form-submit-box{
 .helptext{
     padding-top: 10%;
     color: var(--lighter-text-color);
-    font-size: smaller;
-    /* justify-self: flex-end; */
+    font-size: medium;
     grid-row: 1 / 3;
     grid-column: 1;
+}
+
+.helptext span a {
+    color: var(--lighter-text-color);
+    text-decoration: underline;
+    font-weight: bold;
+}
+
+.helptext * {
+    font-size: medium;
+}
+
+.helptext span a:hover {
+    color: var(--lighter-text-color);
+    text-decoration: underline;
 }
 
 .graph-list {
