@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 
 from arbiter3.arbiter.models import BasePolicy, Limits, QueryData, QueryParameters, CPU_QUOTA, MEMORY_MAX
-from arbiter3.arbiter.utils import usec_to_cores, bytes_to_gib, cores_to_usec, gib_to_bytes
+from arbiter3.arbiter.utils import usec_to_cores, bytes_to_gib, cores_to_usec, gib_to_bytes, regex_help_text
 from arbiter3.arbiter.prop import CPU_QUOTA, MEMORY_MAX
 
 from .nav import navbar
@@ -35,13 +35,17 @@ class BasePolicyForm(forms.ModelForm):
         label="Query User Whitelist",
         required=False,
         initial="arbiter|nobody", 
-        help_text="A regex for usernames which are whitelisted from recieving this base status", 
+        help_text=regex_help_text("A regex for usernames which are whitelisted from recieving this base status"), 
         widget=forms.Textarea(attrs={'rows':3})
         )
 
     class Meta:
         model = BasePolicy
         fields = ["name", "domain", "description", "active"]
+
+        help_texts = {
+            'domain': regex_help_text("regex for the hostname/instance where this policy is in affect")
+        }
 
     def __init__(self, *args, disabled=False, **kwargs):
         super().__init__(*args, **kwargs)

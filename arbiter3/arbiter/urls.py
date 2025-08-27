@@ -26,7 +26,7 @@ urlpatterns = [
     path("", index.view_index, name="view-index"),
     path("dashboard", dashboard.view_dashboard, name="view-dashboard"),
     path("clean", dashboard.clean, name="clean"),
-    path("apply", dashboard.apply, name="apply"),
+    #path("apply", dashboard.apply, name="apply"),
     path("evaluate", dashboard.evaluate, name="evaluate"),
 
     path("graphs/proc/cpu", graphs.user_proc_cpu_graph,

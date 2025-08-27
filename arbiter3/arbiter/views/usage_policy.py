@@ -10,7 +10,7 @@ import json
 from dataclasses import dataclass
 
 from arbiter3.arbiter.models import UsagePolicy, QueryData, QueryParameters, CPU_QUOTA, MEMORY_MAX
-from arbiter3.arbiter.utils import usec_to_cores, bytes_to_gib, cores_to_usec, gib_to_bytes
+from arbiter3.arbiter.utils import usec_to_cores, bytes_to_gib, cores_to_usec, gib_to_bytes, regex_help_text
 
 from .nav import navbar
 
@@ -78,7 +78,7 @@ class UsagePolicyForm(forms.ModelForm):
     proc_whitelist = forms.CharField(
         label="Query Process Whitelist", 
         required=False, 
-        help_text="A regex for processes that will not be counted against user usage", 
+        help_text=regex_help_text("A regex for processes that will not be counted against user usage."), 
         widget=forms.Textarea(attrs={'rows':6, 'cols':100})
         )
     
@@ -86,7 +86,7 @@ class UsagePolicyForm(forms.ModelForm):
         label="Query User Whitelist",
         required=False,
         initial="arbiter|nobody", 
-        help_text="A regex for usernames which are whitelisted from violating this policy", 
+        help_text=regex_help_text("A regex for usernames which are whitelisted from violating this policy"), 
         widget=forms.Textarea(attrs={'rows':3})
         )
     
@@ -110,6 +110,11 @@ class UsagePolicyForm(forms.ModelForm):
         widgets = {'grace_period': forms.TimeInput(), "repeated_offense_lookback": forms.TimeInput(
         ), "penalty_constraints": TieredPenaltyWidget}
 
+        help_texts = {
+            'domain': regex_help_text("regex for the hostname/instance where this policy is in affect"),
+            'lookback': "<span>How far back arbiter evaluates user's usage (e.g. if a user's average usage is above the threshold(s) for this amount of time, they will be in violation). <b>Should be at least twice as long as the configured scrape interval for the wardens on your TSDB.</b></span>",
+        }
+
     def __init__(self, *args, disabled=False, **kwargs):
         super().__init__(*args, **kwargs)
         # self.fields['use_pss'].initial = False
@@ -119,7 +124,7 @@ class UsagePolicyForm(forms.ModelForm):
             if cpu_threshold := query_data["params"]["cpu_threshold"]:
                 self.fields['cpu_threshold'].initial = cpu_threshold
             if mem_threshold := query_data["params"]["mem_threshold"]:
-                self.fields['mem_threshold'].initial = round(bytes_to_gib(mem_threshold), 2)
+                self.fields['mem_threshold'].initial = round(bytes_to_gib(mem_threshold), 3)
             # if use_pss := query_data["params"].get("use_pss_metric"):
             #     self.fields['use_pss'].initial = use_pss
             self.fields['proc_whitelist'].initial = query_data["params"]["proc_whitelist"]
@@ -175,6 +180,8 @@ class UsagePolicyForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        if not (cleaned_data["cpu_threshold"] or cleaned_data["mem_threshold"]):
+            raise forms.ValidationError("At least one threshold (CPU or memory) is required.")
 
     def save(self, commit=True):
         policy = super().save(commit=False)
