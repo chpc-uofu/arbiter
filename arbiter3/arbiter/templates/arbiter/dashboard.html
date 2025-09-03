@@ -31,7 +31,7 @@
                         {% csrf_token %}
                         <h3>Run Arbiter Evaluation Loop:</h3>
                         <i class="helptext">
-                            Use to run a single loop of evaluating arbiter's polcies. Useful when testing for one off runs.
+                            Use to run a single loop of evaluating arbiter's policies. Useful when testing for one off runs.
                         </i>
                         <input type="submit" value="Evaluate"
                             hx-post="{% url 'arbiter:evaluate' %}" hx-swap="afterbegin"
