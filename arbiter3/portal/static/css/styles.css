@@ -5,26 +5,66 @@
     --secondary-bg : #bbbaba;
     --darker-bg : #a9a8a8;
     --title-color: black;
+    --nav-button-color: #fefefe;
     --light-text-color: #fefefe;
     --darker-light-text : #8b8f8d;
     --lighter-text-color: #7c7a7a;
     --border-color : black;
     --lighter-border-color : #413f3f;
+    --light-border: gray;
     --darker-accent : #890000;
-    --success-bg-color: #b7e9b7;
+    --link-accent : #890000;
+    --success-bg-color: #8de28d;
     --error-bg-color: #e27171;
     --warning-bg-color: #cfb274;
     --table-head : #5e5e5e;
+    --table-header: #fefefe;
+    --header-bg: #f1f1f1;
+    --header-fg: black;
+    --input-bg: white;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bright-accent: #cc0000;
+    --light-accent: #be0000;
+    --primary-bg : #272b2c;
+    --secondary-bg : #373738;
+    --darker-bg : #181a1b;
+    --title-color: white;
+    --nav-button-color: #fefefe;
+    --light-text-color: #696969;
+    --darker-light-text : #c4c9c7;
+    --lighter-text-color: #bebcbc;
+    --border-color : #646464;
+    --lighter-border-color : #a1a1a1;
+    --light-border: #a3a3a3;
+    --darker-accent : #c90404;
+    --link-accent : #e40606;
+    --success-bg-color: #71cf71;
+    --error-bg-color: #e27171;
+    --warning-bg-color: #cfb274;
+    --table-head : #202020;
+    --table-header: white;
+    --header-bg: #181a1b;
+    --main-fg: #fefefe;
+    --input-bg: #141414;
+  }
 }
 
 * {
     font-family: var(--bs-font-monospace); 
     font-family: monospace;
     font-size: large;
+    color: var(--main-fg);
 }
 
 a {
-    color: var(--darker-accent);
+    color: var(--link-accent);
+}
+
+a *{
+    color: inherit;
 }
 
 a:hover {
@@ -43,7 +83,7 @@ hr{
     font-weight: 600;
     margin: 15px;
     margin-bottom: 8px;
-    color: var(--lighter-border-color)
+    color: var(--title-color)
 }
 
 body {
@@ -77,21 +117,23 @@ tr:nth-child(even) {
 
 th {
     background-color: var(--table-head); 
-    color: var(--light-text-color);
+    color: var(--table-header);
 }
 
 .navbar {
     display: flex;
     background-color: var(--darker-accent);
-    color: var(--light-text-color);
+    color: var(--nav-button-color);
     padding: 0px;
     padding-left: 5px;
     height: 3em;
     align-items: center;
     margin : 0px;
-    /* border-bottom: 2px solid var(--border-color); */
 }
 
+h2, h3, h4, h5{
+    color: var(--main-fg);
+}
 
 .navbar button{
     background: inherit;
@@ -101,6 +143,9 @@ th {
     border: none;
 }
 
+input, select, textarea{
+    background-color: var(--input-bg);
+}
 
 
 .navbar a {
@@ -141,7 +186,7 @@ th {
 }
 
 .user-login button, .user-login a{
-    color: var(--light-text-color);
+    color: var(--nav-button-color);
     border: 0px;
     font-weight: bold;
 }
@@ -169,6 +214,7 @@ ul.messagelist{
 ul.messagelist li{
     list-style-type: none;
     padding: 5px;
+    color: black;
 }
 
 ul.messagelist li.success{
