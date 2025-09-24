@@ -43,7 +43,7 @@ def view_dashboard(request):
 
     context = dict(
         title="Dashboard",
-        violations=Violation.objects.filter(is_base_status=False).order_by("-timestamp")[:10],
+        violations=Violation.objects.filter(is_base_status=False).order_by("-timestamp")[:20],
         agents=agents,
         limits=prop_list,
         last_evaluated=last_eval.timestamp if last_eval else "Never",

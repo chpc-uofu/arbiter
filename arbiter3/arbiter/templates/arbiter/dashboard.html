@@ -16,7 +16,6 @@
 <div class="dashboard">
     <div class="card">
         <h2 class="box-header">Management</h2>
-        <hr class="box-divider">
         <div class="management-box">
             <div class="status-box">
                 <h3>Status:</h3>
@@ -76,19 +75,8 @@
     </div>
 <div class="card">
     <h2 class="box-header">Recent Violations</h2>
-    <hr class="box-divider">
     <div class="notification-box">
         <table class="notification-table">
-            <thead>
-                <tr>
-                    <th>
-                        <h4>Violation</h4>
-                    </th>
-                    <th>
-                        <h4>Time</h4>
-                    </th>
-                </tr>
-            </thead>
             <tbody>
                 {% for violation in violations %}
                 <tr>
@@ -108,7 +96,6 @@
 </div>
 <div class="card">
     <h2 class="box-header">View Usage</h2>
-    <hr class="box-divider">
     <div class="usage-box">
         <form>
             <div class="usage-options">

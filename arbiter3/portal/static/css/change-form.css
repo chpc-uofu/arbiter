@@ -8,7 +8,7 @@ form div, .form-row {
     grid-template-rows: 30% 70%;
     grid-template-columns: 1fr 4fr;
     /* flex-direction: row; */
-    border-bottom: 1px solid var(--darker-bg);
+    border-bottom: 1px solid var(--shadow-color);
     padding: 10px;
 }
 

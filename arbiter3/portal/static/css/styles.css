@@ -1,27 +1,28 @@
 :root{
     --bright-accent: #cc0000;
     --light-accent: #be0000;
-    --primary-bg : #E2E6E6;
+    --primary-bg : #fefefe;
     --secondary-bg : #bbbaba;
     --darker-bg : #a9a8a8;
     --title-color: black;
     --nav-button-color: #fefefe;
     --light-text-color: #fefefe;
     --darker-light-text : #8b8f8d;
-    --lighter-text-color: #7c7a7a;
+    --lighter-text-color: #6e6b6b;
     --border-color : black;
     --lighter-border-color : #413f3f;
-    --light-border: gray;
-    --darker-accent : #890000;
-    --link-accent : #890000;
+    --light-border: #808080;
+    --darker-accent : #990101;
+    --link-accent : #800202;
     --success-bg-color: #8de28d;
     --error-bg-color: #e27171;
     --warning-bg-color: #cfb274;
     --table-head : #5e5e5e;
     --table-header: #fefefe;
-    --header-bg: #f1f1f1;
+    --header-bg: #E2E6E6;
     --header-fg: black;
     --input-bg: white;
+    --shadow-color: rgba(0, 0, 0, 0.61);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -49,6 +50,7 @@
     --header-bg: #212121;
     --main-fg: #eeeeee;
     --input-bg: #141414;
+    --shadow-color: rgba(255, 255, 255, 0.5);
   }
 }
 
@@ -79,7 +81,7 @@ hr{
 }
 
 .page-title{
-    font-size: larger;
+    font-size: 1.55rem;
     font-weight: 600;
     margin: 15px;
     margin-bottom: 8px;
@@ -126,13 +128,15 @@ th {
     color: var(--nav-button-color);
     padding: 0px;
     padding-left: 5px;
-    height: 3em;
+    height: 4em;
     align-items: center;
     margin : 0px;
 }
 
-h2, h3, h4, h5{
+h1, h2, h3, h4, h5, h6{
     color: var(--main-fg);
+    font-family: 'Montserrat', sans-serif;
+    /* font-size: medium; */
 }
 
 .navbar button{
@@ -227,4 +231,10 @@ ul.messagelist li.warning{
     background-color: var(--warning-bg-color);
 }
 
+input[type="submit"], input[type="button"], select{
+    cursor: pointer;
+}
 
+input[type="datetime-local"]{
+    cursor:text;
+}
