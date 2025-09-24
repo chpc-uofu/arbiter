@@ -1,16 +1,16 @@
 :root{
     --bright-accent: #cc0000;
     --light-accent: #be0000;
-    --primary-bg : #fefefe;
-    --secondary-bg : #bbbaba;
+    --primary-bg : #f1f1f1;
+    --secondary-bg : #cdcccb;
     --darker-bg : #a9a8a8;
     --title-color: black;
-    --nav-button-color: #fefefe;
-    --light-text-color: #fefefe;
+    --nav-button-color: #f1f1f1;
+    --light-text-color: #dddddd;
     --darker-light-text : #8b8f8d;
     --lighter-text-color: #6e6b6b;
     --border-color : black;
-    --lighter-border-color : #413f3f;
+    --lighter-border-color : #979393;
     --light-border: #808080;
     --darker-accent : #990101;
     --link-accent : #800202;
@@ -18,7 +18,7 @@
     --error-bg-color: #e27171;
     --warning-bg-color: #cfb274;
     --table-head : #5e5e5e;
-    --table-header: #fefefe;
+    --table-header: #dddddd;
     --header-bg: #E2E6E6;
     --header-fg: black;
     --input-bg: white;
@@ -38,7 +38,7 @@
     --darker-light-text : #c4c9c7;
     --lighter-text-color: #bebcbc;
     --border-color : #353535;
-    --lighter-border-color : #8f8f9d;
+    --lighter-border-color : #666669;
     --light-border: #8f8f9d;
     --darker-accent : #9c0303;
     --link-accent : #e40606;
@@ -59,6 +59,7 @@
     font-family: monospace;
     font-size: large;
     color: var(--main-fg);
+    transition: 220ms all ease-in-out;
 }
 
 a {
@@ -128,7 +129,7 @@ th {
     color: var(--nav-button-color);
     padding: 0px;
     padding-left: 5px;
-    height: 4em;
+    height: 3.5em;
     align-items: center;
     margin : 0px;
 }
@@ -136,7 +137,6 @@ th {
 h1, h2, h3, h4, h5, h6{
     color: var(--main-fg);
     font-family: 'Montserrat', sans-serif;
-    /* font-size: medium; */
 }
 
 .navbar button{
@@ -155,22 +155,36 @@ input, select, textarea{
 .navbar a {
     color: inherit;
     background-color: inherit;
-    margin: 12px 20px;
+    margin: 12px 8px;
+    padding: 5px 10px;
     text-decoration: none;
     font-weight: bold;
     text-align: center;
     max-height: 100%;
+    border-radius: 18px;
+}
+
+.navbar a h3{
+    color: inherit;
+    margin: 0px;
+    font-weight: 600;
 }
 
 .navbar a.active{
-    text-decoration: underline;
+    color: #aaaaaa;
+    background-color: #00000011;
 }
 
 .navbar a:hover, .user-login button:hover{
-    /* background-color: var(--secondary-bg); */
-    color: var(--darker-light-text);
-    transition: 0.1s;
-    text-decoration: underline;
+    border: none;
+    transition: 200ms ease-in-out;
+    scale: 1.01;
+    background-color: #00000011;
+}
+
+#navbar-icon:hover{
+    background-color: inherit;
+    scale: 1;
 }
 
 #navbar-icon{
@@ -237,4 +251,8 @@ input[type="submit"], input[type="button"], select{
 
 input[type="datetime-local"]{
     cursor:text;
+}
+
+input{
+    color: var(--main-fg);
 }

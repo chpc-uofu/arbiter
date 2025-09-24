@@ -103,9 +103,10 @@
                     <div class="label-input-box">
                         <h3>Host:</h3>
                         <select name="host" id="usage-host">
-                            <!-- <option value="all">All</option> -->
                             {% for host in agents %}
                             <option value="{{host}}">{{host}}</option>
+                            {% empty %}
+                                <option value="" disabled selected>No Hosts Found</option>
                             {% endfor %}
                         </select>
                     </div>
