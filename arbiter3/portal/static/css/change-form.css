@@ -70,3 +70,15 @@ form div div, .form-submit-box{
 .graph-list div .helptext{
     padding-top: 0%;
 }
+
+.penalty-tiers{
+    width: 50%;
+}
+
+.table-action{
+    padding: 5px;
+    margin: 0px;
+    width: 100%;
+    height: 100%;
+    background-color: var(--input-bg);
+}
