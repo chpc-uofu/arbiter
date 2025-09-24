@@ -152,7 +152,7 @@ input, select, textarea{
 }
 
 
-.navbar a {
+.navbar a, .navbar button {
     color: inherit;
     background-color: inherit;
     margin: 12px 8px;
@@ -220,7 +220,11 @@ input, button, select, textarea {
 }
 
 input:focus, button:hover, select:hover, textarea:hover {
-    box-shadow: 0 0 0 3px #007bff80;
+    box-shadow: 0 0 0 2px #0044ff5b;
+}
+
+.navbar button:hover{
+    box-shadow: none;
 }
 
 /* message box */
@@ -245,8 +249,12 @@ ul.messagelist li.warning{
     background-color: var(--warning-bg-color);
 }
 
-input[type="submit"], input[type="button"], select{
+input[type="submit"], input[type="button"], select, button{
     cursor: pointer;
+}
+
+:is(input[type="submit"], input[type="button"], select, button):hover{
+    background-color: var(--secondary-bg);
 }
 
 input[type="datetime-local"]{
@@ -263,4 +271,17 @@ select{
 
 select:required:invalid {
   color: var(--lighter-text-color)
+}
+
+
+td[contenteditable="true"] {
+  cursor: text;
+}
+
+td[contenteditable="true"]:hover {
+  background-color: #fff3b065;
+}
+
+td[contenteditable="true"]:focus {
+  background-color: #fff3b000;
 }
