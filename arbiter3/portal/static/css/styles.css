@@ -172,14 +172,11 @@ input, select, textarea{
 
 .navbar a.active{
     color: #aaaaaa;
-    background-color: #00000011;
 }
 
 .navbar a:hover, .user-login button:hover{
-    border: none;
     transition: 200ms ease-in-out;
-    scale: 1.01;
-    background-color: #00000011;
+    scale: 1.01;    
 }
 
 #navbar-icon:hover{
@@ -201,12 +198,19 @@ input, select, textarea{
 .user-login{
     justify-content: center;
     margin-left: auto;
+    background-color: inherit;
 }
 
 .user-login button, .user-login a{
     color: var(--nav-button-color);
+    background-color: inherit;
     border: 0px;
     font-weight: bold;
+    margin: 0 10px 0 0;
+}
+
+.user-login form{
+    background-color: inherit;
 }
 
 
@@ -256,6 +260,12 @@ input[type="submit"], input[type="button"], select, button{
 :is(input[type="submit"], input[type="button"], select, button):hover{
     background-color: var(--secondary-bg);
 }
+
+.navbar a.active, .navbar a:hover, .user-login button:hover{
+    box-shadow: 0 0 2px #ffffff98;
+    background-color: #0000001a;
+}
+
 
 input[type="datetime-local"]{
     cursor:text;

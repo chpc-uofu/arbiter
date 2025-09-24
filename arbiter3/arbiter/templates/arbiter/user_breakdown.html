@@ -54,7 +54,7 @@ User Breakdown for {{ username }}
                     {% for violation in recent_violations %}
                     <li>
                         <a href="{% url 'arbiter:change-violation' violation.id %}">
-                            {{violation.policy.name}}- {{violation.timestamp | naturaltime}} on {{ violation.target.host }}
+                            {{violation.policy.name}} - {{violation.timestamp | naturaltime}} on {{ violation.target.host }}
                         </a> 
                     </li>
                     {% endfor %}
