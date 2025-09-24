@@ -46,8 +46,8 @@
             <label>Recorded Usage:</label> 
             <div class="field-value">
                 <div class="graph-list">
-                    <div hx-get="{% url 'arbiter:violation-proc-cpu-graph' violation.id%}" hx-trigger="load" hx-target="this" hx-swap="innerHTML" ></div>
-                    <div hx-get="{% url 'arbiter:violation-proc-memory-graph' violation.id%}" hx-trigger="load" hx-target="this" hx-swap="innerHTML" ></div>
+                    <div hx-get="{% url 'arbiter:violation-proc-cpu-graph' violation.id%}" hx-vals="js:{...getPlotParams()}" hx-trigger="load" hx-target="this" hx-swap="innerHTML" ></div>
+                    <div hx-get="{% url 'arbiter:violation-proc-memory-graph' violation.id%}"  hx-vals="js:{...getPlotParams()}" hx-trigger="load" hx-target="this" hx-swap="innerHTML" ></div>
                     <div>
                         <i class="helptext">
                             *Processes marked like this are on the whitelist and are not counted against the user when evaluating policies. 

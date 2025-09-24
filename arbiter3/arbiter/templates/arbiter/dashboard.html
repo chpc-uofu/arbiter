@@ -151,9 +151,11 @@
                 <div class="options-column">
                     <input type="button" value="View Memory" hx-get="{% url 'arbiter:user-proc-memory-graph' %}"
                         hx-swap="innerHTML" hx-target="#chart-div"
+                        hx-vals="js:{...getPlotParams()}"
                         hx-include="[id='usage-user-input'], [id='usage-host'], [id='username'], [name='step-value'], [name='step-unit'], [name='end-time'], [name='start-time']">
                     <input type="button" value="View CPU" hx-get="{% url 'arbiter:user-proc-cpu-graph' %}" hx-swap="innerHTML"
                         hx-target="#chart-div"
+                        hx-vals="js:{...getPlotParams()}"
                         hx-include="[id='usage-user-input'], [id='username'], [id='usage-host'], [name='step-value'], [name='step-unit'], [name='end-time'], [name='start-time']">
                 </div>
             </div>

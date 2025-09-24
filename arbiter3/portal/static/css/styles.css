@@ -28,26 +28,26 @@
   :root {
     --bright-accent: #cc0000;
     --light-accent: #be0000;
-    --primary-bg : #272b2c;
-    --secondary-bg : #373738;
+    --primary-bg : #121212;
+    --secondary-bg : #212121;
     --darker-bg : #181a1b;
     --title-color: white;
     --nav-button-color: #fefefe;
     --light-text-color: #696969;
     --darker-light-text : #c4c9c7;
     --lighter-text-color: #bebcbc;
-    --border-color : #646464;
-    --lighter-border-color : #a1a1a1;
-    --light-border: #a3a3a3;
-    --darker-accent : #c90404;
+    --border-color : #353535;
+    --lighter-border-color : #8f8f9d;
+    --light-border: #8f8f9d;
+    --darker-accent : #9c0303;
     --link-accent : #e40606;
     --success-bg-color: #71cf71;
     --error-bg-color: #e27171;
     --warning-bg-color: #cfb274;
     --table-head : #202020;
     --table-header: white;
-    --header-bg: #181a1b;
-    --main-fg: #fefefe;
+    --header-bg: #212121;
+    --main-fg: #eeeeee;
     --input-bg: #141414;
   }
 }
