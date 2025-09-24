@@ -253,6 +253,14 @@ input[type="datetime-local"]{
     cursor:text;
 }
 
-input{
+input, select option{
     color: var(--main-fg);
+}
+
+select{
+    text-align: center;
+}
+
+select:required:invalid {
+  color: var(--lighter-text-color)
 }
