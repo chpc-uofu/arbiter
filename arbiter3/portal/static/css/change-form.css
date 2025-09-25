@@ -10,6 +10,12 @@ form div, .form-row {
     /* flex-direction: row; */
     border-bottom: 1px solid var(--shadow-color);
     padding: 10px;
+    margin-bottom: 20px;
+}
+
+form div div{
+    padding: 8px;
+    margin-bottom: 2px;
 }
 
 form div input, .field-value {

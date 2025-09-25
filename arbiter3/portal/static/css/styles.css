@@ -17,8 +17,8 @@
     --success-bg-color: #8de28d;
     --error-bg-color: #e27171;
     --warning-bg-color: #cfb274;
-    --table-head : #5e5e5e;
-    --table-header: #dddddd;
+    --table-head-bg : #b2b6b6;
+    --table-head-fg: black;
     --header-bg: #E2E6E6;
     --header-fg: black;
     --input-bg: white;
@@ -39,14 +39,14 @@
     --lighter-text-color: #bebcbc;
     --border-color : #353535;
     --lighter-border-color : #666669;
-    --light-border: #8f8f9d;
+    --light-border: #68686d;
     --darker-accent : #9c0303;
     --link-accent : #e40606;
     --success-bg-color: #71cf71;
     --error-bg-color: #e27171;
     --warning-bg-color: #cfb274;
-    --table-head : #202020;
-    --table-header: white;
+    --table-head-bg : #202020;
+    --table-head-fg: white;
     --header-bg: #212121;
     --main-fg: #eeeeee;
     --input-bg: #141414;
@@ -103,24 +103,34 @@ table{
     padding: 5px;
     border-collapse: collapse;
     overflow: hidden;
-    border-radius: 2px 2px 0px 0px;
+    border-radius: 2px 2px 6px 6px;
     width: 100%;
+    box-shadow: 0 0 2px var(--shadow-color);
 }
 
 th, td {
     padding: 5px;
     text-align: left;
-    border: 1px solid var(--lighter-border-color);
+    padding-left: 10px;
+    /* border: 1px solid var(--lighter-border-color); */
 }
 
 tr:nth-child(even) {
     background-color: var(--secondary-bg); 
 }
 
+.truncate-cell {
+  max-width: 15vw; 
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 
 th {
-    background-color: var(--table-head); 
-    color: var(--table-header);
+    background-color: var(--table-head-bg); 
+    color: var(--table-head-fg);
+    font-weight: 500;
 }
 
 .navbar {
@@ -161,7 +171,7 @@ input, select, textarea{
     font-weight: bold;
     text-align: center;
     max-height: 100%;
-    border-radius: 18px;
+    border-radius: 10px;
 }
 
 .navbar a h3{
@@ -216,7 +226,7 @@ input, select, textarea{
 
 input, button, select, textarea {
     box-shadow: none;
-    border: 2px solid var(--lighter-border-color);
+    border: 2px solid var(--light-border);
     border-radius: 4px;
     padding: 10px 15px; /* Padding for input and button */
     outline: none; /* Remove outline on focus */
@@ -262,7 +272,7 @@ input[type="submit"], input[type="button"], select, button{
 }
 
 .navbar a.active, .navbar a:hover, .user-login button:hover{
-    box-shadow: 0 0 2px #ffffff98;
+    box-shadow: 0 0 2px #ffffff56;
     background-color: #0000001a;
 }
 
@@ -295,3 +305,12 @@ td[contenteditable="true"]:hover {
 td[contenteditable="true"]:focus {
   background-color: #fff3b000;
 }
+
+b{
+    color: var(--darker-accent);
+}
+
+dimmed {
+    opacity: 0.7;
+}
+

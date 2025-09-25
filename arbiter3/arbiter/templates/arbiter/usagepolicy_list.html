@@ -10,15 +10,32 @@
 <table>
     <thead>
         <tr>
-            <th>Name</th>
+            <th>Policy</th>
+            <th>Description</th>
             <th>Domain</th>
+            <th>Status</th>
         </tr>
     </thead>
     <tbody>
         {% for policy in object_list %}
         <tr>
             <td><a href="{% url 'arbiter:change-usage-policy' policy.id%}">{{policy.name}}</a></td>
-            <td>{{policy.domain}}</td>
+            {% if policy.description %}
+                <td class="truncate-cell" title="{{policy.description}}">{{ policy.description }}</td>
+            {% else %}
+                <td class="truncate-cell">N/A</td>
+            {% endif %}
+
+            <td class="truncate-cell" title="{{policy.domain}}">{{policy.domain}}</td>
+            <td>
+                {% if policy.active and policy.watcher_mode %}
+                    <b>Enabled</b> <dimmed>- Watcher</dimmed>
+                {% elif policy.active %}
+                    <b>Enabled</b> <dimmed>- Enforcement</dimmed>
+                {% else %}
+                    <dimmed>Disabled</dimmed>
+                {% endif %}
+            </td>
         </tr>
         
         {% empty %}
