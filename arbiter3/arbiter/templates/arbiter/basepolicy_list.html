@@ -5,12 +5,12 @@
 {% endblock %}
 {% block content %}
 {% if can_create %}
-    <a href="{% url 'arbiter:new-base-policy'%}">New Base Policy</a> 
+    <a href="{% url 'arbiter:new-base-policy'%}" class="link-button">New Base Policy +</a> 
 {% endif %}
 <table>
     <thead>
         <tr>
-            <th>Name</th>
+            <th>Base Policy</th>
             <th>Description</th>
             <th>Domain</th>
             <th>Status</th>

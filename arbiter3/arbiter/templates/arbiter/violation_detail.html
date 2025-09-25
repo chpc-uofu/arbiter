@@ -1,5 +1,7 @@
 {% extends "arbiter/base.html" %}
 {% load static %}
+{% load humanize %}
+
 {% block extrastyle %}
     {{block.super}}
     <script src="{% static 'js/htmx.min.js' %}"></script>
@@ -12,7 +14,7 @@
     <div class="form-row">
         <label>Violator:</label> 
         <div class= "field-value">
-            <a href="{% url 'arbiter:user-breakdown' violation.target.username%}">{{violation.target.username}}</a>@{{violation.target.host}}
+            <span>{{violation.target.username}}@{{violation.target.host}}</span> <a href="{% url 'arbiter:user-breakdown' violation.target.username%}">[See user breakdown]</a>
         </div>
     </div>
     <div class="form-row">
@@ -35,7 +37,7 @@
         <label>Timestamp:</label> <div class= "field-value">{{ violation.timestamp }}</div>
     </div>
     <div class="form-row">
-        <label>Offense Count:</label> <div class= "field-value">{{ violation.offense_count}}</div>
+        <label>Offense:</label> <div class= "field-value">{{ violation.offense_count | ordinal}}</div>
     </div>
     <div class="form-row">
         <label>Is Base Status:</label> <div class= "field-value">{{ violation.is_base_status}}</div>

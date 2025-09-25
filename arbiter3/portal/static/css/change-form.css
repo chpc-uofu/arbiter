@@ -88,3 +88,7 @@ form div div, .form-submit-box{
     height: 100%;
     background-color: var(--input-bg);
 }
+
+.field-value span{
+    padding-right: 10px;
+}

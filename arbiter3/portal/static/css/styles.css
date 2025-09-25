@@ -11,7 +11,7 @@
     --lighter-text-color: #6e6b6b;
     --border-color : black;
     --lighter-border-color : #979393;
-    --light-border: #808080;
+    --light-border: #adabab;
     --darker-accent : #990101;
     --link-accent : #800202;
     --success-bg-color: #8de28d;
@@ -97,6 +97,8 @@ body {
 
 .content{
     padding: 15px;
+    display: flex;
+    flex-direction: column;
 }
 
 table{
@@ -267,7 +269,7 @@ input[type="submit"], input[type="button"], select, button{
     cursor: pointer;
 }
 
-:is(input[type="submit"], input[type="button"], select, button):hover{
+:is(input[type="submit"], input[type="button"], select, button):hover, .link-button:hover{
     background-color: var(--secondary-bg);
 }
 
@@ -306,7 +308,7 @@ td[contenteditable="true"]:focus {
   background-color: #fff3b000;
 }
 
-b{
+td b{
     color: var(--darker-accent);
 }
 
@@ -314,3 +316,17 @@ dimmed {
     opacity: 0.7;
 }
 
+.link-button{
+    padding: 4px 12px;
+    max-width: max-content;
+    margin-bottom: 10px;
+    border: 1px solid var(--light-border);
+    background-color: var(--input-bg);
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.link-button:hover{
+    text-decoration: none;
+}
