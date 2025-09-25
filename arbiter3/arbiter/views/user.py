@@ -6,6 +6,14 @@ from django.utils import timezone
 from arbiter3.arbiter.models import Target, Violation
 from arbiter3.arbiter.utils import to_readable_limits
 from .nav import navbar
+from arbiter3.arbiter.conf import ARBITER_USER_LOOKUP
+
+try:
+    user_lookup = ARBITER_USER_LOOKUP
+except ImportError:
+    def no_lookup(username: str):
+        return "unknown", "unknown", "unknown"
+    user_lookup = no_lookup
 
 
 @permission_required('arbiter.arbiter_view')
@@ -38,11 +46,21 @@ def get_user_breakdown(request, username):
     if len(targets) == 0:
         messages.error(request, "Specified user is not in arbiter's records (this may be because the names are incorrect or the user has not gone into penalty/base status before)")
         return redirect("arbiter:user-lookup")
-
     
     active_violations = Violation.objects.filter(target__username=username, policy__active=True).exclude(expiration__lt = timezone.now())
     recent_violations = Violation.objects.filter(target__username=username, is_base_status=False, policy__active=True).order_by("-timestamp")[:10]
 
-    context = {"navbar": navbar(request),"title": "User Breakdown", "username":username, "targets": targets, "active_violations": active_violations, "recent_violations": recent_violations}
+    username, realname, email = user_lookup(username)
+
+    context = {
+        "navbar": navbar(request),
+        "title": "User Breakdown", 
+        "username": username,
+        "realname": realname,
+        "email": email if not email.endswith("@localhost") else "unknown",
+        "targets": targets, 
+        "active_violations": active_violations, 
+        "recent_violations": recent_violations
+        }
 
     return render(request, "arbiter/user_breakdown.html", context)

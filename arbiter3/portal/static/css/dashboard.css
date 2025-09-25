@@ -156,6 +156,10 @@
     border-style: hidden hidden solid hidden;
 }
 
+.status-box .code-name{
+    font-size: 12pt;
+}
+
 .commands-list {
     display: flex;
     flex-direction: column;

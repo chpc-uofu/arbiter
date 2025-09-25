@@ -314,6 +314,14 @@ td b{
 
 dimmed {
     opacity: 0.7;
+    font-size: inherit;
+    font-weight: inherit;
+}
+
+.code-name{
+    font-size: inherit;
+    font-weight: inherit;
+    font-family: "Saira", sans-serif;
 }
 
 .link-button{
@@ -329,4 +337,13 @@ dimmed {
 
 .link-button:hover{
     text-decoration: none;
+}
+
+.title-note{
+    margin-left: 20px;
+    align-self: end;
+}
+
+.title-note *{
+    font-size: medium;
 }

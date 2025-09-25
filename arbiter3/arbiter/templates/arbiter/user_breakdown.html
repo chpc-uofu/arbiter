@@ -8,7 +8,15 @@
 {% endblock %}
 
 {% block page-title %}
-User Breakdown for {{ username }}
+    User Breakdown for <span class="code-name">{{ username }}</span> 
+    {% if realname and realname != "unknown" and realname != "unknown real name"%}
+        <dimmed>({{realname}})</dimmed>
+    {% endif %}
+    {% if email and email != "unknown"%}
+        <span class="title-note">
+            <dimmed><label>Email:</label><a href="mailto:{{email}}">{{email}}</a></dimmed>
+        </span>
+    {% endif %}
 {% endblock %}
 
 {% block content %}
