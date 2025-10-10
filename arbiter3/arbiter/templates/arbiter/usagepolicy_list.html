@@ -29,9 +29,9 @@
             <td class="truncate-cell" title="{{policy.domain}}">{{policy.domain}}</td>
             <td>
                 {% if policy.active and policy.watcher_mode %}
-                    <b>Enabled</b> <dimmed>- Watcher</dimmed>
+                    <b>Enabled</b> <dimmed>- Watcher <i class="fa-solid fa-eye"></i></dimmed>
                 {% elif policy.active %}
-                    <b>Enabled</b> <dimmed>- Enforcement</dimmed>
+                    <b>Enabled</b> <dimmed>- Enforcement <i class="fa-solid fa-shield-halved"></i></dimmed>
                 {% else %}
                     <dimmed>Disabled</dimmed>
                 {% endif %}

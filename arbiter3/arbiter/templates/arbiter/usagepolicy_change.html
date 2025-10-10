@@ -3,6 +3,7 @@
 {% block submit-box %}
 {{ block.super }}
 {% if form.instance.pk %}
-<input type="submit" name="copy" value="copy" />
+<!-- <input type="submit" name="copy" value="copy" /> -->
+<button type="submit" name="copy"><i class="fa-solid fa-copy"></i> Copy</button>
 {% endif %}
 {% endblock %}
