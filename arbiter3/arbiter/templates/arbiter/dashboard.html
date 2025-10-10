@@ -15,11 +15,12 @@
 {% block content %}
 <div class="dashboard">
     <div class="card">
-        <h2 class="box-header">Management</h2>
+        <h2 class="box-header">        
+            <i class="fa-solid fa-play"></i> Management
+        </h2>
         <div class="management-box">
             <div class="status-box">
                 <h3>Status:</h3>
-                <hr class="box-divider">
                 <p><span class="code-name">cgroup-warden</span> instances up: {{ agents|length }}</p>
                 <p>Last-Evaluated: {{last_evaluated | naturaltime}} </p>
             </div>
@@ -74,7 +75,7 @@
         </div>
     </div>
 <div class="card">
-    <h2 class="box-header">Recent Violations</h2>
+    <h2 class="box-header"><i class="fa-solid fa-shield-halved"></i> Recent Violations</h2>
     <div class="notification-box">
         <table class="notification-table">
             <tbody>
@@ -95,7 +96,7 @@
     </div>
 </div>
 <div class="card">
-    <h2 class="box-header">View Usage</h2>
+    <h2 class="box-header"><i class="fa-solid fa-chart-line"></i> View Usage </h2>
     <div class="usage-box">
         <form>
             <div class="usage-options">
@@ -115,8 +116,16 @@
                         <h3>Username:</h3>
                         <input type="text" name="username" placeholder="" id="username">
                     </div>
-                </div>
-                <div class="options-column">
+                    <div class="label-input-box">
+                        <h3>Step Size:</h3>
+                        <span class="multi-select">
+                            <input type="number" name="step-value" value="60">
+                            <select name="step-unit">
+                                <option value="s">Seconds</option>
+                                <option value="m">Minutes</option>
+                            </select>
+                        </span>
+                    </div>
                     <div class="label-input-box">
                         <h3>Start Time:</h3>
                         <input type="datetime-local" name="start-time">
@@ -125,19 +134,7 @@
                         <h3>End Time:</h3>
                         <input type="datetime-local" name="end-time">
                     </div>
-
-                </div>
-                <div class="options-column">
-                    <div class="label-input-box">
-                        <h3>Step Size:</h3>
-                        <input type="number" name="step-value" value="60">
-                        <select name="step-unit">
-                            <option value="s">Seconds</option>
-                            <option value="m">Minutes</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="options-column">
+                    
                     <input type="button" value="View Memory" hx-get="{% url 'arbiter:user-proc-memory-graph' %}"
                         hx-swap="innerHTML" hx-target="#chart-div"
                         hx-vals="js:{...getPlotParams()}"
@@ -149,7 +146,7 @@
                 </div>
             </div>
         </form>
-
+        <hr class="box-divider">
         <div id="chart-div"></div>
     </div>
 </div>

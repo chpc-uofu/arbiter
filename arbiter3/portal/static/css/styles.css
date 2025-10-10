@@ -233,10 +233,16 @@ input, button, select, textarea {
     padding: 10px 15px; /* Padding for input and button */
     outline: none; /* Remove outline on focus */
     transition: box-shadow 0.3s ease; /* Smooth transition */
+    box-sizing: border-box;
 }
 
-input:focus, button:hover, select:hover, textarea:hover {
-    box-shadow: 0 0 0 2px #0044ff5b;
+select {
+    background-color: var(--secondary-bg);
+}
+
+input:focus-visible, button:hover, textarea:hover, select:focus {
+  outline: 5px auto -webkit-focus-ring-color;
+  outline: 5px auto Highlight;
 }
 
 .navbar button:hover{
@@ -324,18 +330,29 @@ dimmed {
     font-family: "Saira", sans-serif;
 }
 
-.link-button{
-    padding: 4px 12px;
+
+.link-button {
+    margin-bottom: 15px;
+    margin-top: 0.4rem;
+    padding: 0.5rem;
+    width: 100%;
+    border-radius: 6px;
     max-width: max-content;
-    margin-bottom: 10px;
-    border: 1px solid var(--light-border);
-    background-color: var(--input-bg);
-    text-decoration: none;
-    border-radius: 4px;
-    font-weight: 500;
+    font-size: 0.95rem;
+    background-color: var(--darker-accent);
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: 0.2s ease;
 }
 
-.link-button:hover{
+i{
+    color: inherit;
+}
+
+
+.link-button:hover {
+    background-color: var(--bright-accent);
     text-decoration: none;
 }
 

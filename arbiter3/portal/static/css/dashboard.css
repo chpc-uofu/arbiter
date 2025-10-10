@@ -29,18 +29,20 @@
 }
 
 .box-header {
-    background-color: var(--header-bg);
-    color: var(--main-fg);
+    /* background-color: var(--header-bg); */
+    color: var(--darker-accent);
     padding: 10px;
     margin-top: 0px;
     margin-bottom: 0px;
     text-align: center;
     border-radius: 8px 8px 2px 2px;
     /* border-bottom: 2px solid var(--light-border); */
-    box-shadow: 0 1px 2px var(--shadow-color);
-}
+    /* box-shadow: 0 1px 2px var(--shadow-color); */
 
-.sub-box
+    text-align: left;
+    padding-left: 1rem;
+    font-weight: bolder;
+}
 
 .box-divider, .sub-box-divider {
     background-color: var(--light-border);
@@ -49,11 +51,9 @@
 }
 
 .management-box {
-    display: grid;
-    grid-template-rows: 2fr 5fr;
-    grid-template-columns: 1fr 1fr;
-    padding: 0px;
-    width: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 0px 1rem;
     min-width: 670px;
     height: auto;
     flex: 1;
@@ -67,6 +67,10 @@
 
 .search-box, .user-box {
     padding: 10px;
+}
+
+.search-box * input[type="submit"]{
+    width: 8rem;
 }
 
 .user-box {
@@ -131,7 +135,7 @@
     border-style: solid hidden hidden hidden;
     grid-row: 2 / 3;
     grid-column: 1 / 3;
-    padding: 10px;
+    padding-bottom: 10px;
     display: flex;
     flex-direction: column;
     gap: 0px;
@@ -149,11 +153,14 @@
 }
 
 .status-box {
+    padding-top: 0px;
+    margin-top: 0px;
     grid-row: 1;
     grid-column: 1 / 3;
-    border: 1px solid var(--light-border);
-    padding: 10px;
-    border-style: hidden hidden solid hidden;
+}
+
+.status-box h3{
+    margin: .2em 0 .3em 0;
 }
 
 .status-box .code-name{
@@ -173,29 +180,49 @@
     width: 100%;
     border-collapse: collapse;
     border-style: hidden;
+    border: none;
+
 }
 
-.notification-box tr td {
+.notification-box tbody tr {
+    background-color: var(--secondary-bg);
     padding: 2px;
 }
 
+.notification-table tbody tr:nth-child(even) {
+    background-color: var(--main-bg); 
+}
+
 .usage-box {
-    width: 90vw;
+    width: 98%;
 }
 
 .usage-options, .options-box {
     display: flex;
     justify-content: space-between;
     margin-bottom: 10px;
-    padding-top: 10px;
+    padding-top: 0px;
+    margin-top: 0px;
     gap: 10px;
     height: min-content;
     flex-wrap: wrap;
     width: 100%;
 }
 
+.usage-options * .label-input-box{
+    display: flex;
+    flex-direction: column;
+    gap: 0px;
+}
+
+.usage-options * .label-input-box h3{
+    margin : 0.8rem 0px 0px 0px;
+}
+
 .options-box {
     justify-content: start;
+    display: flex;
+    flex-direction: row;
 }
 
 .options-column input[type="text"],
@@ -204,10 +231,34 @@
 }
 
 .options-column {
+    width: 100%;
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    flex-wrap: wrap;
+    gap: 0px;
+    max-height: 250px;
+}
+
+.multi-select{
+    width: 100%;
+    display: flex;
+    flex-direction: row;
     flex-grow: 1;
+    gap: 5px;
+}
+
+.multi-select input{
+    width: 60%;
+}
+
+.multi-select select{
+    flex: 1;
+}
+
+.options-column .label-input-box, .options-column input[type="button"]{
+    width: 50%;
+    box-sizing: border-box;
+    margin-right: 10px;
 }
 
 .label-input-box {
@@ -247,4 +298,30 @@
 
 .commands-box .helptext{
     margin-bottom: 20px;
+}
+
+input,
+button,
+select {
+    margin-top: 0.4rem;
+    padding: 0.5rem;
+    width: 100%;
+    border-radius: 6px;
+    font-size: 0.95rem;
+}
+
+button, input[type="submit"], input[type="button"] {
+    background-color: var(--darker-accent);
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+button:hover, input[type=submit]:hover, input[type="button"]:hover {
+    background-color: var(--bright-accent);
+}
+
+#chart-div{
+    margin-top: 20px;
 }
