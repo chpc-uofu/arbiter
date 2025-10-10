@@ -66,11 +66,19 @@
 }
 
 .search-box, .user-box {
-    padding: 10px;
+    padding: 15px;
+}
+
+.search-box * .options-box{
+    padding: 10px 5px;
 }
 
 .search-box * input[type="submit"]{
-    width: 8rem;
+    width: 9rem;
+}
+
+.search-box * input[type="text"]{
+    width: 20rem;
 }
 
 .user-box {
