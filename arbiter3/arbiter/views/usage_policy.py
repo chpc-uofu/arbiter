@@ -110,6 +110,10 @@ class UsagePolicyForm(forms.ModelForm):
         widgets = {'grace_period': forms.TimeInput(), "repeated_offense_lookback": forms.TimeInput(
         ), "penalty_constraints": TieredPenaltyWidget}
 
+        labels = {
+            'active': 'Enabled'
+        }
+
         help_texts = {
             'domain': regex_help_text("regex for the hostname/instance where this policy is in affect"),
             'lookback': "<span>How far back arbiter evaluates user's usage (e.g. if a user's average usage is above the threshold(s) for this amount of time, they will be in violation). <b>Should be at least twice as long as the configured scrape interval for the wardens on your TSDB.</b></span>",

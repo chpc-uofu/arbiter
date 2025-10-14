@@ -3,13 +3,20 @@ form{
     flex-direction: column;
 }
 
-form div, .form-row {
+form > div, .form-row {
     display: grid;
     grid-template-rows: 30% 70%;
     grid-template-columns: 1fr 4fr;
     /* flex-direction: row; */
-    border-bottom: 1px solid var(--darker-bg);
+    border-bottom: 1px solid var(--shadow-color);
     padding: 10px;
+    margin-bottom: 20px;
+}
+
+form div div{
+    padding: 8px;
+    margin-bottom: 2px;
+    display: block;
 }
 
 form div input, .field-value {
@@ -28,10 +35,16 @@ form div label, .form-row label{
     grid-column: 1;
 }
 
-form div div, .form-submit-box{
+.form-submit-box{
     border-bottom: none;
     display: flex;
     flex-direction: row;
+    gap: 8px;
+    width: 30%;
+}
+
+.form-submit-box button[type="submit"]{
+    padding: 10px;
 }
 
 .helptext{
@@ -49,7 +62,9 @@ form div div, .form-submit-box{
 }
 
 .helptext * {
-    font-size: medium;
+    font-size: inherit;
+    color: inherit;
+    font-weight: inherit;
 }
 
 .helptext span a:hover {
@@ -69,4 +84,21 @@ form div div, .form-submit-box{
 
 .graph-list div .helptext{
     padding-top: 0%;
+}
+
+.penalty-tiers{
+    width: 50%;
+}
+
+.table-action{
+    padding: 5px;
+    margin: 0px;
+    width: 100%;
+    height: 100%;
+    background-color: var(--input-bg);
+    color: var(--main-fg);
+}
+
+.field-value span{
+    padding-right: 10px;
 }

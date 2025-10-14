@@ -3,7 +3,7 @@
 
 {% block extrastyle %}
 {{block.super}}
-<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.0">
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.3">
 {% endblock %}
 
 {% block content %}
@@ -15,11 +15,9 @@
                 <h3>Quick Search</h3>
                 <hr class="box-divider">
                 <div class="options-box">
-                    <div class="options-column">
-                        <div class="label-input-box">
-                            <h3>Username</h3>
-                            <input type="text" name="user" placeholder="user">
-                        </div>
+                    <div class="label-input-box">
+                        <h3>Username</h3>
+                        <input type="text" name="user" placeholder="user">
                     </div>
                     <input type="submit" value="search">
                 </div>

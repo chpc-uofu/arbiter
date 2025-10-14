@@ -1,9 +1,9 @@
 {% extends "arbiter/base.html" %}
 {% load static %}
+{% load humanize %}
 
 {% block extrastyle %}
 {{block.super}}
-    <link rel="stylesheet" href="{% static 'css/list-view.css' %}?v=1.0">
 {% endblock %}
 
 {% block page-title %}
@@ -17,7 +17,7 @@
             Violation
         </th>
         <th>
-            Offense Number
+            Offense
         </th>
         <th>
             Timestamp
@@ -27,8 +27,8 @@
         {% for violation in object_list %}
             <tr>
                 <td><a href="{% url 'arbiter:change-violation' violation.id%}">{{violation}}</a></td>
-                <td>{{violation.offense_count}}</td>
-                <td>{{violation.timestamp}}</td>
+                <td>{{violation.offense_count | ordinal }}</td>
+                <td>{{violation.timestamp | naturaltime}}</td>
             </tr>
         {% endfor %}
     </tbody>

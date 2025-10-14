@@ -5,20 +5,37 @@
 {% endblock %}
 {% block content %}
 {% if can_create %}
-    <a href="{% url 'arbiter:new-base-policy'%}">New Base Policy</a> 
+    <a href="{% url 'arbiter:new-base-policy'%}" class="link-button">New Base Policy +</a> 
 {% endif %}
 <table>
     <thead>
         <tr>
-            <th>Name</th>
+            <th>Base Policy</th>
+            <th>Description</th>
             <th>Domain</th>
+            <th>Status</th>
         </tr>
     </thead>
     <tbody>
         {% for policy in object_list %}
         <tr>
             <td><a href="{% url 'arbiter:change-base-policy' policy.id%}">{{policy.name}}</a></td>
-            <td>{{policy.domain}}</td>
+            {% if policy.description %}
+                <td class="truncate-cell" title="{{policy.description}}">{{ policy.description }}</td>
+            {% else %}
+                <td class="truncate-cell">N/A</td>
+            {% endif %}
+
+            <td class="truncate-cell" title="{{policy.domain}}">{{policy.domain}}</td>
+            <td>
+                {% if policy.active and policy.watcher_mode %}
+                    <b>Enabled</b>
+                {% elif policy.active %}
+                    <b>Enabled</b>
+                {% else %}
+                    <dimmed>Disabled</dimmed>
+                {% endif %}
+            </td>
         </tr>
         
         {% empty %}

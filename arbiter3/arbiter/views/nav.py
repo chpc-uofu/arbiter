@@ -8,7 +8,7 @@ class BarItem:
 
     def render(self):
         attributes = " ".join([f"{k}={v}" for k, v in self.attr.items()])
-        return f'<a {attributes} href="{self.url}">{self.name}</a>'
+        return f'<a {attributes} href="{self.url}"><h3>{self.name}</h3></a>'
 
 
 def navbar(request):

@@ -4,11 +4,19 @@
 
 {% block extrastyle %}
 {{block.super}}
-<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.0">
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.3">
 {% endblock %}
 
 {% block page-title %}
-User Breakdown for {{ username }}
+    User Breakdown for <span class="code-name">{{ username }}</span> 
+    {% if realname and realname != "unknown" and realname != "unknown real name"%}
+        <dimmed>({{realname}})</dimmed>
+    {% endif %}
+    {% if email and email != "unknown"%}
+        <span class="title-note">
+            <dimmed><label>Email:</label><a href="mailto:{{email}}">{{email}}</a></dimmed>
+        </span>
+    {% endif %}
 {% endblock %}
 
 {% block content %}
@@ -54,7 +62,7 @@ User Breakdown for {{ username }}
                     {% for violation in recent_violations %}
                     <li>
                         <a href="{% url 'arbiter:change-violation' violation.id %}">
-                            {{violation.policy.name}}- {{violation.timestamp | naturaltime}} on {{ violation.target.host }}
+                            {{violation.policy.name}} - {{violation.timestamp | naturaltime}} on {{ violation.target.host }}
                         </a> 
                     </li>
                     {% endfor %}

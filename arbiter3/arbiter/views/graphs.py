@@ -92,6 +92,11 @@ def make_aware(time: datetime | None) -> datetime | None:
 def render_figure(figure, request, include_other_note: bool = False):
     context = dict()
     if figure:
+        theme = request.GET.get("theme", "light")
+        template = "plotly_dark" if theme == "dark" else "plotly_white"
+
+        figure.update_layout(template=template)
+
         context['other_note'] = include_other_note
         context["graph"] = mark_safe(figure.to_html(
             default_width="100%", default_height="400px"))

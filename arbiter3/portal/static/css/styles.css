@@ -1,30 +1,73 @@
 :root{
     --bright-accent: #cc0000;
     --light-accent: #be0000;
-    --primary-bg : #E2E6E6;
-    --secondary-bg : #bbbaba;
+    --primary-bg : #f1f1f1;
+    --secondary-bg : #cdcccb;
     --darker-bg : #a9a8a8;
     --title-color: black;
-    --light-text-color: #fefefe;
+    --nav-button-color: #f1f1f1;
+    --light-text-color: #dddddd;
     --darker-light-text : #8b8f8d;
-    --lighter-text-color: #7c7a7a;
+    --lighter-text-color: #6e6b6b;
     --border-color : black;
-    --lighter-border-color : #413f3f;
-    --darker-accent : #890000;
-    --success-bg-color: #b7e9b7;
+    --lighter-border-color : #979393;
+    --light-border: #adabab;
+    --darker-accent : #990101;
+    --link-accent : #800202;
+    --success-bg-color: #8de28d;
     --error-bg-color: #e27171;
     --warning-bg-color: #cfb274;
-    --table-head : #5e5e5e;
+    --table-head-bg : #b2b6b6;
+    --table-head-fg: black;
+    --header-bg: #E2E6E6;
+    --header-fg: black;
+    --input-bg: white;
+    --shadow-color: rgba(0, 0, 0, 0.61);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bright-accent: #cc0000;
+    --light-accent: #be0000;
+    --primary-bg : #121212;
+    --secondary-bg : #212121;
+    --darker-bg : #181a1b;
+    --title-color: white;
+    --nav-button-color: #fefefe;
+    --light-text-color: #696969;
+    --darker-light-text : #c4c9c7;
+    --lighter-text-color: #bebcbc;
+    --border-color : #353535;
+    --lighter-border-color : #666669;
+    --light-border: #68686d;
+    --darker-accent : #9c0303;
+    --link-accent : #e40606;
+    --success-bg-color: #71cf71;
+    --error-bg-color: #e27171;
+    --warning-bg-color: #cfb274;
+    --table-head-bg : #202020;
+    --table-head-fg: white;
+    --header-bg: #212121;
+    --main-fg: #eeeeee;
+    --input-bg: #141414;
+    --shadow-color: rgba(255, 255, 255, 0.5);
+  }
 }
 
 * {
     font-family: var(--bs-font-monospace); 
     font-family: monospace;
     font-size: large;
+    color: var(--main-fg);
+    transition: 220ms all ease-in-out;
 }
 
 a {
-    color: var(--darker-accent);
+    color: var(--link-accent);
+}
+
+a *{
+    color: inherit;
 }
 
 a:hover {
@@ -39,11 +82,11 @@ hr{
 }
 
 .page-title{
-    font-size: larger;
+    font-size: 1.55rem;
     font-weight: 600;
     margin: 15px;
     margin-bottom: 8px;
-    color: var(--lighter-border-color)
+    color: var(--title-color)
 }
 
 body {
@@ -54,44 +97,59 @@ body {
 
 .content{
     padding: 15px;
+    display: flex;
+    flex-direction: column;
 }
 
 table{
     padding: 5px;
     border-collapse: collapse;
     overflow: hidden;
-    border-radius: 2px 2px 0px 0px;
+    border-radius: 2px 2px 6px 6px;
     width: 100%;
+    box-shadow: 0 0 2px var(--shadow-color);
 }
 
 th, td {
     padding: 5px;
     text-align: left;
-    border: 1px solid var(--lighter-border-color);
+    padding-left: 10px;
+    /* border: 1px solid var(--lighter-border-color); */
 }
 
 tr:nth-child(even) {
     background-color: var(--secondary-bg); 
 }
 
+.truncate-cell {
+  max-width: 15vw; 
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 
 th {
-    background-color: var(--table-head); 
-    color: var(--light-text-color);
+    background-color: var(--table-head-bg); 
+    color: var(--table-head-fg);
+    font-weight: 500;
 }
 
 .navbar {
     display: flex;
     background-color: var(--darker-accent);
-    color: var(--light-text-color);
+    color: var(--nav-button-color);
     padding: 0px;
     padding-left: 5px;
-    height: 3em;
+    height: 3.5em;
     align-items: center;
     margin : 0px;
-    /* border-bottom: 2px solid var(--border-color); */
 }
 
+h1, h2, h3, h4, h5, h6{
+    color: var(--main-fg);
+    font-family: 'Montserrat', sans-serif;
+}
 
 .navbar button{
     background: inherit;
@@ -101,27 +159,41 @@ th {
     border: none;
 }
 
+input, select, textarea{
+    background-color: var(--input-bg);
+}
 
 
-.navbar a {
+.navbar a, .navbar button {
     color: inherit;
     background-color: inherit;
-    margin: 12px 20px;
+    margin: 12px 8px;
+    padding: 5px 10px;
     text-decoration: none;
     font-weight: bold;
     text-align: center;
     max-height: 100%;
+    border-radius: 10px;
+}
+
+.navbar a h3{
+    color: inherit;
+    margin: 0px;
+    font-weight: 600;
 }
 
 .navbar a.active{
-    text-decoration: underline;
+    color: #aaaaaa;
 }
 
 .navbar a:hover, .user-login button:hover{
-    /* background-color: var(--secondary-bg); */
-    color: var(--darker-light-text);
-    transition: 0.1s;
-    text-decoration: underline;
+    transition: 200ms ease-in-out;
+    scale: 1.01;    
+}
+
+#navbar-icon:hover{
+    background-color: inherit;
+    scale: 1;
 }
 
 #navbar-icon{
@@ -138,26 +210,43 @@ th {
 .user-login{
     justify-content: center;
     margin-left: auto;
+    background-color: inherit;
 }
 
 .user-login button, .user-login a{
-    color: var(--light-text-color);
+    color: var(--nav-button-color);
+    background-color: inherit;
     border: 0px;
     font-weight: bold;
+    margin: 0 10px 0 0;
+}
+
+.user-login form{
+    background-color: inherit;
 }
 
 
 input, button, select, textarea {
     box-shadow: none;
-    border: 2px solid var(--lighter-border-color);
+    border: 2px solid var(--light-border);
     border-radius: 4px;
     padding: 10px 15px; /* Padding for input and button */
     outline: none; /* Remove outline on focus */
     transition: box-shadow 0.3s ease; /* Smooth transition */
+    box-sizing: border-box;
 }
 
-input:focus, button:hover, select:hover, textarea:hover {
-    box-shadow: 0 0 0 3px #007bff80;
+select {
+    background-color: var(--secondary-bg);
+}
+
+input:focus-visible, button:hover, textarea:hover, select:focus {
+  outline: 5px auto -webkit-focus-ring-color;
+  outline: 5px auto Highlight;
+}
+
+.navbar button:hover{
+    box-shadow: none;
 }
 
 /* message box */
@@ -169,6 +258,7 @@ ul.messagelist{
 ul.messagelist li{
     list-style-type: none;
     padding: 5px;
+    color: black;
 }
 
 ul.messagelist li.success{
@@ -181,4 +271,96 @@ ul.messagelist li.warning{
     background-color: var(--warning-bg-color);
 }
 
+input[type="submit"], input[type="button"], select, button{
+    cursor: pointer;
+}
 
+:is(input[type="submit"], input[type="button"], select, button):hover, .link-button:hover{
+    background-color: var(--secondary-bg);
+}
+
+.navbar a.active, .navbar a:hover, .user-login button:hover{
+    box-shadow: 0 0 2px #ffffff56;
+    background-color: #0000001a;
+}
+
+
+input[type="datetime-local"]{
+    cursor:text;
+}
+
+input, select option{
+    color: var(--main-fg);
+}
+
+select{
+    text-align: center;
+}
+
+select:required:invalid {
+  color: var(--lighter-text-color)
+}
+
+
+td[contenteditable="true"] {
+  cursor: text;
+}
+
+td[contenteditable="true"]:hover {
+  background-color: #fff3b065;
+}
+
+td[contenteditable="true"]:focus {
+  background-color: #fff3b000;
+}
+
+td b{
+    color: var(--darker-accent);
+}
+
+dimmed {
+    opacity: 0.7;
+    font-size: inherit;
+    font-weight: inherit;
+}
+
+.code-name{
+    font-size: inherit;
+    font-weight: inherit;
+    font-family: "Saira", sans-serif;
+}
+
+
+.link-button {
+    margin-bottom: 15px;
+    margin-top: 0.4rem;
+    padding: 0.5rem;
+    width: 100%;
+    border-radius: 6px;
+    max-width: max-content;
+    font-size: 0.95rem;
+    background-color: var(--darker-accent);
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+i{
+    color: inherit;
+}
+
+
+.link-button:hover {
+    background-color: var(--bright-accent);
+    text-decoration: none;
+}
+
+.title-note{
+    margin-left: 20px;
+    align-self: end;
+}
+
+.title-note *{
+    font-size: medium;
+}
