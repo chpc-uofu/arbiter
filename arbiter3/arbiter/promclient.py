@@ -69,7 +69,7 @@ class PrometheusSession(requests.Session):
         if timeout:
             params["timeout"] = timeout
 
-        response = self.get("api/v1/query", params=params)
+        response = self.get("api/v1/query", params=params, timeout=timeout)
         data = self.validate_response(response)['data']
         match data['resultType']:
             case 'matrix':
@@ -95,7 +95,7 @@ class PrometheusSession(requests.Session):
         if timeout:
             params['timeout'] = timeout
 
-        response = self.get("api/v1/query_range", params=params)
+        response = self.get("api/v1/query_range", params=params, timeout=timeout)
         data = self.validate_response(response)['data']
         match data['resultType']:
             case 'matrix':
