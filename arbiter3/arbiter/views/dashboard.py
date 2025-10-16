@@ -8,6 +8,7 @@ from django.core.management import call_command
 from django.http import HttpResponse
 from django.core.management.base import CommandError
 from django.contrib.auth.decorators import permission_required
+from django.contrib import messages
 
 from arbiter3.arbiter.conf import PROMETHEUS_CONNECTION, WARDEN_JOB
 from arbiter3.arbiter.utils import split_port, cores_to_usec, gib_to_bytes
@@ -28,11 +29,12 @@ def message_http(message: str, status: str = "success"):
 def view_dashboard(request):
     agents = []
     try:
-        result = PROMETHEUS_CONNECTION.query(f'up{{job="{WARDEN_JOB}"}} == 1')
+        result = PROMETHEUS_CONNECTION.query(f'up{{job="{WARDEN_JOB}"}} == 1', timeout=3)
         agents = [r.metric['instance'] for r in result]
     except Exception as e:
+        messages.warning(request, "Warning: Unable to connect to prometheus instance to query cgroup-warden instances")
         LOGGER.error(
-            f"Could not query prometheus for cgroup-agent instances: {e}")
+            f"Could not query prometheus for cgroup-warden instances: {e}")
 
     last_eval = Event.objects.order_by("timestamp").last()
 
