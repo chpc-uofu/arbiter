@@ -89,8 +89,8 @@ ARBITER_ADMIN_EMAILS = []
 ARBITER_FROM_EMAIL = None
 
 # arbiter will use the templates in the templates dir called 'email_body.html' and 'email_subject.html' when sending email
-# If you wish to use the templates created by the initialization script, uncomment the line below ot set to str '/path/to/installation/templates/'
-# ARBITER_EMAIL_TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
+# If you wish to use the templates created by the initialization script, uncomment the line below ro set to str '/path/to/installation/templates/'
+# ARBITER_EMAIL_TEMPLATE_DIR = str(Path(__file__).resolve().parent / "templates") # sets the path to the "templates" directory located in the same directory of this file
 ARBITER_EMAIL_TEMPLATE_DIR = None
 
 # arbiter will route the mail through this mail server
