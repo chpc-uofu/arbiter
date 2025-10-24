@@ -45,6 +45,7 @@ class PrometheusSession(requests.Session):
         self.headers.update({"Content-Type": "application/json"})
         if username and password:
             self.auth = requests.auth.HTTPBasicAuth(username, password)
+        self.verify = verify
 
 
     def get(self, path, *args, **kwargs):
