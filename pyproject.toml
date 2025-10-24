@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "arbiter3"
-version = "0.0.8"
+version = "0.0.9"
 description = ""
 authors = ["Kai Forrest <kai.forrest@utah.edu>", "Jackson McKay <jay.mckay@utah.edu>", "Paul Fischer <p.fischer@utah.edu>"]
 readme = "README.md"
