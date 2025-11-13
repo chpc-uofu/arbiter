@@ -47,6 +47,7 @@ def refresh_limit(limit_query: str, limit_name: str) -> list[Target]:
         response = PROMETHEUS_CONNECTION.query(limit_query)
     except Exception as e:
         logger.error(f"Unable to assert limits set: {e}")
+        return []
 
     for result in response:
         cgroup = result.metric['cgroup']
