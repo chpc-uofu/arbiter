@@ -364,3 +364,7 @@ i{
 .title-note *{
     font-size: medium;
 }
+
+.plotly * {
+    transition: none;
+}
