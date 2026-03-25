@@ -5,12 +5,19 @@ form{
 
 form > div, .form-row {
     display: grid;
-    grid-template-rows: 30% 70%;
+    grid-template-rows: 1.2em 1fr;
     grid-template-columns: 1fr 4fr;
-    /* flex-direction: row; */
     border-bottom: 1px solid var(--shadow-color);
     padding: 10px;
     margin-bottom: 20px;
+}
+
+form > div > input, form > div > select, form > div > textarea, form > div > .penalty-box{
+    grid-row: 1 / 3;
+}
+
+form > div > #penalty-messages{
+    grid-column: 2;
 }
 
 form div div{
@@ -30,7 +37,6 @@ form div input, .field-value {
 
 form div label, .form-row label{
     display: block;
-    /* width: 20%; */
     grid-row: 1;
     grid-column: 1;
 }
@@ -48,10 +54,10 @@ form div label, .form-row label{
 }
 
 .helptext{
-    padding-top: 10%;
+    /* padding-top: 10%; */
     color: var(--lighter-text-color);
     font-size: medium;
-    grid-row: 1 / 3;
+    grid-row: 2;
     grid-column: 1;
 }
 
