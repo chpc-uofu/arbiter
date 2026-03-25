@@ -1,5 +1,4 @@
 window.addEventListener("load", function () {
-    console.log("loaded");
     const tiers_container = document.getElementById("tiers-content");
     const add_tier_button = document.getElementById("add-tier-button");
     const constraints_input = document.getElementById("penalty-constraints-input");
