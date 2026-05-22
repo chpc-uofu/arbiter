@@ -107,8 +107,12 @@ class UsagePolicyForm(forms.ModelForm):
         model = UsagePolicy
         fields = ["name", "domain", "description", "penalty_duration", "repeated_offense_scalar",
                   "repeated_offense_lookback", "grace_period", "lookback", "active", "watcher_mode", "penalty_constraints"]
-        widgets = {'grace_period': forms.TimeInput(), "repeated_offense_lookback": forms.TimeInput(
-        ), "penalty_constraints": TieredPenaltyWidget}
+        widgets = {
+            'grace_period': forms.TimeInput(), 
+            "repeated_offense_lookback": forms.TimeInput(), 
+            "penalty_constraints": TieredPenaltyWidget,
+            "domain": forms.Textarea(attrs={'rows':3}),
+        }
 
         labels = {
             'active': 'Enabled'

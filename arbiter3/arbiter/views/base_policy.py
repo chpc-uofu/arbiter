@@ -42,6 +42,7 @@ class BasePolicyForm(forms.ModelForm):
     class Meta:
         model = BasePolicy
         fields = ["name", "domain", "description", "active"]
+        widgets = {"domain": forms.Textarea(attrs={'rows':3})}
 
         help_texts = {
             'domain': regex_help_text("regex for the hostname/instance where this policy is in affect")

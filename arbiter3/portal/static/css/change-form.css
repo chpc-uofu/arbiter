@@ -108,3 +108,12 @@ form div label, .form-row label{
 .field-value span{
     padding-right: 10px;
 }
+
+.errorlist{
+    background-color: var(--error-bg-color);
+    border-radius: 5px;
+}
+
+.errorlist li{
+    color: var(--header-fg);
+}
