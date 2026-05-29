@@ -79,7 +79,7 @@ class UsagePolicyForm(forms.ModelForm):
         label="Query Process Whitelist", 
         required=False, 
         help_text=regex_help_text("A regex for processes that will not be counted against user usage."), 
-        widget=forms.Textarea(attrs={'rows':6, 'cols':100})
+        widget=forms.Textarea(attrs={'rows':5, 'cols':100})
         )
     
     user_whitelist = forms.CharField(
