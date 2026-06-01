@@ -54,7 +54,6 @@ form div label, .form-row label{
 }
 
 .helptext{
-    /* padding-top: 10%; */
     color: var(--lighter-text-color);
     font-size: medium;
     grid-row: 2;
