@@ -79,7 +79,7 @@ class UsagePolicyForm(forms.ModelForm):
         label="Query Process Whitelist", 
         required=False, 
         help_text=regex_help_text("A regex for processes that will not be counted against user usage."), 
-        widget=forms.Textarea(attrs={'rows':6, 'cols':100})
+        widget=forms.Textarea(attrs={'rows':5, 'cols':100})
         )
     
     user_whitelist = forms.CharField(
@@ -107,8 +107,12 @@ class UsagePolicyForm(forms.ModelForm):
         model = UsagePolicy
         fields = ["name", "domain", "description", "penalty_duration", "repeated_offense_scalar",
                   "repeated_offense_lookback", "grace_period", "lookback", "active", "watcher_mode", "penalty_constraints"]
-        widgets = {'grace_period': forms.TimeInput(), "repeated_offense_lookback": forms.TimeInput(
-        ), "penalty_constraints": TieredPenaltyWidget}
+        widgets = {
+            'grace_period': forms.TimeInput(), 
+            "repeated_offense_lookback": forms.TimeInput(), 
+            "penalty_constraints": TieredPenaltyWidget,
+            "domain": forms.Textarea(attrs={'rows':3}),
+        }
 
         labels = {
             'active': 'Enabled'

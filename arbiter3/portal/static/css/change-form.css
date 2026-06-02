@@ -54,7 +54,6 @@ form div label, .form-row label{
 }
 
 .helptext{
-    /* padding-top: 10%; */
     color: var(--lighter-text-color);
     font-size: medium;
     grid-row: 2;
@@ -107,4 +106,13 @@ form div label, .form-row label{
 
 .field-value span{
     padding-right: 10px;
+}
+
+.errorlist{
+    background-color: var(--error-bg-color);
+    border-radius: 5px;
+}
+
+.errorlist li{
+    color: var(--header-fg);
 }

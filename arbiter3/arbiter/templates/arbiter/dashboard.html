@@ -104,9 +104,11 @@
                     <div class="label-input-box">
                         <h3>Host:</h3>
                         <select required name="host" id="usage-host">
-                            <option value="" disabled selected hidden>--Select--</option>
+                            {% if agents|length > 1 %}
+                                <option value="" disabled selected hidden>--Select--</option>
+                            {% endif %}
                             {% for host in agents %}
-                            <option value="{{host}}">{{host}}</option>
+                                <option value="{{host}}">{{host}}</option>
                             {% empty %}
                                 <option value="" disabled>No Hosts Found</option>
                             {% endfor %}
