@@ -13,10 +13,10 @@ def violation_metrics_scrape(request):
 
     metric_name = "arbiter_violation"
 
-    exported_str = f"""# HELP {metric_name} The offense count (penalty tier) of a currntly active violation\n# TYPE {metric_name} gauge\n"""
+    exported_str = f"""# HELP {metric_name} The offense count (penalty tier) of a currently active violation\n# TYPE {metric_name} gauge\n"""
 
     for violation in unexpired_violations_metrics:
         labels = f'policy="{violation.policy.name}", host="{violation.target.host}", user="{violation.target.username}"'
-        exported_str += f'{metric_name}{{{labels}}} {violation.penalty_tier + 1}'
+        exported_str += f'{metric_name}{{{labels}}} {violation.penalty_tier + 1}\n'
 
     return HttpResponse(exported_str, content_type="text")
