@@ -35,6 +35,7 @@
 </table>
 <br>
 {% if is_paginated %}
+    <div>
     {% if page_obj.has_previous %}
         <a href='?page=1'>&laquo;</a>
         <a href='?page={{ page_obj.previous_page_number }}'>&lsaquo;</a>
@@ -52,6 +53,7 @@
         <a href='?page={{ page_obj.next_page_number }}'>&rsaquo;</a>
         <a href='?page={{ page_obj.paginator.num_pages }}'>&raquo;</a>
     {% endif %}
+    </div>
 {% endif %} 
 
 {% endblock content %}
