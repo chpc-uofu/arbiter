@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "arbiter3"
-version = "0.0.15"
+version = "0.0.16"
 description = ""
 authors = ["Kai Forrest <kai.forrest@utah.edu>", "Jackson McKay <jay.mckay@utah.edu>", "Paul Fischer <p.fischer@utah.edu>"]
 readme = "README.md"
@@ -16,7 +16,8 @@ python = "^3.11"
 requests = "^2.31.0"
 prometheus-api-client = "^0.5.3"
 django = "^5.0.0"
-aiohttp = "^3.9.1"
+sqlparse = "^0.6.0"
+aiohttp = "^3.14.4"
 asyncio = "^3.4.3"
 plotly = "^5.20.0"
 kaleido = "0.2.1"
@@ -25,8 +26,8 @@ jinja2 = "^3.1.5"
 
 [tool.poetry.group.dev.dependencies]
 pytest-django = "^4.6.0"
-pytest = "^7.4.0"
-black = "^23.7.0"
+pytest = "^9.0.3"
+black = "^24.3.0"
 isort = "^5.12.0"
 paramiko = "^3.4.0"
 pytest-asyncio = "^0.23.2"
