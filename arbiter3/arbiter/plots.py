@@ -248,6 +248,12 @@ def align_with_prom_limit(start: datetime, end: datetime, step: str) -> str:
     elif step[-1] == "m":
         step_seconds = int(step[:-1]) * 60
 
+    # A step larger than the range yields a single evaluation point, often
+    # before a short-lived workload started, so rate()/avg_over_time() return
+    # no series. Keep at least two points for short lookbacks.
+    if total_range_seconds < step_seconds * 2:
+        return f"{max(1, int(total_range_seconds // 2))}s"
+
     if total_range_seconds / step_seconds >= 400:
         return f"{int(total_range_seconds // 400)}s"
     else:
